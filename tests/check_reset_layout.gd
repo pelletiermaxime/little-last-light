@@ -14,6 +14,8 @@ func check() -> void:
 	var path := "/tmp/little-last-light-reset-%d.json" % OS.get_process_id()
 	var scene = load("res://main.tscn").instantiate()
 	scene.save_path = path
+	# This scenario checks publication, so simulate a numbered exported release.
+	scene.game_version = "0.1.0"
 	root.add_child(scene)
 	scene.process_mode = Node.PROCESS_MODE_DISABLED
 	var build = scene.get_node("BuildController")
@@ -61,6 +63,7 @@ func check() -> void:
 	scene.free()
 	var reopened = load("res://main.tscn").instantiate()
 	reopened.save_path = path
+	reopened.game_version = "0.1.0"
 	root.add_child(reopened)
 	await process_frame
 	expect(get_nodes_in_group("turrets").size() == 1 and is_equal_approx(reopened.banked_energy,120.5), "Reset survives reopening")

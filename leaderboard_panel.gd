@@ -37,8 +37,8 @@ func _ready() -> void:
 	var site_url := str(ProjectSettings.get_setting("leaderboard/site_url", ""))
 	if not site_url.is_empty():
 		var view := LinkButton.new()
-		view.text = "View online leaderboard ↗"
-		view.pressed.connect(func(): OS.shell_open(site_url + "?version=" + main.game_version.uri_encode()))
+		view.text = "View online leaderboard"
+		view.pressed.connect(func(): OS.shell_open(site_url if main.game_version == "dev" else site_url + "?version=" + main.game_version.uri_encode()))
 		add_child(view)
 	request = HTTPRequest.new()
 	request.timeout = 15.0
@@ -60,7 +60,8 @@ func refresh() -> void:
 		displayed_pending = pending.duplicate()
 		if not pending.is_empty() and sending.is_empty():
 			notice.text = ""
-	var offered := not pending.is_empty()
+	var development: bool = main.game_version == "dev"
+	var offered := not pending.is_empty() and not development
 	prompt.visible = offered
 	username.visible = offered
 	publish.visible = offered
@@ -72,6 +73,8 @@ func refresh() -> void:
 	username.editable = sending.is_empty()
 	if api_url.is_empty() and offered:
 		notice.text = "Online publishing is not configured in this build. Your record is saved locally."
+	if development:
+		notice.text = "Development build · records stay local."
 
 
 func _skip() -> void:
@@ -84,7 +87,7 @@ func _skip() -> void:
 
 
 func _publish() -> void:
-	if not sending.is_empty() or api_url.is_empty() or main.leaderboard_profile.pending.is_empty():
+	if main.game_version == "dev" or not sending.is_empty() or api_url.is_empty() or main.leaderboard_profile.pending.is_empty():
 		return
 	var name_text := username.text.strip_edges()
 	var pattern := RegEx.new()

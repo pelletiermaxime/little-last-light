@@ -102,6 +102,23 @@ func check() -> void:
 	scene = game("0.2.0")
 	expect(scene.best_time == 12.345 and scene.leaderboard_profile.pending.durationMs == 12345, "Voluntary record and pending publication survive reopening")
 	expect(scene.banked_energy == 107.0, "Leaderboard persistence preserves End Run earnings")
+	var release_offer: Dictionary = scene.leaderboard_profile.pending.duplicate()
+	scene.free()
+	await process_frame
+	scene = game("dev")
+	expect(scene.best_time == 0.0, "Development has a separate local best")
+	finish(scene, 120.0)
+	panel = scene.get_node("GameHUD").leaderboard
+	expect(scene.best_time == 120.0 and scene.version_bests["0.2.0"] == 12.345, "Playtests do not change release bests")
+	expect(scene.leaderboard_profile.pending == release_offer, "Playtests preserve an unpublished release offer")
+	expect(not panel.publish.visible and panel.notice.text.contains("Development build"), "Dev explains that records stay local")
+	panel.api_url = "https://example.convex.site"
+	panel._publish()
+	expect(panel.sending.is_empty(), "Dev cannot send leaderboard requests")
+	scene.free()
+	await process_frame
+	scene = game("dev")
+	expect(scene.best_time == 120.0 and scene.banked_energy == 107.0, "Dev record and progression survive reopening")
 	scene.free()
 	await process_frame
 	var file := FileAccess.open(path, FileAccess.WRITE)

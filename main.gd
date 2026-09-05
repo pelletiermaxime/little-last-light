@@ -5,6 +5,12 @@ enum Phase { PREPARATION, RUNNING }
 const SIDEBAR_WIDTH: float = 320.0
 
 const ENEMY_SCENE: PackedScene = preload("res://enemy.tscn")
+const CHARGER_SCENE: PackedScene = preload("res://charger.tscn")
+const FIRST_CHARGER_TIME: float = 20.0
+const CHARGER_INTERVAL: float = 8.0
+const MIN_CHARGER_INTERVAL: float = 5.0
+const CHARGER_RAMP_END: float = 120.0
+const MAX_CHARGERS: int = 4
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
 const SPAWN_INTERVALS: Array[float] = [2.0, 1.2, 0.65]
 const PRESSURE_RAMP_SECONDS: float = 20.0
@@ -18,13 +24,15 @@ var phase: Phase = Phase.PREPARATION
 var banked_energy: float = 0.0
 var best_time: float = 0.0
 var spawn_progress: float = 0.0
+var next_charger_time: float = FIRST_CHARGER_TIME
 var autosave_elapsed: float = 0.0
 var summary: String = "Arrange your defense, then start your first run."
 var save_message: String = ""
 var previous_viewport_size: Vector2
 var save_is_readable: bool = true
 var last_run: Dictionary = {}
-var game_version: String = str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
+# Running from the editor uses local records; export templates use the stamped release.
+var game_version: String = "dev" if OS.has_feature("editor") else str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
 var version_bests: Dictionary = {}
 var legacy_best_time: float = 0.0
 var leaderboard_profile: Dictionary = {"token": "", "username": "", "pending": {}}
@@ -65,6 +73,7 @@ func start_run() -> void:
 	lantern.hit_flash = 0.0
 	lantern._center_in_viewport()
 	spawn_progress = 0.0
+	next_charger_time = FIRST_CHARGER_TIME
 	autosave_elapsed = 0.0
 	phase = Phase.RUNNING
 	lantern.running = true
@@ -85,7 +94,7 @@ func end_run(voluntary: bool = false) -> void:
 	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time, "voluntary": voluntary}
 	best_time = maxf(best_time, lantern.elapsed)
 	version_bests[game_version] = best_time
-	if last_run.new_best:
+	if last_run.new_best and game_version != "dev":
 		leaderboard_profile.pending = {"version": game_version, "durationMs": maxi(1, int(lantern.elapsed * 1000.0))}
 	var result := "Run ended" if voluntary else "The light went out"
 	summary = "%s · %ds survived · +%d energy\nImprove your layout and try again. Best: %ds" % [result, int(lantern.elapsed), int(lantern.energy), int(best_time)]
@@ -99,6 +108,7 @@ func end_run(voluntary: bool = false) -> void:
 
 func _clear_enemies() -> void:
 	for enemy in get_tree().get_nodes_in_group("enemies"):
+		enemy.remove_from_group("chargers")
 		enemy.process_mode = Node.PROCESS_MODE_DISABLED
 		enemy.remove_from_group("enemies")
 		enemy.queue_free()
@@ -133,6 +143,10 @@ func _process(delta: float) -> void:
 	if spawn_progress >= 1.0:
 		spawn_progress -= 1.0
 		_spawn_enemy()
+	if lantern.elapsed >= next_charger_time:
+		# Brightness changes basic spawn pressure, not the charger's warning cadence.
+		next_charger_time = lantern.elapsed + current_charger_interval()
+		_spawn_charger()
 	autosave_elapsed += delta
 	if autosave_elapsed >= 5.0:
 		autosave_elapsed = 0.0
@@ -148,6 +162,21 @@ func _spawn_enemy() -> void:
 	enemy.speed = current_enemy_speed()
 	add_child(enemy)
 	enemy.global_position = _random_edge_position()
+
+
+func current_charger_interval() -> float:
+	var progress := clampf((lantern.elapsed - FIRST_CHARGER_TIME) / (CHARGER_RAMP_END - FIRST_CHARGER_TIME), 0.0, 1.0)
+	return lerpf(CHARGER_INTERVAL, MIN_CHARGER_INTERVAL, progress)
+
+
+func _spawn_charger() -> void:
+	if phase != Phase.RUNNING or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
+		return
+	var charger := CHARGER_SCENE.instantiate() as Node2D
+	charger.target = lantern
+	charger.max_health = maxf(3.0, current_enemy_health() + 1.0)
+	add_child(charger)
+	charger.global_position = _random_edge_position()
 
 
 func get_arena_rect() -> Rect2:
