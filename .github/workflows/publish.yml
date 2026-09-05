@@ -124,7 +124,7 @@ jobs:
 
   release:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: build
+    needs: [build, leaderboard]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -161,7 +161,7 @@ jobs:
 
   pages:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: build
+    needs: [build, leaderboard]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:

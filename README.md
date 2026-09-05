@@ -44,6 +44,7 @@ The preparation sidebar offers to publish a new survival record with a username.
 - [Run progression and saving walkthrough](docs/milestone-4.md)
 - [Clarity, brightness feedback, and run recap walkthrough](docs/milestone-5.md)
 - [Slower enemies and committed pursuit walkthrough](docs/milestone-6.md)
+- [Versioned online leaderboard walkthrough](docs/milestone-7.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 

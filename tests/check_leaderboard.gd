@@ -85,6 +85,23 @@ func check() -> void:
 	expect(scene.best_time == 0 and scene.banked_energy == 100, "New version resets best but keeps economy")
 	finish(scene, 5)
 	expect(scene.last_run.new_best and scene.version_bests["0.1.0"] == 80, "New release record keeps older version history")
+	# M6's voluntary End Run must use the same record and saving path as death.
+	scene.start_run()
+	scene.lantern.elapsed = 12.345
+	scene.lantern.energy = 7.0
+	var pause_screen = scene.get_node("PauseScreen")
+	pause_screen.pause()
+	pause_screen.end_run_button.pressed.emit()
+	expect(not paused and scene.phase == scene.Phase.PREPARATION, "Ending a paused run returns to interactive preparation")
+	expect(scene.last_run.voluntary and scene.best_time == 12.345, "End Run records the voluntary personal best")
+	expect(scene.leaderboard_profile.pending == {"version": "0.2.0", "durationMs": 12345}, "End Run offers its record for the correct version")
+	expect(scene.get_node("GameHUD").leaderboard.publish.visible, "End Run immediately displays the opt-in offer")
+	expect(scene.banked_energy == 107.0, "End Run banks energy alongside the leaderboard record")
+	scene.free()
+	await process_frame
+	scene = game("0.2.0")
+	expect(scene.best_time == 12.345 and scene.leaderboard_profile.pending.durationMs == 12345, "Voluntary record and pending publication survive reopening")
+	expect(scene.banked_energy == 107.0, "Leaderboard persistence preserves End Run earnings")
 	scene.free()
 	await process_frame
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -100,5 +117,5 @@ func check() -> void:
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:
-		print("PASS: version isolation, save migration, opt-in, identity, input focus, retries, stale response protection")
+		print("PASS: version isolation, save migration, opt-in, identity, input focus, retries, stale response protection, paused End Run and reopening")
 	quit(1 if failures else 0)
