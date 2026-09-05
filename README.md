@@ -8,6 +8,7 @@ Open `project.godot` in Godot and press F6 for the current scene or F5 for the p
 
 - WASD or arrow keys: move the lantern.
 - Space: cycle brightness, energy generation, and enemy spawn rate.
+- During a run, click Low / Medium / High in the sidebar to select brightness directly.
 - The turret stays in place and shoots nearby enemies.
 
 DualSense / gamepad controls: **left stick or D-pad** moves the lantern during a run and a visible cursor during preparation. **Cross** cycles brightness during a run; during preparation it selects a turret or confirms placement. **Square** buys a turret, **Circle** cancels placement, and **Options** starts the run. These use Godot's standard gamepad mapping (A, X, B, and Start on Xbox-style controllers). Keyboard and mouse remain supported. Restart the running scene after changing input bindings; previously exported builds must be exported again to include changes.
@@ -24,6 +25,7 @@ Progress saves locally to `user://progress-v1.json` after purchases, moves, defe
 - [Health, defeat, and restart walkthrough](docs/milestone-2.md)
 - [Turret placement walkthrough](docs/milestone-3.md)
 - [Run progression and saving walkthrough](docs/milestone-4.md)
+- [Clarity, brightness feedback, and run recap walkthrough](docs/milestone-5.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — separately published export; may lag behind this source.
 

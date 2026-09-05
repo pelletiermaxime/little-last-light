@@ -26,7 +26,7 @@ func check() -> void:
 	expect(build.turret_cost() == 30.0, "Second extra turret costs 30")
 	expect(build.placement_error(Vector2(3, 300)) == "Too close to the arena edge", "Edge rejection explained")
 	expect(build.placement_error(another.position) == "Too close to another turret", "Spacing rejection explained")
-	expect(build.placement_error(scene.lantern.status_label.position + Vector2(10, 10)) == "Place inside the arena", "Sidebar is outside arena")
+	expect(build.placement_error(scene.get_node("GameHUD").scroll.position + Vector2(10, 10)) == "Place inside the arena", "Sidebar is outside arena")
 	expect(build.can_place_at(Vector2(30, 30)), "Former top-left HUD location is buildable")
 	var arena: Rect2 = scene.get_arena_rect()
 	var empty_bottom := Vector2(arena.size.x * 0.5, arena.size.y - 36)

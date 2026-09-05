@@ -41,7 +41,7 @@ func _ready() -> void:
 	background_layer.layer = 2
 	add_child(background_layer)
 	sidebar = ColorRect.new()
-	sidebar.color = Color("#1b2533")
+	sidebar.color = Color("#18242e")
 	background_layer.add_child(sidebar)
 	sidebar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	placement_hint = Label.new()
@@ -68,11 +68,13 @@ func _ready() -> void:
 	overview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overview.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	bar.add_child(overview)
+	overview.add_theme_color_override("font_color", Color("#ffcf7a"))
 	hint = Label.new()
 	hint.add_theme_font_size_override("font_size", 18)
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	bar.add_child(hint)
+	hint.add_theme_color_override("font_color", Color("#a8bbc8"))
 	var buttons := VBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 10)
 	buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -95,6 +97,12 @@ func _ready() -> void:
 	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(main.start_run)
 	buttons.add_child(start_button)
+	# The filled gold action makes the next run the clearest way forward.
+	var primary := StyleBoxFlat.new()
+	primary.bg_color = Color("#ffcf7a")
+	primary.set_corner_radius_all(5)
+	start_button.add_theme_stylebox_override("normal", primary)
+	start_button.add_theme_color_override("font_color", Color("#17212b"))
 	cancel_button.hide()
 	_layout_sidebar()
 	controller_cursor = main.get_arena_rect().get_center()
@@ -106,8 +114,7 @@ func _layout_sidebar() -> void:
 	var arena: Rect2 = main.get_arena_rect()
 	sidebar.position = Vector2(arena.end.x, 0)
 	sidebar.size = Vector2(main.SIDEBAR_WIDTH, arena.size.y)
-	bar.position = Vector2(arena.end.x + 20, 260)
-	bar.size = Vector2(280, 0)
+	# GameHUD places the preparation controls in its shared scrollable column.
 
 
 func _process(delta: float) -> void:
@@ -139,6 +146,7 @@ func turret_cost() -> float:
 func _update_interface() -> void:
 	# Parent _ready() has not run during this child's _ready(), so keep reads simple.
 	var preparing: bool = main.phase == main.Phase.PREPARATION
+	bar.visible = preparing
 	build_button.visible = preparing
 	start_button.visible = preparing
 	start_button.disabled = placing
@@ -146,17 +154,16 @@ func _update_interface() -> void:
 	cancel_button.text = "Cancel (%s)" % ("Circle" if using_controller else "Esc")
 	start_button.text = "Start run (%s)" % ("Options" if using_controller else "Enter")
 	build_button.disabled = placing or main.banked_energy < turret_cost()
-	overview.text = ("Energy available: %d\n%s" % [int(main.banked_energy), main.summary]) if preparing else ("Saved energy: %d · Building unlocks after this run" % int(main.banked_energy))
-	if not main.save_message.is_empty():
-		overview.text += "\n" + main.save_message
+	var remaining := maxi(0, int(ceil(turret_cost() - main.banked_energy)))
+	overview.text = "AVAILABLE  %d energy\n%s" % [int(main.banked_energy), "Next turret affordable" if remaining == 0 else "%d more for next turret" % remaining]
 	if placing:
 		hint.text = "Move turret for free · Click to confirm · Esc to cancel" if is_instance_valid(selected_turret) else "Place new turret · Click to buy · Esc to cancel"
 	elif not preparing:
 		hint.text = "New enemies: %d hits · Tougher every 30s · Brightness attracts more" % int(main.current_enemy_health())
 	elif main.banked_energy < turret_cost():
-		hint.text = "Click a turret to move it · Need %d more energy to buy" % int(ceil(turret_cost() - main.banked_energy))
+		hint.text = "Reposition turrets for free.\nClick one to move it."
 	else:
-		hint.text = "Click a turret to move it, or buy another with B"
+		hint.text = "Add a turret, or click one to move it for free."
 	if preparing and using_controller:
 		hint.text = "Left stick / D-pad: cursor\nCross: select / place\nSquare: buy · Circle: cancel"
 

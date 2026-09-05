@@ -25,6 +25,7 @@ var summary: String = "Arrange your defense, then start your first run."
 var save_message: String = ""
 var previous_viewport_size: Vector2
 var save_is_readable: bool = true
+var last_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -67,6 +68,8 @@ func _on_lantern_died() -> void:
 		return
 	phase = Phase.PREPARATION
 	lantern.running = false
+	# Capture the result before banking clears this run's energy.
+	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time}
 	best_time = maxf(best_time, lantern.elapsed)
 	summary = "The light went out · %ds survived · +%d energy\nImprove your layout and try again. Best: %ds" % [int(lantern.elapsed), int(lantern.energy), int(best_time)]
 	banked_energy += lantern.energy

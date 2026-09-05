@@ -17,7 +17,6 @@ var elapsed: float = 0.0
 var brightness: int = 0
 var energy: float = 0.0
 
-var status_label: Label
 
 
 func _ready() -> void:
@@ -25,30 +24,18 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_keep_inside_viewport)
 	_center_in_viewport()
 
-	# A CanvasLayer keeps the interface separate from world positioning.
-	var hud := CanvasLayer.new()
-	hud.layer = 3
-	add_child(hud)
-
-	status_label = Label.new()
-	status_label.add_theme_font_size_override("font_size", 18)
-	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(status_label)
-	_layout_status()
-	get_viewport().size_changed.connect(_layout_status)
-
-	_update_status()
 
 
 func _process(delta: float) -> void:
+	# Let the last hit fade after death instead of freezing a red flash in prep.
+	if hit_flash > 0.0:
+		hit_flash = maxf(0.0, hit_flash - delta)
+		queue_redraw()
 	if not running:
 		return
-	hit_flash = maxf(0.0, hit_flash - delta)
 	elapsed += delta
 	energy += ENERGY_RATES[brightness] * delta
 
-	_update_status()
 	queue_redraw()
 
 
@@ -82,8 +69,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not running:
 		return
 	if event.is_action_pressed("cycle_brightness"):
-		brightness = (brightness + 1) % BRIGHTNESS_NAMES.size()
-		_update_status()
+		set_brightness((brightness + 1) % BRIGHTNESS_NAMES.size())
 		get_viewport().set_input_as_handled()
 
 
@@ -91,26 +77,18 @@ func _center_in_viewport() -> void:
 	position = get_parent().get_arena_rect().get_center()
 
 
-func _layout_status() -> void:
-	status_label.position = Vector2(get_parent().get_arena_rect().end.x + 20.0, 24.0)
-	status_label.size = Vector2(280, 220)
+func set_brightness(level: int) -> void:
+	if not running or level < 0 or level >= BRIGHTNESS_NAMES.size():
+		return
+	brightness = level
+	_update_status()
+	queue_redraw()
 
 
 func _update_status() -> void:
-	if not running:
-		status_label.text = "PREPARATION\nHealth restored on Start run"
-		return
-	status_label.text = (
-		"Health: %d / %d\nTime: %ds · Brightness: %s\nThis run: %d energy\n(+%.0f / second)\n\nWASD / Arrows / Left stick: move\nSpace / Cross: brightness"
-		% [
-			int(ceil(health)),
-			int(max_health),
-			int(elapsed),
-			BRIGHTNESS_NAMES[brightness],
-			int(energy),
-			ENERGY_RATES[brightness],
-		]
-	)
+	var hud := get_parent().get_node_or_null("GameHUD")
+	if hud != null and hud.is_node_ready():
+		hud.refresh()
 
 
 func _draw() -> void:
@@ -123,5 +101,10 @@ func _draw() -> void:
 
 	draw_circle(Vector2.ZERO, 12.0 * pulse, Color("#ffbd59"))
 	draw_circle(Vector2.ZERO, 6.0 * pulse, Color("#fff2cf"))
+	# One, two, or three rays make brightness readable without relying on color.
+	for index in range(brightness + 1):
+		var angle := -PI / 2.0 + (index - brightness / 2.0) * 0.45
+		draw_line(Vector2.from_angle(angle) * 19.0, Vector2.from_angle(angle) * 25.0, Color("#ffe0a0"), 2.0, true)
 	if hit_flash > 0.0:
+		draw_circle(Vector2.ZERO, 14.0, Color(1.0, 0.35, 0.3, 0.65))
 		draw_arc(Vector2.ZERO, 18.0, 0.0, TAU, 32, Color("#ff6b6b"), 3.0, true)
