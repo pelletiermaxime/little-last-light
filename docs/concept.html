@@ -20,10 +20,10 @@
 <span class="label">01 / The run</span><h2>Start small. Build up. Survive.</h2>
 <div class="loop">
 <div class="step"><span class="number">1</span><h3>Defend</h3><p>Start with your lantern and one turret. Enemies approach; your turret fires automatically.</p></div>
-<div class="step"><span class="number">2</span><h3>Spend</h3><p>Defeated enemies give currency. Pause to place a new turret or upgrade your defense.</p></div>
-<div class="step"><span class="number">3</span><h3>Push further</h3><p>Face stronger waves and survive the final wave. If the lantern breaks, try a new build.</p></div>
+<div class="step"><span class="number">2</span><h3>Earn</h3><p>Brightness generates energy and attracts more enemies. Pressure rises with survival time; building stays locked.</p></div>
+<div class="step"><span class="number">3</span><h3>Improve &amp; retry</h3><p>After defeat, spend your earnings on turrets and rearrange your layout for free. Start a fresh run when ready.</p></div>
 </div>
-<p class="note">First target: a 3–5 minute run. Duration and prices are proposals to test.</p>
+<p class="note">Early runs should be short and earn a useful improvement. Energy and turret layouts persist between runs and are saved locally.</p>
 </section>
 <section aria-labelledby="style-title">
 <span class="label">02 / Your playstyle</span><h2>Move to dodge. Settle to defend.</h2>
@@ -51,16 +51,16 @@
 </section>
 <section aria-labelledby="upgrade-title">
 <span class="label">03 / The interesting choice</span><h2>Another turret—or a stronger build?</h2>
-<p>Use the same run currency for every purchase. Place a new turret to cover a gap or overlap firepower; upgrade an existing turret to make that position stronger.</p>
+<p>Spend banked energy during preparation. Place a new turret to cover a gap or overlap firepower. Turret upgrades are a later addition.</p>
 <div class="choices"><div class="choice"><h3>A nimble build</h3><p>Faster movement, longer turret range, piercing shots. Give yourself room to dodge while drawing enemies through your firing zones.</p></div><div class="choice"><h3>An idle-friendly build</h3><p>More lantern health and armor while settled. Combine these with overlapping turret coverage to hold a defended spot with less input.</p></div></div>
 <p class="note">Standing still would activate a defensive bonus after a short delay. Moving removes it. Idle means low input during a run; surviving still depends on the build.</p>
 </section>
 <section class="next" aria-labelledby="next-title">
 <span class="label">04 / Build the smallest version</span><h2>Prove this loop before adding more.</h2>
-<ol><li>Move the lantern while its first turret stays fixed; let enemies damage the lantern.</li><li>Add defeat and a quick restart.</li><li>Earn currency and place an extra turret, previewing its range.</li><li>Add one stationary armor upgrade.</li><li>Add a short wave sequence with a final wave.</li></ol>
+<ol><li>Move and dodge while fixed turrets defend you.</li><li>Earn energy as enemy pressure grows.</li><li>Bank earnings on defeat and clear the arena.</li><li>Buy turrets or reposition your existing layout.</li><li>Start a fresh run with your improvements.</li></ol>
 </section>
-<section aria-labelledby="later-title"><h2>What could grow later?</h2><p>Turrets with different jobs, enemies that challenge different builds, and unlockable upgrades to try on your next run.</p><p class="muted">Still to decide: does any currency carry between runs, or do you unlock new purchase options? First, make spending currency inside one run feel good.</p></section>
-<footer>A direction to play with, not a feature checklist. The prototype already has light, enemies, energy, and automatic shooting. Movement, purchases, damage, and the stationary bonus are proposed additions.</footer>
+<section aria-labelledby="later-title"><h2>What could grow later?</h2><p>Turret upgrades, armor bonuses for a stationary lantern, turrets with different jobs, and enemies that challenge different builds.</p><p class="muted">First, test whether short attempts and persistent improvements make you want another run. Prices and difficulty are still being tuned.</p></section>
+<footer>M4 implements runs, saved energy and layouts, turret purchases, and free repositioning between runs. The stationary bonuses illustrated above remain future design ideas.</footer>
 </main>
 <script>
 const modes={moving:{title:'Find the sweet spot',copy:'Dodge without leading enemies out of your turrets’ reach. Overlapping ranges let several turrets fire at the same threat; your position shapes the enemies’ approach.',description:'The lantern dodges between two fixed turrets. Their range circles overlap, letting both turrets attack enemies in the middle.'},stationary:{title:'Hold a defended spot',copy:'Settle where your turrets cover approaching enemies. Stationary armor helps your lantern absorb the hits that get through. You can still move to escape if your defense is overwhelmed.',description:'The same two turrets stay fixed. The lantern holds the middle with a personal armor bonus, while both turrets fire into their overlapping range.'}};

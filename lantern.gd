@@ -10,6 +10,7 @@ const LIGHT_SCALES: Array[float] = [1.0, 1.4, 1.9]
 @export var max_health: float = 100.0
 
 var health: float
+var running: bool = false
 var hit_flash: float = 0.0
 
 var elapsed: float = 0.0
@@ -26,17 +27,23 @@ func _ready() -> void:
 
 	# A CanvasLayer keeps the interface separate from world positioning.
 	var hud := CanvasLayer.new()
+	hud.layer = 3
 	add_child(hud)
 
 	status_label = Label.new()
-	status_label.position = Vector2(24.0, 24.0)
-	status_label.add_theme_font_size_override("font_size", 20)
+	status_label.add_theme_font_size_override("font_size", 18)
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(status_label)
+	_layout_status()
+	get_viewport().size_changed.connect(_layout_status)
 
 	_update_status()
 
 
 func _process(delta: float) -> void:
+	if not running:
+		return
 	hit_flash = maxf(0.0, hit_flash - delta)
 	elapsed += delta
 	energy += ENERGY_RATES[brightness] * delta
@@ -46,7 +53,7 @@ func _process(delta: float) -> void:
 
 
 func take_damage(amount: float) -> void:
-	if health <= 0.0 or amount <= 0.0:
+	if not running or health <= 0.0 or amount <= 0.0:
 		return
 	health = maxf(0.0, health - amount)
 	hit_flash = 0.15
@@ -57,6 +64,8 @@ func take_damage(amount: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not running:
+		return
 	# get_vector keeps diagonal movement the same speed as straight movement.
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	position += direction * move_speed * delta
@@ -64,12 +73,14 @@ func _physics_process(delta: float) -> void:
 
 
 func _keep_inside_viewport() -> void:
-	var screen_size := get_viewport_rect().size
+	var screen_size: Vector2 = get_parent().get_arena_rect().size
 	var margin := Vector2.ONE * 16.0
 	position = position.clamp(margin, (screen_size - margin).max(margin))
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if not running:
+		return
 	if event is InputEventKey:
 		if event.pressed and not event.echo and event.keycode == KEY_SPACE:
 			brightness = (brightness + 1) % BRIGHTNESS_NAMES.size()
@@ -78,15 +89,24 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 func _center_in_viewport() -> void:
-	position = get_viewport_rect().size / 2.0
+	position = get_parent().get_arena_rect().get_center()
+
+
+func _layout_status() -> void:
+	status_label.position = Vector2(get_parent().get_arena_rect().end.x + 20.0, 24.0)
+	status_label.size = Vector2(280, 220)
 
 
 func _update_status() -> void:
+	if not running:
+		status_label.text = "PREPARATION\nHealth restored on Start run"
+		return
 	status_label.text = (
-		"Health: %d / %d\nBrightness: %s\nEnergy: %d  (+%.0f / second)\n\nWASD / Arrows: move lantern\nSpace: change brightness"
+		"Health: %d / %d\nTime: %ds · Brightness: %s\nThis run: %d energy\n(+%.0f / second)\n\nWASD / Arrows: move\nSpace: brightness"
 		% [
 			int(ceil(health)),
 			int(max_health),
+			int(elapsed),
 			BRIGHTNESS_NAMES[brightness],
 			int(energy),
 			ENERGY_RATES[brightness],

@@ -2,6 +2,7 @@ extends Node2D
 
 @export var attack_range: float = 220.0
 @export var fire_interval: float = 1.5
+@export var damage: float = 1.0
 
 var cooldown: float = 0.0
 var shot_time: float = 0.0
@@ -19,7 +20,7 @@ func _process(delta: float) -> void:
 			shot_endpoint = enemy.global_position
 			shot_time = 0.12
 			cooldown = fire_interval
-			enemy.queue_free()
+			enemy.take_damage(damage)
 
 	queue_redraw()
 

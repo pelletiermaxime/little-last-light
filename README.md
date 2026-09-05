@@ -10,15 +10,18 @@ Open `project.godot` in Godot and press F6 for the current scene or F5 for the p
 - Space: cycle brightness, energy generation, and enemy spawn rate.
 - The turret stays in place and shoots nearby enemies.
 
-Enemies in contact drain health. At zero health, the run pauses: click **Try again** or press **R** to restart.
+Start in **Preparation**. Click an existing turret to move it for free, or build with **B**. Extra turrets cost **20, 30, 40, 50… energy**. Left-click to confirm a valid position; **Escape** cancels. Controls live in a separate right sidebar. The entire arena is buildable except for its edge margin and occupied turret positions. Click **Start run** or press **Enter** when ready; the arena keeps the same bounds during combat.
 
-Earn 20 energy, then press **B** or click **Build turret**. Gameplay pauses while you preview its range. Left-click a valid position to purchase; **Escape** cancels without spending. Turret upgrades are planned next.
+During a run, construction is locked and enemies spawn faster over time. Newly spawned enemies need one additional turret hit every 30 seconds; their health bars show remaining health. Enemies touching the lantern drain health. At zero health, enemies clear and your earnings are banked for preparation. Turrets and unspent energy carry into the next run.
+
+Progress saves locally to `user://progress-v1.json` after purchases, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening returns to preparation with saved energy and turret positions. Turret upgrades are future work.
 
 ## Learn and explore
 
 - [First milestone walkthrough](docs/milestone-1.md)
 - [Health, defeat, and restart walkthrough](docs/milestone-2.md)
 - [Turret placement walkthrough](docs/milestone-3.md)
+- [Run progression and saving walkthrough](docs/milestone-4.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — separately published export; may lag behind this source.
 

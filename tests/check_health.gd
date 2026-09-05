@@ -6,9 +6,12 @@ func _initialize() -> void:
 	call_deferred("check")
 
 func check() -> void:
-	change_scene_to_file("res://main.tscn")
-	await scene_changed
-	var scene = current_scene
+	var scene = load("res://main.tscn").instantiate()
+	var test_path := "/tmp/little-last-light-health-%d.json" % OS.get_process_id()
+	scene.save_path = test_path
+	root.add_child(scene)
+	current_scene = scene
+	scene.start_run()
 	var lantern = scene.get_node("Lantern")
 	scene.set_process(false)
 	lantern.set_process(false)
@@ -32,7 +35,7 @@ func check() -> void:
 		return
 	lantern.health = 100.0
 	enemy.global_position = lantern.global_position + Vector2(100, 0)
-	enemy._process(1.0)
+	enemy._process(0.5)
 	assert(lantern.health == 100.0, "No damage outside contact range")
 	enemy.global_position = lantern.global_position
 	enemy._process(0.5)
@@ -44,18 +47,17 @@ func check() -> void:
 	lantern.take_damage(1000)
 	lantern.take_damage(1000)
 	assert(lantern.health == 0 and deaths == 1, "Death emits once and health clamps")
-	assert(paused and scene.defeat_screen.visible, "Death pauses and shows menu")
-	assert(scene.restart_button.can_process(), "Restart works while paused")
+	assert(scene.phase == scene.Phase.PREPARATION and not lantern.running, "Death returns to preparation")
 	var energy: float = lantern.energy
 	var progress: float = scene.spawn_progress
 	await process_frame
 	await process_frame
 	assert(lantern.energy == energy and scene.spawn_progress == progress, "Run freezes")
-	scene.restart_button.pressed.emit()
-	await scene_changed
-	assert(not paused and current_scene != scene, "Restart replaces scene and unpauses")
+	scene.get_node("BuildController").start_button.pressed.emit()
+	assert(not paused and scene.phase == scene.Phase.RUNNING, "Start begins a fresh run")
 	assert(current_scene.lantern.health == 100.0, "Restart restores health")
 	assert(current_scene.lantern.energy < 1.0 and get_nodes_in_group("enemies").is_empty(), "Fresh run state")
-	assert(not current_scene.defeat_screen.visible, "Defeat menu is hidden again")
-	print("PASS: contact damage, death, paused run, interactive restart, fresh scene")
+	print("PASS: 72 contact approaches, damage, death, preparation freeze, fresh run")
+	scene.free()
+	DirAccess.remove_absolute(test_path)
 	quit()
