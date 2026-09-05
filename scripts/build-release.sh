@@ -3,6 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 godot_bin="${GODOT_BIN:-godot}"
+python3 scripts/prepare-release.py
 
 # Keep desktop binaries outside the directory uploaded to Pages.
 mkdir -p export/{web,windows,linux,downloads}
@@ -18,6 +19,10 @@ test -s export/web/index.pck
 test -s export/windows/little-last-light.exe
 test -s export/linux/little-last-light.x86_64
 chmod +x export/linux/little-last-light.x86_64
+cp export/release/version.txt export/web/version.txt
+cp export/release/version.txt export/windows/version.txt
+cp export/release/version.txt export/linux/version.txt
+touch export/web/.nojekyll
 
 # tar preserves the Linux executable permission; Windows gets a zip.
 rm -f export/downloads/little-last-light-windows-x86_64.zip

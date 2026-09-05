@@ -27,7 +27,7 @@ Progress saves locally to `user://progress-v1.json` after purchases, moves, defe
 - [Run progression and saving walkthrough](docs/milestone-4.md)
 - [Clarity, brightness feedback, and run recap walkthrough](docs/milestone-5.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
-- [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — separately published export; may lag behind this source.
+- [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 
 ## Export
 
@@ -35,14 +35,20 @@ Linux, Windows, and Web presets are included in `export_presets.cfg`. Install ma
 
 ### Automated builds and publishing
 
-`.github/workflows/publish.yml` builds all three platforms on pushes to `main` and `feat/**` branches, and on pull requests to `main`. A push to `main` also deploys the browser game to [GitHub Pages](https://pelletiermaxime.github.io/little-last-light/) and publishes Windows and Linux x86_64 archives, plus SHA-256 checksums, in [Releases](https://github.com/pelletiermaxime/little-last-light/releases). Feature branches only upload build artifacts, so the pipeline can be tested before merging. The earlier demo linked above is a separate site.
+`.github/workflows/publish.yml` builds all three platforms on pushes to `main` and `feat/**` branches, and on pull requests to `main`. A push to `main` also deploys the browser game to [the public demo repository's Pages site](https://pelletiermaxime.github.io/little-last-light-demo/) and publishes Windows and Linux x86_64 archives, plus SHA-256 checksums, in [Releases](https://github.com/pelletiermaxime/little-last-light/releases). Feature branches only upload build artifacts, so the pipeline can be tested before merging. The source repository stays private; only the web export is copied to the demo repository.
 
 Godot and the three required release templates are cached by engine version, runner OS, and architecture. A cache hit skips the download and installation steps. The first run, a Godot version change, or an evicted cache requires a fresh download; the game itself is rebuilt every run.
 
-**One-time setup:** In this repository's **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**. Ensure GitHub Actions is enabled and the `github-pages` environment permits deployments from `main`. The workflow uses the built-in `GITHUB_TOKEN`; no personal access token or extra secret is needed.
+**Deployment setup:** The public `pelletiermaxime/little-last-light-demo` repository serves Pages from `main`, at `/`. A write-enabled deploy key on that repository has its private key stored in this source repository's `PAGES_DEPLOY_KEY` Actions secret. This key is restricted to the demo repository and used only in the `pages` job on `main`. Keep the `github-pages` environment open to `main` deployments. Publishing preserves the demo README and replaces the exported site files; GitHub then builds the public Pages site. Desktop releases use the source repository's built-in `GITHUB_TOKEN`. Pages does not need to be enabled on this private repository.
 
-Each published workflow run creates a release tagged `build-<run-id>` at the exact built commit and marks it latest. Re-running that same run replaces its release assets. Pull requests only build and upload artifacts; they do not publish. You can also use **Actions → Build and publish game → Run workflow** on `main` to publish manually. Other branches only build. Pages and release publication run independently after a successful build, so a Pages configuration error does not prevent desktop downloads from publishing.
+### Automatic versions and changelog
+
+`scripts/prepare-release.py` starts at `0.0.1` and increments the patch version from existing `vMAJOR.MINOR.PATCH` Git tags: `v0.0.1`, `v0.0.2`, and so on. These tags are the published version history. `config/version` in `project.godot` is the minimum version; raise it manually when you want a new minor or major series, such as `0.1.0`. The script stamps the selected version into the build's project settings and a `version.txt` included in each platform export. It does not commit automatic version edits back to `main`, so there is no extra build loop. Local builds also stamp the working copy's project version.
+
+Releases use the version as both name and tag, point to the exact source commit, and contain a changelog of non-merge commits since the previous version (all history for the first version), with a comparison link. Rebuilding an already tagged commit reuses its version and replaces its release assets instead of consuming another number. Build-only branches do not create tags or consume versions. The old `build-*` release remains available but does not affect version numbering.
+
+Pull requests only build and upload artifacts; they do not publish. You can also use **Actions → Build and publish game → Run workflow** on `main` to publish manually. Other branches only build. Pages and release publication run independently after a successful build, so a Pages deployment error does not prevent desktop downloads from publishing. The Pages job publishes the public repository commit; final site deployment runs in the public repository's Pages workflow.
 
 The Web preset has threads disabled, allowing it to run on Pages without custom cross-origin isolation headers. Desktop downloads are unsigned. Extract the Windows zip and run `little-last-light.exe`; extract the Linux tarball and run `./little-last-light.x86_64` (the archive preserves executable permissions).
 
-To reproduce the build locally on Linux, install Godot 4.7.2, its matching export templates, `zip`, and `tar`, then run `bash scripts/build-release.sh`. Set `GODOT_BIN` if the executable has another name. The script imports assets before exporting and writes the site to `export/web` and release archives to `export/downloads`. When upgrading Godot, update `GODOT_VERSION` in the workflow and use matching local templates.
+To reproduce the build locally on Linux, install Godot 4.7.2, its matching export templates, Python 3, `zip`, and `tar`, then run `bash scripts/build-release.sh`. Fetch the repository tags first to calculate the current version. Set `GODOT_BIN` if the executable has another name. The script imports assets before exporting and writes the site to `export/web`, release archives to `export/downloads`, and version/changelog metadata to `export/release`. When upgrading Godot, update `GODOT_VERSION` in the workflow and use matching local templates.

@@ -22,10 +22,14 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Restore Godot and export templates
         id: godot-cache
@@ -65,7 +69,11 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Check release versioning
+        run: python3 -B -m unittest discover -s tests -p 'test_release_version.py'
+
       - name: Import and export all platforms
+        id: version
         run: bash scripts/build-release.sh
 
       - name: Upload desktop downloads
@@ -76,10 +84,20 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Pages site
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload release metadata
+        uses: actions/upload-artifact@v7.0.1
         with:
+          name: release-metadata
+          path: export/release/
+          if-no-files-found: error
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: web-build
           path: export/web
+          include-hidden-files: true
+          if-no-files-found: error
 
   release:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -94,23 +112,27 @@ jobs:
           name: desktop-downloads
           path: downloads
 
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: release-metadata
+          path: metadata
+
       - name: Publish desktop release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           COMMIT: ${{ github.sha }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_NUMBER: ${{ github.run_number }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
         run: |
           set -euo pipefail
-          tag="build-$RUN_ID"
+          tag="$RELEASE_TAG"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" downloads/* --clobber
           else
             gh release create "$tag" downloads/* \
               --target "$COMMIT" \
-              --title "Main build $RUN_NUMBER" \
-              --notes "Automated build of commit $COMMIT. Download and extract the archive for your platform. These are unsigned x86_64 builds." \
+              --title "$tag" \
+              --notes-file metadata/notes.md \
               --latest
           fi
 
@@ -119,14 +141,37 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      pages: write
-      id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://pelletiermaxime.github.io/little-last-light-demo/
     steps:
-      - uses: actions/configure-pages@v5
-      - name: Deploy web build
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Check out public demo repository
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: pelletiermaxime/little-last-light-demo
+          ref: main
+          path: site
+          ssh-key: ${{ secrets.PAGES_DEPLOY_KEY }}
+
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: web-build
+          path: web-build
+
+      - name: Publish web export to the public demo
+        env:
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          set -euo pipefail
+          test -s web-build/index.html
+          test -s web-build/index.wasm
+          test -s web-build/index.pck
+          rsync -a --delete --exclude='.git/' --exclude='README.md' web-build/ site/
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          if ! git diff --cached --quiet; then
+            git commit -m "Deploy $RELEASE_TAG"
+            git push origin main
+          fi
