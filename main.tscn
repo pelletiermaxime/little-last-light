@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" uid="uid://cit3707eae47i" path="res://main.gd" id="1_h2yge"]
 [ext_resource type="Script" uid="uid://b2bk4an1dwj4l" path="res://lantern.gd" id="1_ig7tw"]
-[ext_resource type="Script" uid="uid://blpsid2cus1i7" path="res://turret.gd" id="3_h2yge"]
+[ext_resource type="PackedScene" path="res://turret.tscn" id="3_turret"]
+[ext_resource type="Script" path="res://build_controller.gd" id="4_build"]
 
 [node name="Main" type="Node2D" unique_id=49982640]
 script = ExtResource("1_h2yge")
@@ -10,6 +11,8 @@ script = ExtResource("1_h2yge")
 [node name="Lantern" type="Node2D" parent="." unique_id=118638199]
 script = ExtResource("1_ig7tw")
 
-[node name="Turret" type="Node2D" parent="." unique_id=1662014141]
+[node name="Turret" parent="." instance=ExtResource("3_turret")]
 position = Vector2(80, 0)
-script = ExtResource("3_h2yge")
+
+[node name="BuildController" type="Node2D" parent="."]
+script = ExtResource("4_build")

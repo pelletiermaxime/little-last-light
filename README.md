@@ -10,12 +10,15 @@ Open `project.godot` in Godot and press F6 for the current scene or F5 for the p
 - Space: cycle brightness, energy generation, and enemy spawn rate.
 - The turret stays in place and shoots nearby enemies.
 
-Enemies in contact drain health. At zero health, the run pauses: click **Try again** or press **R** to restart. Turret purchases and upgrades are planned additions.
+Enemies in contact drain health. At zero health, the run pauses: click **Try again** or press **R** to restart.
+
+Earn 20 energy, then press **B** or click **Build turret**. Gameplay pauses while you preview its range. Left-click a valid position to purchase; **Escape** cancels without spending. Turret upgrades are planned next.
 
 ## Learn and explore
 
 - [First milestone walkthrough](docs/milestone-1.md)
 - [Health, defeat, and restart walkthrough](docs/milestone-2.md)
+- [Turret placement walkthrough](docs/milestone-3.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — separately published export; may lag behind this source.
 
