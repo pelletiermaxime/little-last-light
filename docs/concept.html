@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Last Light — the idea</title>
+<style>
+:root{color-scheme:dark;--bg:#141b1b;--panel:#1d2727;--text:#f2f0e6;--muted:#b8c5bd;--gold:#ffd17c;--mint:#92d4bf}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:19px/1.65 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:64px 28px 80px}header{margin-bottom:46px}.eyebrow{font-size:13px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold)}h1{font-size:clamp(38px,7vw,60px);line-height:1.08;letter-spacing:-.055em;margin:15px 0 22px}h2{font-size:28px;line-height:1.25;letter-spacing:-.025em;margin:0 0 18px}h3{font-size:20px;margin:0 0 7px}p{margin:0 0 16px}.lead{font-size:23px;line-height:1.5;max-width:700px}.muted,small{color:var(--muted)}section{margin:0 0 46px}.label{display:block;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px}.loop{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.step{background:var(--panel);border-radius:14px;padding:20px}.number{color:var(--gold);font-size:14px;display:block;margin-bottom:10px}.step p{font-size:17px;margin:0;color:var(--muted)}.demo{border:1px solid #3c4c47;background:var(--panel);border-radius:20px;overflow:hidden}.switch{display:flex;gap:8px;padding:20px 20px 0}.switch button{flex:1;min-height:48px;border:1px solid #617369;border-radius:9px;background:transparent;color:var(--text);font:600 17px system-ui;cursor:pointer}.switch button[aria-pressed=true]{background:var(--gold);border-color:var(--gold);color:#20251f}button:focus-visible{outline:3px solid var(--mint);outline-offset:4px}svg{width:100%;height:auto;display:block;max-height:330px}.caption{padding:0 28px 24px;min-height:150px}.caption p{margin-bottom:0;color:var(--muted)}.note{font-size:16px;color:var(--muted);margin-top:14px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:16px}.choice{border-left:3px solid var(--mint);padding:4px 0 4px 20px}.choice p{font-size:17px;color:var(--muted);margin:0}.choice:last-child{border-color:var(--gold)}.next{padding:28px;background:#26332d;border-radius:16px}.next ol{margin:0;padding-left:25px}.next li{padding:5px 0}footer{font-size:15px;color:var(--muted);border-top:1px solid #3c4c47;padding-top:22px}.stationary{display:none}svg[data-mode=stationary] .stationary{display:initial}svg[data-mode=stationary] .moving{display:none}@media(max-width:600px){main{padding:36px 20px 50px}.loop,.choices{grid-template-columns:1fr}.step{padding:16px 20px}.number{display:inline;margin-right:10px}.step h3{display:inline}.step p{margin-top:6px}.caption{padding:0 20px 22px}.lead{font-size:21px}.next{padding:23px}.switch{padding:16px 16px 0}}@media print{body{background:white;color:#111;font-size:12pt}main{padding:0;max-width:none}h1{font-size:32pt}.step,.demo,.next{background:#f2f2ef;color:#111}.muted,small,.step p,.caption p,.note,.choice p,footer{color:#444}section{break-inside:avoid;margin-bottom:24px}.switch{display:none}svg{max-height:230px}.label,.eyebrow,.number{color:#725110}}
+</style>
+</head>
+<body><main>
+<header>
+<div class="eyebrow">Little Last Light · working concept</div>
+<h1>A little lantern.<br>A growing defense.</h1>
+<p class="lead">Place your turrets. Dodge with your lantern. Find the sweet spot where your defenses cover the enemies chasing you.</p>
+<p class="muted">One arena, automatic shooting, and a few satisfying choices.</p>
+</header>
+<section aria-labelledby="run-title">
+<span class="label">01 / The run</span><h2>Start small. Build up. Survive.</h2>
+<div class="loop">
+<div class="step"><span class="number">1</span><h3>Defend</h3><p>Start with your lantern and one turret. Enemies approach; your turret fires automatically.</p></div>
+<div class="step"><span class="number">2</span><h3>Spend</h3><p>Defeated enemies give currency. Pause to place a new turret or upgrade your defense.</p></div>
+<div class="step"><span class="number">3</span><h3>Push further</h3><p>Face stronger waves and survive the final wave. If the lantern breaks, try a new build.</p></div>
+</div>
+<p class="note">First target: a 3–5 minute run. Duration and prices are proposals to test.</p>
+</section>
+<section aria-labelledby="style-title">
+<span class="label">02 / Your playstyle</span><h2>Move to dodge. Settle to defend.</h2>
+<p>Turrets stay where you place them. Enemies chase the lantern, so dodge while drawing them through overlapping firing zones.</p>
+<div class="demo">
+<div class="switch" aria-label="Preview a playstyle"><button type="button" data-mode="moving" aria-pressed="true">Keep moving</button><button type="button" data-mode="stationary" aria-pressed="false">Hold your ground</button></div>
+<svg data-mode="moving" viewBox="0 0 740 310" role="img" aria-labelledby="arena-title arena-desc">
+<title id="arena-title">Fixed turrets with overlapping firing zones</title><desc id="arena-desc">The lantern dodges between two fixed turrets. Their range circles overlap, letting both turrets attack enemies in the middle.</desc>
+<defs><radialGradient id="glow"><stop stop-color="#ffd17c" stop-opacity=".25"/><stop offset="1" stop-color="#ffd17c" stop-opacity="0"/></radialGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#728578" opacity=".22"/></pattern></defs>
+<rect x="20" y="18" width="700" height="274" rx="12" fill="url(#grid)"/>
+<g fill="#92d4bf" fill-opacity=".07" stroke="#92d4bf" stroke-opacity=".55" stroke-dasharray="5 6"><circle cx="285" cy="153" r="125"/><circle cx="455" cy="153" r="125"/></g>
+<g class="moving" fill="none"><path d="M372 213 Q412 186 401 150" stroke="#ffd17c" stroke-width="3" stroke-dasharray="6 7"/><path d="m392 161 9-13 9 11" stroke="#ffd17c" stroke-width="3"/><path d="M370 46 370 108" stroke="#dd8a84" stroke-width="3" stroke-dasharray="7 7"/></g>
+<g class="stationary"><circle cx="370" cy="156" r="38" fill="#ffd17c" fill-opacity=".06" stroke="#ffd17c" stroke-width="3"/></g>
+<g fill="#31483e" stroke="#92d4bf" stroke-width="2"><rect x="265" y="153" width="40" height="18" rx="3"/><rect x="435" y="153" width="40" height="18" rx="3"/></g>
+<g fill="#92d4bf" stroke="#182724" stroke-width="4"><circle cx="285" cy="153" r="14"/><circle cx="455" cy="153" r="14"/></g>
+<path d="m291 144 10-11m148 11-10-11" stroke="#92d4bf" stroke-width="8" stroke-linecap="round"/>
+<path d="M301 133 358 87M439 133 382 87" stroke="#92d4bf" stroke-width="2" opacity=".7"/>
+<g fill="#e09085"><path d="m370 65 12 14-12 14-12-14z"/><path d="m339 24 10 12-10 12-10-12z"/><path d="m403 28 10 12-10 12-10-12z"/></g>
+<g stroke="#ffd17c" stroke-width="3"><path d="M359 136v-9a11 11 0 0 1 22 0v9" fill="none"/><rect x="348" y="136" width="44" height="48" rx="9" fill="#493f2e"/><path d="M370 146q-17 21 0 28 17-7 0-28" fill="#ffd17c" stroke="none"/></g>
+<g font-family="system-ui,sans-serif" font-size="16" text-anchor="middle" fill="#92d4bf"><text x="255" y="206">Fixed turret</text><text x="485" y="206">Fixed turret</text><text class="moving" x="370" y="300">Lure enemies into overlapping range</text><text class="stationary" x="370" y="300">Hold a spot covered by both turrets</text></g>
+</svg>
+<div class="caption" aria-live="polite"><h3 id="mode-title">Find the sweet spot</h3><p id="mode-copy">Dodge without leading enemies out of your turrets’ reach. Overlapping ranges let several turrets fire at the same threat; your position shapes the enemies’ approach.</p></div>
+</div>
+<p class="note">Chosen direction: fixed turrets, a mobile lantern. Range circles show where turrets can hit enemies—not a boundary the lantern must stay inside.</p>
+</section>
+<section aria-labelledby="upgrade-title">
+<span class="label">03 / The interesting choice</span><h2>Another turret—or a stronger build?</h2>
+<p>Use the same run currency for every purchase. Place a new turret to cover a gap or overlap firepower; upgrade an existing turret to make that position stronger.</p>
+<div class="choices"><div class="choice"><h3>A nimble build</h3><p>Faster movement, longer turret range, piercing shots. Give yourself room to dodge while drawing enemies through your firing zones.</p></div><div class="choice"><h3>An idle-friendly build</h3><p>More lantern health and armor while settled. Combine these with overlapping turret coverage to hold a defended spot with less input.</p></div></div>
+<p class="note">Standing still would activate a defensive bonus after a short delay. Moving removes it. Idle means low input during a run; surviving still depends on the build.</p>
+</section>
+<section class="next" aria-labelledby="next-title">
+<span class="label">04 / Build the smallest version</span><h2>Prove this loop before adding more.</h2>
+<ol><li>Move the lantern while its first turret stays fixed; let enemies damage the lantern.</li><li>Add defeat and a quick restart.</li><li>Earn currency and place an extra turret, previewing its range.</li><li>Add one stationary armor upgrade.</li><li>Add a short wave sequence with a final wave.</li></ol>
+</section>
+<section aria-labelledby="later-title"><h2>What could grow later?</h2><p>Turrets with different jobs, enemies that challenge different builds, and unlockable upgrades to try on your next run.</p><p class="muted">Still to decide: does any currency carry between runs, or do you unlock new purchase options? First, make spending currency inside one run feel good.</p></section>
+<footer>A direction to play with, not a feature checklist. The prototype already has light, enemies, energy, and automatic shooting. Movement, purchases, damage, and the stationary bonus are proposed additions.</footer>
+</main>
+<script>
+const modes={moving:{title:'Find the sweet spot',copy:'Dodge without leading enemies out of your turrets’ reach. Overlapping ranges let several turrets fire at the same threat; your position shapes the enemies’ approach.',description:'The lantern dodges between two fixed turrets. Their range circles overlap, letting both turrets attack enemies in the middle.'},stationary:{title:'Hold a defended spot',copy:'Settle where your turrets cover approaching enemies. Stationary armor helps your lantern absorb the hits that get through. You can still move to escape if your defense is overwhelmed.',description:'The same two turrets stay fixed. The lantern holds the middle with a personal armor bonus, while both turrets fire into their overlapping range.'}};
+document.querySelectorAll('button[data-mode]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.mode;const mode=modes[key];document.querySelector('svg').dataset.mode=key;document.getElementById('mode-title').textContent=mode.title;document.getElementById('mode-copy').textContent=mode.copy;document.getElementById('arena-desc').textContent=mode.description;document.querySelectorAll('button[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));}));
+</script>
+</body>
+</html>
