@@ -7,7 +7,7 @@ func _initialize() -> void:
 
 func check() -> void:
 	change_scene_to_file("res://main.tscn")
-	await process_frame
+	await scene_changed
 	var scene = current_scene
 	var lantern = scene.get_node("Lantern")
 	scene.set_process(false)
@@ -17,6 +17,20 @@ func check() -> void:
 	scene._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.set_process(false)
+	# Approach naturally from many angles; teleporting into contact misses rounding bugs.
+	var missed_contacts := 0
+	for angle in range(0, 360, 5):
+		lantern.health = 100.0
+		enemy.global_position = lantern.global_position + Vector2.from_angle(deg_to_rad(angle)) * 100.0
+		for frame in range(180):
+			enemy._process(1.0 / 60.0)
+		if lantern.health >= 99.0:
+			missed_contacts += 1
+	if missed_contacts > 0:
+		printerr("FAIL: enemies reached the edge but did not damage the lantern from %d / 72 angles" % missed_contacts)
+		quit(1)
+		return
+	lantern.health = 100.0
 	enemy.global_position = lantern.global_position + Vector2(100, 0)
 	enemy._process(1.0)
 	assert(lantern.health == 100.0, "No damage outside contact range")
@@ -38,8 +52,7 @@ func check() -> void:
 	await process_frame
 	assert(lantern.energy == energy and scene.spawn_progress == progress, "Run freezes")
 	scene.restart_button.pressed.emit()
-	await process_frame
-	await process_frame
+	await scene_changed
 	assert(not paused and current_scene != scene, "Restart replaces scene and unpauses")
 	assert(current_scene.lantern.health == 100.0, "Restart restores health")
 	assert(current_scene.lantern.energy < 1.0 and get_nodes_in_group("enemies").is_empty(), "Fresh run state")

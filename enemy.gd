@@ -1,5 +1,8 @@
 extends Node2D
 
+const CONTACT_DISTANCE: float = 20.0
+const CONTACT_TOLERANCE: float = 0.1
+
 @export var speed: float = 45.0
 @export var contact_damage_per_second: float = 15.0
 
@@ -18,11 +21,12 @@ func _process(delta: float) -> void:
 	var distance: float = global_position.distance_to(target.global_position)
 
 	# Contact damage scales with time, so frame rate does not change its strength.
-	if distance <= 20.0:
+	# Movement can stop a fraction of a pixel outside the intended distance.
+	if distance <= CONTACT_DISTANCE + CONTACT_TOLERANCE:
 		target.take_damage(contact_damage_per_second * delta)
 		return
 
-	var step: float = minf(speed * delta, distance - 20.0)
+	var step: float = minf(speed * delta, distance - CONTACT_DISTANCE)
 	global_position = global_position.move_toward(
 		target.global_position,
 		step
