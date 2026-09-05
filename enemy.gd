@@ -1,6 +1,7 @@
 extends Node2D
 
 @export var speed: float = 45.0
+@export var contact_damage_per_second: float = 15.0
 
 var target: Node2D
 
@@ -16,8 +17,9 @@ func _process(delta: float) -> void:
 
 	var distance: float = global_position.distance_to(target.global_position)
 
-	# Stop at the edge of the lantern for now.
+	# Contact damage scales with time, so frame rate does not change its strength.
 	if distance <= 20.0:
+		target.take_damage(contact_damage_per_second * delta)
 		return
 
 	var step: float = minf(speed * delta, distance - 20.0)

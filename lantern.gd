@@ -1,10 +1,16 @@
 extends Node2D
 
+signal died
+
 const BRIGHTNESS_NAMES: Array[String] = ["Low", "Medium", "High"]
 const ENERGY_RATES: Array[float] = [1.0, 3.0, 6.0]
 const LIGHT_SCALES: Array[float] = [1.0, 1.4, 1.9]
 
 @export var move_speed: float = 220.0
+@export var max_health: float = 100.0
+
+var health: float
+var hit_flash: float = 0.0
 
 var elapsed: float = 0.0
 var brightness: int = 0
@@ -14,6 +20,7 @@ var status_label: Label
 
 
 func _ready() -> void:
+	health = max_health
 	get_viewport().size_changed.connect(_keep_inside_viewport)
 	_center_in_viewport()
 
@@ -30,11 +37,23 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	hit_flash = maxf(0.0, hit_flash - delta)
 	elapsed += delta
 	energy += ENERGY_RATES[brightness] * delta
 
 	_update_status()
 	queue_redraw()
+
+
+func take_damage(amount: float) -> void:
+	if health <= 0.0 or amount <= 0.0:
+		return
+	health = maxf(0.0, health - amount)
+	hit_flash = 0.15
+	_update_status()
+	queue_redraw()
+	if health <= 0.0:
+		died.emit()
 
 
 func _physics_process(delta: float) -> void:
@@ -64,8 +83,10 @@ func _center_in_viewport() -> void:
 
 func _update_status() -> void:
 	status_label.text = (
-		"Brightness: %s\nEnergy: %d  (+%.0f / second)\n\nWASD / Arrows: move lantern\nSpace: change brightness"
+		"Health: %d / %d\nBrightness: %s\nEnergy: %d  (+%.0f / second)\n\nWASD / Arrows: move lantern\nSpace: change brightness"
 		% [
+			int(ceil(health)),
+			int(max_health),
 			BRIGHTNESS_NAMES[brightness],
 			int(energy),
 			ENERGY_RATES[brightness],
@@ -83,3 +104,5 @@ func _draw() -> void:
 
 	draw_circle(Vector2.ZERO, 12.0 * pulse, Color("#ffbd59"))
 	draw_circle(Vector2.ZERO, 6.0 * pulse, Color("#fff2cf"))
+	if hit_flash > 0.0:
+		draw_arc(Vector2.ZERO, 18.0, 0.0, TAU, 32, Color("#ff6b6b"), 3.0, true)
