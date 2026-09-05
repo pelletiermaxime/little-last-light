@@ -131,7 +131,7 @@ func refresh() -> void:
 		detail.text = "Earned this run · banked when it ends\nIn reserve: %d energy" % int(main.banked_energy)
 		var risk: Array[String] = ["LOW attraction", "MEDIUM attraction", "HIGH attraction"]
 		threat.text = "%s\nNew enemies: %d hit%s to defeat" % [risk[lantern.brightness], int(main.current_enemy_health()), "" if main.current_enemy_health() == 1 else "s"]
-		controls.text = "Move inside your turrets' reach.\n%s" % ("Left stick: move · Cross: brightness" if main.get_node("BuildController").using_controller else "WASD / arrows: move\nSpace: cycle brightness · or click above")
+		controls.text = "Move inside your turrets' reach.\n%s" % ("Left stick: move · Cross: brightness\nOptions: pause" if main.get_node("BuildController").using_controller else "WASD / arrows: move\nSpace: brightness · Esc / P: pause")
 		if displayed_brightness != lantern.brightness:
 			displayed_brightness = lantern.brightness
 			for index in range(3):
@@ -145,6 +145,8 @@ func refresh() -> void:
 				light_buttons[index].add_theme_color_override("font_pressed_color", Color("#111b23"))
 	else:
 		heading.text = "THE LIGHT WENT OUT" if not main.last_run.is_empty() else "LITTLE LAST LIGHT"
+		if main.last_run.get("voluntary", false):
+			heading.text = "RUN ENDED"
 		subheading.text = "Prepare your next run" if not main.last_run.is_empty() else "Build your refuge"
 		health_text.text = "Full health on every start"
 		if not main.last_run.is_empty():

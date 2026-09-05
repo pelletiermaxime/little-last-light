@@ -24,6 +24,8 @@ func check() -> void:
 	var missed_contacts := 0
 	for angle in range(0, 360, 5):
 		lantern.health = 100.0
+		# Each angle represents a fresh approach, not a teleport with old steering.
+		enemy.heading = Vector2.ZERO
 		enemy.global_position = lantern.global_position + Vector2.from_angle(deg_to_rad(angle)) * 100.0
 		for frame in range(180):
 			enemy._process(1.0 / 60.0)
@@ -34,6 +36,7 @@ func check() -> void:
 		quit(1)
 		return
 	lantern.health = 100.0
+	enemy.heading = Vector2.ZERO
 	enemy.global_position = lantern.global_position + Vector2(100, 0)
 	enemy._process(0.5)
 	assert(lantern.health == 100.0, "No damage outside contact range")

@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://build_controller.gd" id="4_build"]
 [ext_resource type="Script" path="res://fps_counter.gd" id="5_fps"]
 [ext_resource type="Script" path="res://game_hud.gd" id="6_hud"]
+[ext_resource type="Script" path="res://pause_screen.gd" id="7_pause"]
 
 [node name="Main" type="Node2D" unique_id=49982640]
 script = ExtResource("1_h2yge")
@@ -24,6 +25,9 @@ script = ExtResource("6_hud")
 
 [node name="Diagnostics" type="CanvasLayer" parent="."]
 layer = 10
+
+[node name="PauseScreen" type="CanvasLayer" parent="."]
+script = ExtResource("7_pause")
 
 [node name="FPS" type="Label" parent="Diagnostics"]
 offset_left = 12.0

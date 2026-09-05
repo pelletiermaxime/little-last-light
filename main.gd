@@ -9,9 +9,7 @@ const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
 const SPAWN_INTERVALS: Array[float] = [2.0, 1.2, 0.65]
 const PRESSURE_RAMP_SECONDS: float = 20.0
 const TOUGHNESS_STEP_SECONDS: float = 30.0
-const BASE_ENEMY_SPEED: float = 100.0
-const ENEMY_SPEED_GAIN_PER_SECOND: float = 3.0
-const MAX_ENEMY_SPEED: float = 320.0
+const BASE_ENEMY_SPEED: float = 85.0
 
 @export var save_path: String = "user://progress-v1.json"
 @onready var lantern: Node2D = $Lantern
@@ -41,8 +39,13 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		if save_progress() or not save_is_readable:
-			get_tree().quit()
+		quit_game()
+
+
+func quit_game() -> void:
+	# Share the normal window-close save behavior with the preparation button.
+	if save_progress() or not save_is_readable:
+		get_tree().quit()
 
 
 func start_run() -> void:
@@ -64,14 +67,19 @@ func start_run() -> void:
 
 
 func _on_lantern_died() -> void:
+	end_run()
+
+
+func end_run(voluntary: bool = false) -> void:
 	if phase != Phase.RUNNING:
 		return
 	phase = Phase.PREPARATION
 	lantern.running = false
 	# Capture the result before banking clears this run's energy.
-	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time}
+	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time, "voluntary": voluntary}
 	best_time = maxf(best_time, lantern.elapsed)
-	summary = "The light went out · %ds survived · +%d energy\nImprove your layout and try again. Best: %ds" % [int(lantern.elapsed), int(lantern.energy), int(best_time)]
+	var result := "Run ended" if voluntary else "The light went out"
+	summary = "%s · %ds survived · +%d energy\nImprove your layout and try again. Best: %ds" % [result, int(lantern.elapsed), int(lantern.energy), int(best_time)]
 	banked_energy += lantern.energy
 	lantern.energy = 0.0
 	_clear_enemies()
@@ -105,8 +113,8 @@ func current_enemy_health() -> float:
 
 
 func current_enemy_speed() -> float:
-	# Faster arrivals eventually catch a lantern that only runs away.
-	return minf(MAX_ENEMY_SPEED, BASE_ENEMY_SPEED + lantern.elapsed * ENEMY_SPEED_GAIN_PER_SECOND)
+	# Basic pursuers never gain speed with time. Open space is a reliable escape.
+	return BASE_ENEMY_SPEED
 
 
 func _process(delta: float) -> void:

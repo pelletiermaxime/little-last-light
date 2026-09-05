@@ -16,6 +16,8 @@ var cancel_button: Button
 var hint: Label
 var overview: Label
 var start_button: Button
+var reset_button: Button
+var quit_button: Button
 var bar: VBoxContainer
 var selected_turret: Node2D
 var placement_hint: Label
@@ -97,6 +99,19 @@ func _ready() -> void:
 	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(main.start_run)
 	buttons.add_child(start_button)
+	reset_button = Button.new()
+	reset_button.custom_minimum_size.y = 44
+	reset_button.focus_mode = Control.FOCUS_NONE
+	reset_button.tooltip_text = "Refund every purchased turret and return to one free starting turret. Your other progress stays saved."
+	reset_button.pressed.connect(reset_layout)
+	buttons.add_child(reset_button)
+	quit_button = Button.new()
+	quit_button.text = "Quit Game"
+	quit_button.custom_minimum_size.y = 44
+	quit_button.focus_mode = Control.FOCUS_NONE
+	quit_button.tooltip_text = "Save your progress and close the game."
+	quit_button.pressed.connect(main.quit_game)
+	buttons.add_child(quit_button)
 	# The filled gold action makes the next run the clearest way forward.
 	var primary := StyleBoxFlat.new()
 	primary.bg_color = Color("#ffcf7a")
@@ -143,12 +158,49 @@ func turret_cost() -> float:
 	return BASE_TURRET_COST + purchased * EXTRA_TURRET_COST
 
 
+func layout_refund() -> float:
+	# Purchases cost 20, 30, 40...; the initial turret was free.
+	# Sum the prices paid, not today's next-turret price for every turret.
+	var purchased := maxi(0, get_tree().get_nodes_in_group("turrets").size() - 1)
+	return purchased * BASE_TURRET_COST + EXTRA_TURRET_COST * purchased * (purchased - 1) / 2.0
+
+
+func reset_layout() -> bool:
+	if main.phase != main.Phase.PREPARATION:
+		return false
+	var turrets := get_tree().get_nodes_in_group("turrets")
+	if turrets.is_empty():
+		return false
+	var refund := layout_refund()
+	# A preview is not a purchase. Restore any hidden moving turret first.
+	cancel_placement()
+	var starter := turrets[0] as Node2D
+	for turret in turrets:
+		if turret == starter:
+			continue
+		# Remove group membership now, so saving and a second click see one turret.
+		turret.remove_from_group("turrets")
+		turret.queue_free()
+	var arena: Rect2 = main.get_arena_rect()
+	starter.position = (arena.get_center() + Vector2(80, 0)).clamp(Vector2.ONE * PLACEMENT_MARGIN, arena.size - Vector2.ONE * PLACEMENT_MARGIN)
+	starter.show()
+	main.banked_energy += refund
+	main.save_progress()
+	_update_interface()
+	lantern._update_status()
+	return true
+
+
 func _update_interface() -> void:
 	# Parent _ready() has not run during this child's _ready(), so keep reads simple.
 	var preparing: bool = main.phase == main.Phase.PREPARATION
 	bar.visible = preparing
 	build_button.visible = preparing
 	start_button.visible = preparing
+	reset_button.visible = preparing
+	# Browser players close their tab; SceneTree.quit cannot close it for them.
+	quit_button.visible = preparing and not OS.has_feature("web")
+	reset_button.text = "Reset layout · +%d (%s)" % [int(layout_refund()), "Triangle" if using_controller else "R"]
 	start_button.disabled = placing
 	build_button.text = "Build turret — %d energy (%s)" % [int(turret_cost()), "Square" if using_controller else "B"]
 	cancel_button.text = "Cancel (%s)" % ("Circle" if using_controller else "Esc")
@@ -193,6 +245,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("build_turret"):
 		begin_placement()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("reset_layout"):
+		reset_layout()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("cancel_placement"):
 		cancel_placement()
