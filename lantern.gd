@@ -78,14 +78,13 @@ func _keep_inside_viewport() -> void:
 	position = position.clamp(margin, (screen_size - margin).max(margin))
 
 
-func _unhandled_key_input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if not running:
 		return
-	if event is InputEventKey:
-		if event.pressed and not event.echo and event.keycode == KEY_SPACE:
-			brightness = (brightness + 1) % BRIGHTNESS_NAMES.size()
-			_update_status()
-			get_viewport().set_input_as_handled()
+	if event.is_action_pressed("cycle_brightness"):
+		brightness = (brightness + 1) % BRIGHTNESS_NAMES.size()
+		_update_status()
+		get_viewport().set_input_as_handled()
 
 
 func _center_in_viewport() -> void:
@@ -102,7 +101,7 @@ func _update_status() -> void:
 		status_label.text = "PREPARATION\nHealth restored on Start run"
 		return
 	status_label.text = (
-		"Health: %d / %d\nTime: %ds · Brightness: %s\nThis run: %d energy\n(+%.0f / second)\n\nWASD / Arrows: move\nSpace: brightness"
+		"Health: %d / %d\nTime: %ds · Brightness: %s\nThis run: %d energy\n(+%.0f / second)\n\nWASD / Arrows / Left stick: move\nSpace / Cross: brightness"
 		% [
 			int(ceil(health)),
 			int(max_health),

@@ -10,6 +10,8 @@ Open `project.godot` in Godot and press F6 for the current scene or F5 for the p
 - Space: cycle brightness, energy generation, and enemy spawn rate.
 - The turret stays in place and shoots nearby enemies.
 
+DualSense / gamepad controls: **left stick or D-pad** moves the lantern during a run and a visible cursor during preparation. **Cross** cycles brightness during a run; during preparation it selects a turret or confirms placement. **Square** buys a turret, **Circle** cancels placement, and **Options** starts the run. These use Godot's standard gamepad mapping (A, X, B, and Start on Xbox-style controllers). Keyboard and mouse remain supported. Restart the running scene after changing input bindings; previously exported builds must be exported again to include changes.
+
 Start in **Preparation**. Click an existing turret to move it for free, or build with **B**. Extra turrets cost **20, 30, 40, 50… energy**. Left-click to confirm a valid position; **Escape** cancels. Controls live in a separate right sidebar. The entire arena is buildable except for its edge margin and occupied turret positions. Click **Start run** or press **Enter** when ready; the arena keeps the same bounds during combat.
 
 During a run, construction is locked and enemies spawn faster over time. Newly spawned enemies need one additional turret hit every 30 seconds; their health bars show remaining health. Enemies touching the lantern drain health. At zero health, enemies clear and your earnings are banked for preparation. Turrets and unspent energy carry into the next run.
