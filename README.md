@@ -29,4 +29,18 @@ Progress saves locally to `user://progress-v1.json` after purchases, moves, defe
 
 ## Export
 
-Linux and Web presets are included in `export_presets.cfg`. Install matching Godot export templates and create the `export` folder before exporting through Project → Export. Generated builds and Godot caches are excluded from Git.
+Linux, Windows, and Web presets are included in `export_presets.cfg`. Install matching Godot 4.7.2 export templates and create the `export` folder before exporting through Project → Export. Generated builds and Godot caches are excluded from Git.
+
+### Automated builds and publishing
+
+`.github/workflows/publish.yml` builds all three platforms on pushes to `main` and `feat/**` branches, and on pull requests to `main`. A push to `main` also deploys the browser game to [GitHub Pages](https://pelletiermaxime.github.io/little-last-light/) and publishes Windows and Linux x86_64 archives, plus SHA-256 checksums, in [Releases](https://github.com/pelletiermaxime/little-last-light/releases). Feature branches only upload build artifacts, so the pipeline can be tested before merging. The earlier demo linked above is a separate site.
+
+Godot and the three required release templates are cached by engine version, runner OS, and architecture. A cache hit skips the download and installation steps. The first run, a Godot version change, or an evicted cache requires a fresh download; the game itself is rebuilt every run.
+
+**One-time setup:** In this repository's **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**. Ensure GitHub Actions is enabled and the `github-pages` environment permits deployments from `main`. The workflow uses the built-in `GITHUB_TOKEN`; no personal access token or extra secret is needed.
+
+Each published workflow run creates a release tagged `build-<run-id>` at the exact built commit and marks it latest. Re-running that same run replaces its release assets. Pull requests only build and upload artifacts; they do not publish. You can also use **Actions → Build and publish game → Run workflow** on `main` to publish manually. Other branches only build. Pages and release publication run independently after a successful build, so a Pages configuration error does not prevent desktop downloads from publishing.
+
+The Web preset has threads disabled, allowing it to run on Pages without custom cross-origin isolation headers. Desktop downloads are unsigned. Extract the Windows zip and run `little-last-light.exe`; extract the Linux tarball and run `./little-last-light.x86_64` (the archive preserves executable permissions).
+
+To reproduce the build locally on Linux, install Godot 4.7.2, its matching export templates, `zip`, and `tar`, then run `bash scripts/build-release.sh`. Set `GODOT_BIN` if the executable has another name. The script imports assets before exporting and writes the site to `export/web` and release archives to `export/downloads`. When upgrading Godot, update `GODOT_VERSION` in the workflow and use matching local templates.
