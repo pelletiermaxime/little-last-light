@@ -189,6 +189,8 @@ func _draw() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if get_viewport().gui_get_focus_owner() is LineEdit:
+		return
 	if main.phase != main.Phase.PREPARATION:
 		return
 	if event.is_action_pressed("build_turret"):

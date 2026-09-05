@@ -19,6 +19,10 @@ During a run, construction is locked and enemies spawn faster over time. Newly s
 
 Progress saves locally to `user://progress-v1.json` after purchases, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening returns to preparation with saved energy and turret positions. Turret upgrades are future work.
 
+## Online leaderboard
+
+The preparation sidebar offers to publish a new survival record with a username. Publication is optional; failed attempts can be retried, and records are separate for every game version. Saved energy and turret layouts continue across versions. The Nuxt website and Convex backend live in [`leaderboard/`](leaderboard/README.md), including setup, deployment, and verification instructions. Online publishing requires configuring this game's own backend and website URLs; unconfigured builds keep records locally.
+
 ## Learn and explore
 
 - [First milestone walkthrough](docs/milestone-1.md)

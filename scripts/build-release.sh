@@ -4,11 +4,15 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 godot_bin="${GODOT_BIN:-godot}"
 python3 scripts/prepare-release.py
+python3 scripts/configure-leaderboard.py
 
 # Keep desktop binaries outside the directory uploaded to Pages.
 mkdir -p export/{web,windows,linux,downloads}
 touch export/.gdignore
 "$godot_bin" --headless --editor --import
+for check in tests/check_*.gd; do
+  "$godot_bin" --headless --script "$check"
+done
 "$godot_bin" --headless --export-release Web export/web/index.html
 "$godot_bin" --headless --export-release Windows export/windows/little-last-light.exe
 "$godot_bin" --headless --export-release Linux export/linux/little-last-light.x86_64

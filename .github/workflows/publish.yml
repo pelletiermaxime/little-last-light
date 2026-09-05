@@ -70,10 +70,13 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Check release versioning
-        run: python3 -B -m unittest discover -s tests -p 'test_release_version.py'
+        run: python3 -B -m unittest discover -s tests -p 'test_*.py'
 
       - name: Import and export all platforms
         id: version
+        env:
+          LEADERBOARD_API_URL: ${{ vars.LEADERBOARD_API_URL }}
+          LEADERBOARD_SITE_URL: ${{ vars.LEADERBOARD_SITE_URL }}
         run: bash scripts/build-release.sh
 
       - name: Upload desktop downloads
@@ -98,6 +101,26 @@ jobs:
           path: export/web
           include-hidden-files: true
           if-no-files-found: error
+
+  leaderboard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: leaderboard/package.json
+      - run: pnpm install --frozen-lockfile
+        working-directory: leaderboard
+      - run: pnpm check
+        working-directory: leaderboard
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: leaderboard
+      - run: pnpm test:browser
+        working-directory: leaderboard
 
   release:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'

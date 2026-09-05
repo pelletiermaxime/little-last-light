@@ -81,6 +81,11 @@ confirm_placement={
 
 3d/physics_engine="Jolt Physics"
 
+[leaderboard]
+
+api_url="https://judicious-meerkat-207.convex.site"
+site_url="https://little-last-light-leaderboard.pages.dev"
+
 [rendering]
 
 rendering_device/driver.windows="d3d12"

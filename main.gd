@@ -26,6 +26,10 @@ var save_message: String = ""
 var previous_viewport_size: Vector2
 var save_is_readable: bool = true
 var last_run: Dictionary = {}
+var game_version: String = str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
+var version_bests: Dictionary = {}
+var legacy_best_time: float = 0.0
+var leaderboard_profile: Dictionary = {"token": "", "username": "", "pending": {}}
 
 
 func _ready() -> void:
@@ -33,6 +37,8 @@ func _ready() -> void:
 	$Turret.position = lantern.position + Vector2(80.0, 0.0)
 	lantern.died.connect(_on_lantern_died)
 	load_progress()
+	if leaderboard_profile.token.is_empty():
+		leaderboard_profile.token = Crypto.new().generate_random_bytes(32).hex_encode()
 	_set_turrets_active(false)
 	lantern._update_status()
 	get_viewport().size_changed.connect(_resize_layout)
@@ -71,6 +77,9 @@ func _on_lantern_died() -> void:
 	# Capture the result before banking clears this run's energy.
 	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time}
 	best_time = maxf(best_time, lantern.elapsed)
+	version_bests[game_version] = best_time
+	if last_run.new_best:
+		leaderboard_profile.pending = {"version": game_version, "durationMs": maxi(1, int(lantern.elapsed * 1000.0))}
 	summary = "The light went out · %ds survived · +%d energy\nImprove your layout and try again. Best: %ds" % [int(lantern.elapsed), int(lantern.energy), int(best_time)]
 	banked_energy += lantern.energy
 	lantern.energy = 0.0
@@ -174,7 +183,7 @@ func save_progress() -> bool:
 		var point: Vector2 = turret.position / size
 		positions.append([point.x, point.y])
 	# Include current earnings without banking them twice in the live game.
-	var data := {"version": 1, "energy": banked_energy + lantern.energy, "best_time": best_time, "turrets": positions}
+	var data := {"version": 1, "energy": banked_energy + lantern.energy, "best_time": best_time, "turrets": positions, "version_bests": version_bests, "legacy_best_time": legacy_best_time, "leaderboard": leaderboard_profile}
 	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if file == null:
 		save_message = "Could not save progress. Keep this window open and retry."
@@ -205,7 +214,11 @@ func load_progress() -> void:
 		return
 	var data: Dictionary = parser.data
 	banked_energy = float(data.energy)
-	best_time = float(data.best_time)
+	# A legacy record's release cannot be inferred; preserve it separately.
+	legacy_best_time = float(data.get("legacy_best_time", data.best_time if not data.has("version_bests") else 0.0))
+	version_bests = data.get("version_bests", {})
+	best_time = float(version_bests.get(game_version, 0.0))
+	leaderboard_profile = data.get("leaderboard", {"token": "", "username": "", "pending": {}})
 	for turret in get_tree().get_nodes_in_group("turrets"):
 		turret.remove_from_group("turrets")
 		turret.queue_free()
@@ -219,6 +232,30 @@ func load_progress() -> void:
 func _valid_save(data: Variant) -> bool:
 	if not data is Dictionary or data.get("version") != 1:
 		return false
+	var records = data.get("version_bests", {})
+	if not records is Dictionary:
+		return false
+	for record in records.values():
+		if not (record is float or record is int) or not is_finite(float(record)) or record < 0:
+			return false
+	var legacy = data.get("legacy_best_time", 0.0)
+	if not (legacy is float or legacy is int) or not is_finite(float(legacy)) or legacy < 0:
+		return false
+	var profile = data.get("leaderboard", {"token": "", "username": "", "pending": {}})
+	if not profile is Dictionary or not profile.get("token") is String or not profile.get("username") is String or not profile.get("pending") is Dictionary:
+		return false
+	if not profile.token.is_empty():
+		var token_pattern := RegEx.new()
+		token_pattern.compile("^[a-f0-9]{64}$")
+		if token_pattern.search(profile.token) == null:
+			return false
+	var pending: Dictionary = profile.pending
+	if not pending.is_empty():
+		var duration = pending.get("durationMs")
+		if not pending.get("version") is String or not (duration is int or duration is float):
+			return false
+		if not is_finite(float(duration)) or duration < 1 or duration != floor(duration):
+			return false
 	for key in ["energy", "best_time"]:
 		var value = data.get(key)
 		if not (value is float or value is int):

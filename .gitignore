@@ -5,3 +5,14 @@
 # Generated exports and local export credentials
 /export/
 .godot/export_credentials.cfg
+
+# Leaderboard app and local credentials
+leaderboard/node_modules/
+leaderboard/.nuxt/
+leaderboard/.output/
+leaderboard/dist
+leaderboard/test-results/
+leaderboard/playwright-report/
+leaderboard/.wrangler/
+leaderboard/.env*
+!leaderboard/.env.example

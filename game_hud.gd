@@ -23,6 +23,7 @@ var controls: Label
 var save_notice: Label
 var refresh_elapsed: float = 0.0
 var displayed_brightness: int = -1
+var leaderboard: VBoxContainer
 
 
 func _ready() -> void:
@@ -71,6 +72,9 @@ func _ready() -> void:
 	threat = _label(brightness_box, 16, INK)
 	controls = _label(panel, 14, MUTED)
 	save_notice = _label(panel, 14, Color("#ff997d"))
+	leaderboard = preload("res://leaderboard_panel.gd").new()
+	leaderboard.main = main
+	panel.add_child(leaderboard)
 	main.get_node("BuildController").bar.reparent(panel)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
@@ -113,6 +117,8 @@ func format_time(seconds: float) -> String:
 
 
 func refresh() -> void:
+	if is_instance_valid(leaderboard):
+		leaderboard.refresh()
 	var running: bool = lantern.running
 	earnings.visible = running or not main.last_run.is_empty()
 	health_bar.visible = running
@@ -144,7 +150,7 @@ func refresh() -> void:
 				light_buttons[index].add_theme_color_override("font_hover_color", Color("#111b23"))
 				light_buttons[index].add_theme_color_override("font_pressed_color", Color("#111b23"))
 	else:
-		heading.text = "THE LIGHT WENT OUT" if not main.last_run.is_empty() else "LITTLE LAST LIGHT"
+		heading.text = ("THE LIGHT WENT OUT" if not main.last_run.is_empty() else "LITTLE LAST LIGHT") + " · v" + main.game_version
 		subheading.text = "Prepare your next run" if not main.last_run.is_empty() else "Build your refuge"
 		health_text.text = "Full health on every start"
 		if not main.last_run.is_empty():
