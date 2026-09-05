@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://b2bk4an1dwj4l" path="res://lantern.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" path="res://turret.tscn" id="3_turret"]
 [ext_resource type="Script" path="res://build_controller.gd" id="4_build"]
+[ext_resource type="Script" path="res://fps_counter.gd" id="5_fps"]
 
 [node name="Main" type="Node2D" unique_id=49982640]
 script = ExtResource("1_h2yge")
@@ -16,3 +17,18 @@ position = Vector2(80, 0)
 
 [node name="BuildController" type="Node2D" parent="."]
 script = ExtResource("4_build")
+
+[node name="Diagnostics" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="FPS" type="Label" parent="Diagnostics"]
+offset_left = 12.0
+offset_top = 10.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 16
+text = "FPS: …"
+script = ExtResource("5_fps")
