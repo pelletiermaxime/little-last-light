@@ -10,6 +10,7 @@ Open `project.godot` in Godot and press F6 for the current scene or F5 for the p
 - Space: cycle brightness, energy generation, and enemy spawn rate.
 - During a run, click Low / Medium / High in the sidebar to select brightness directly.
 - The turret stays in place and shoots nearby enemies.
+- During a run, **Escape / P / controller Options** pauses or resumes. The pause screen's **Resume** button also works with mouse or controller focus. Movement, combat, the timer, and earnings freeze; Escape still cancels turret placement during preparation.
 
 DualSense / gamepad controls: **left stick or D-pad** moves the lantern during a run and a visible cursor during preparation. **Cross** cycles brightness during a run; during preparation it selects a turret or confirms placement. **Square** buys a turret, **Circle** cancels placement, and **Options** starts the run. These use Godot's standard gamepad mapping (A, X, B, and Start on Xbox-style controllers). Keyboard and mouse remain supported. Restart the running scene after changing input bindings; previously exported builds must be exported again to include changes.
 
@@ -17,7 +18,15 @@ Start in **Preparation**. Click an existing turret to move it for free, or build
 
 During a run, construction is locked and enemies spawn faster over time. Newly spawned enemies need one additional turret hit every 30 seconds; their health bars show remaining health. Enemies touching the lantern drain health. At zero health, enemies clear and your earnings are banked for preparation. Turrets and unspent energy carry into the next run.
 
+M6 basic enemies move at a fixed **85 pixels/second**, versus the lantern's **220**, and turn at **75 degrees/second** instead of instantly changing direction (2.4 seconds for a half-turn). Their eyes face their travel direction. Open space lets you escape; sharp dodges make pursuers curve around. Enemy speed no longer rises over time. Existing spawn and health scaling are temporary tuning, pending a roster of enemies with different movement patterns.
+
+**Long-term run goal:** survive until a final boss arrives at **15:00**, then defeat it to win. Future difficulty should come from enemy patterns, combinations, and tougher bosses while preserving the lantern's movement advantage. The boss, victory flow, and encounter schedule are planned, not implemented in M6.
+
 Progress saves locally to `user://progress-v1.json` after purchases, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening returns to preparation with saved energy and turret positions. Turret upgrades are future work.
+
+**End Run** on the pause screen banks and saves all earned energy and returns to preparation. Desktop preparation also has **Quit Game**, which saves before closing. The desktop game starts maximized.
+
+**Reset layout** in preparation refunds all purchased turrets (20 + 30 + 40… energy), restores one free starter to its original position, and saves the result. Use its button, **R**, or **Triangle / Y** on a controller. Best survival and other earned energy remain intact. It is unavailable during a run, including while paused.
 
 ## Online leaderboard
 
@@ -25,11 +34,16 @@ The preparation sidebar offers to publish a new survival record with a username.
 
 ## Learn and explore
 
+- [Reset layout and refund arithmetic](docs/reset-layout.md)
+
+- [Pause screen and scene-tree processing](docs/pause-screen.md)
+
 - [First milestone walkthrough](docs/milestone-1.md)
 - [Health, defeat, and restart walkthrough](docs/milestone-2.md)
 - [Turret placement walkthrough](docs/milestone-3.md)
 - [Run progression and saving walkthrough](docs/milestone-4.md)
 - [Clarity, brightness feedback, and run recap walkthrough](docs/milestone-5.md)
+- [Slower enemies and committed pursuit walkthrough](docs/milestone-6.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 

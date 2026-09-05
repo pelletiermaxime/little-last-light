@@ -46,26 +46,28 @@ func check() -> void:
 		expect(arena.has_point(scene._random_edge_position()), "Spawns stay inside arena")
 	scene._set_turrets_active(false)
 	expect(scene.current_enemy_health() == 1.0, "Initial enemies take one hit")
-	expect(scene.current_enemy_speed() == 100.0, "Initial enemies are faster than M3")
+	expect(scene.current_enemy_speed() == 85.0, "Basic enemies use a fixed pursuit speed")
 	scene.lantern.elapsed = 29.9
 	expect(scene.current_enemy_health() == 1.0, "No toughness increase before threshold")
 	scene.lantern.elapsed = 30.0
 	expect(scene.current_enemy_health() == 2.0, "New enemies take two hits at 30 seconds")
 	scene._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
-	expect(enemy.speed == 190.0, "Enemy speed scales with spawn time")
+	expect(enemy.speed == 85.0, "Later spawns retain the basic pursuit speed")
 	enemy.process_mode = Node.PROCESS_MODE_DISABLED
 	expect(enemy.health == 2.0 and enemy.max_health == 2.0, "Spawn applies toughness before ready")
 	scene.lantern.health = 100.0
-	enemy.speed = 320.0
+	enemy.speed = scene.current_enemy_speed()
+	enemy.heading = Vector2.LEFT
 	enemy.global_position = scene.lantern.global_position + Vector2(20.0, 0)
 	for frame in range(60):
 		scene.lantern.position.x -= scene.lantern.move_speed / 60.0
 		enemy._process(1.0 / 60.0)
-	expect(scene.lantern.health < 96.0, "Faster pursuer damages a lantern moving away every frame")
+	expect(scene.lantern.health == 100.0, "Running away from a slower pursuer avoids contact")
 	scene.lantern._center_in_viewport()
 	scene.lantern.health = 100.0
 	enemy.speed = 100.0
+	enemy.heading = Vector2.LEFT
 	enemy.global_position = scene.lantern.global_position + Vector2(30.0, 0)
 	enemy._process(0.2)
 	expect(is_equal_approx(scene.lantern.health, 98.5), "Only the remaining 0.1 seconds after arrival causes damage")
@@ -74,14 +76,14 @@ func check() -> void:
 	enemy.take_damage(1.0)
 	expect(enemy.is_queued_for_deletion(), "Tough enemy dies on second hit")
 	scene.lantern.elapsed = 1000.0
-	expect(scene.current_enemy_speed() > scene.lantern.move_speed and scene.current_enemy_speed() == 320.0, "Late arrivals can catch the lantern and speed is capped")
+	expect(scene.current_enemy_speed() < scene.lantern.move_speed * 0.5 and scene.current_enemy_speed() == 85.0, "Player stays over twice as fast, even beyond 15 minutes")
 	var previous: float = scene.current_enemy_health()
 	scene.lantern.elapsed += 30.0
 	expect(scene.current_enemy_health() > previous, "Toughness continues after spawn interval reaches its floor")
 	scene.lantern.take_damage(1000)
 	scene.start_run()
 	expect(scene.current_enemy_health() == 1.0, "Next run resets toughness")
-	expect(scene.current_enemy_speed() == 100.0, "Next run resets enemy speed")
+	expect(scene.current_enemy_speed() == 85.0, "Next run resets enemy speed")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:
