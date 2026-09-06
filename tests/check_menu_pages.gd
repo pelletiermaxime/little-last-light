@@ -52,7 +52,11 @@ func check() -> void:
 	visible_inside(panel.refresh_scores)
 	visible_inside(results.continue_button)
 	var controls = scene.get_node("Controls")
-	controls.set_device(controls.Family.PLAYSTATION, 3)
+	var controller_event := InputEventJoypadButton.new()
+	controller_event.device = 3
+	controller_event.button_index = JOY_BUTTON_RIGHT_STICK
+	controller_event.pressed = true
+	root.push_input(controller_event)
 	panel.next_page.grab_focus()
 	var event := InputEventJoypadButton.new()
 	event.device = 3

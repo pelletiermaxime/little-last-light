@@ -2,64 +2,51 @@ extends Node
 
 # Last child of Main: receives input before menus or gameplay can consume it.
 # Prompts and controller routing share the same InputMap actions.
-enum Family { KEYBOARD, PLAYSTATION, XBOX, GENERIC }
-var family: Family = Family.KEYBOARD
-var active_device: int = -1
+var prompts: Node
 var main: Node2D
 var repeat_direction := 0
 var repeat_left := 0.0
 var menu_stick := Vector2.ZERO
 var menu_axis := -1
-var icons: Dictionary = {}
 var last_focus_id := 0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	main = get_parent()
-	Input.joy_connection_changed.connect(_connection_changed)
+	prompts = get_node("/root/ControllerIcons")
+	# Feed the addon first: handled menu events do not reach earlier autoloads.
+	prompts.set_process_input(false)
+	prompts.input_type_changed.connect(_input_type_changed)
 	# LinkButton defaults to accessibility-only focus in this Godot version.
 	for button in main.get_node("GameHUD").leaderboard.find_children("*", "BaseButton", true, false):
 		button.focus_mode = Control.FOCUS_ALL
 
 
-static func detect_family(controller_name: String) -> Family:
-	var name_lower := controller_name.to_lower()
-	for fragment in ["playstation", "dualsense", "dualshock", "ps3", "ps4", "ps5", "sony"]:
-		if name_lower.contains(fragment):
-			return Family.PLAYSTATION
-	if name_lower.contains("xbox") or name_lower.contains("xinput"):
-		return Family.XBOX
-	return Family.GENERIC
+func using_controller() -> bool:
+	return prompts.get_last_input_type() == prompts.InputType.CONTROLLER
 
 
-func _connection_changed(device: int, connected: bool) -> void:
-	if not connected and device == active_device:
-		set_device(Family.KEYBOARD)
+func _input_type_changed(_input_type: int, _controller: int) -> void:
+	main.get_node("BuildController").using_controller = using_controller()
+	repeat_direction = 0
+	menu_stick = Vector2.ZERO
+	menu_axis = -1
+	main.get_node("BuildController")._update_interface()
+	refresh_prompts()
+	var prep = main.get_node("PreparationUI")
+	if using_controller() and _menu_open() and not (main.phase == main.Phase.PREPARATION and prep.view == prep.View.PLACEMENT):
+		if get_viewport().gui_get_focus_owner() == null:
+			move_focus(1)
 
 
-func set_device(next: Family, device: int = -1) -> void:
-	var changed := family != next or active_device != device
-	family = next
-	active_device = device
-	main.get_node("BuildController").using_controller = family != Family.KEYBOARD
-	if changed:
-		repeat_direction = 0
-		menu_stick = Vector2.ZERO
-		menu_axis = -1
-		main.get_node("BuildController")._update_interface()
-		refresh_prompts()
-		var prep = main.get_node("PreparationUI")
-		if family != Family.KEYBOARD and _menu_open() and not (main.phase == main.Phase.PREPARATION and prep.view == prep.View.PLACEMENT):
-			if get_viewport().gui_get_focus_owner() == null:
-				move_focus(1)
+func _exit_tree() -> void:
+	if is_instance_valid(prompts):
+		prompts.set_process_input(true)
 
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventJoypadButton and event.pressed or event is InputEventJoypadMotion and absf(event.axis_value) > 0.3:
-		set_device(detect_family(Input.get_joy_name(event.device)), event.device)
-	elif event is InputEventKey and event.pressed or event is InputEventMouseButton and event.pressed or event is InputEventMouseMotion and event.relative.length() > 2.0:
-		set_device(Family.KEYBOARD)
+	prompts._input(event)
 	if event is not InputEventJoypadButton and event is not InputEventJoypadMotion:
 		return
 	var preparation = main.get_node("PreparationUI")
@@ -193,62 +180,19 @@ func move_focus(direction: int) -> void:
 	refresh_prompts()
 
 
-func button_index(action: String) -> int:
-	for event in InputMap.action_get_events(action):
-		if event is InputEventJoypadButton:
-			return event.button_index
-	return -1
-
-
 func hint(action: String) -> String:
-	if family == Family.KEYBOARD:
-		for event in InputMap.action_get_events(action):
-			if event is InputEventKey:
-				return OS.get_keycode_string(event.physical_keycode if event.physical_keycode else event.keycode)
-		return "Click"
-	var index := button_index(action)
-	if family == Family.PLAYSTATION:
-		return {0: "Cross", 1: "Circle", 2: "Square", 3: "Triangle", 5: "R1", 6: "Options"}.get(index, "Confirm")
-	if family == Family.XBOX:
-		return {0: "A", 1: "B", 2: "X", 3: "Y", 5: "RB", 6: "Menu"}.get(index, "Confirm")
-	return {0: "Bottom button", 1: "Right button", 2: "Left button", 3: "Top button", 5: "Right bumper", 6: "Menu"}.get(index, "Confirm")
+	return prompts.parse_path_to_tts(action)
 
 
 func icon_for(action: String) -> Texture2D:
-	if family == Family.KEYBOARD:
-		return null
-	var index := button_index(action)
-	var key := "%d:%d" % [family, index]
-	if icons.has(key):
-		return icons[key]
-	var shape := ""
-	if index in [0, 1, 2, 3] and family == Family.PLAYSTATION:
-		shape = ["<path d='M10 10L22 22M22 10L10 22' stroke='#90caff'/>", "<circle cx='16' cy='16' r='8' stroke='#ffa39d'/>", "<rect x='9' y='9' width='14' height='14' stroke='#efacde'/>", "<path d='M16 7L25 23H7Z' stroke='#9ae1b3'/>"][index]
-	elif index in [0, 1, 2, 3] and family == Family.GENERIC:
-		for i in range(4):
-			var point: Vector2 = [Vector2(16, 24), Vector2(24, 16), Vector2(8, 16), Vector2(16, 8)][i]
-			shape += "<circle cx='%d' cy='%d' r='3' fill='%s' stroke='none'/>" % [point.x, point.y, "#ffcf7a" if i == index else "#667985"]
-	elif index == JOY_BUTTON_RIGHT_SHOULDER:
-		var right_letter := "M6 23V9H11Q18 9 15 16H6M11 16L16 23"
-		var suffix := "M21 12L24 9V23" if family == Family.PLAYSTATION else "M20 9V23H24Q30 23 27 16Q30 9 24 9ZM20 16H25"
-		shape = "<path d='%s %s' stroke='#e8f1f1'/>" % [right_letter, suffix]
-	else:
-		# Use paths for letters: no font dependency or missing Unicode glyphs.
-		shape = {0: "M10 23L16 9L22 23M12 19H20", 1: "M11 9V23H17Q24 23 21 17Q24 9 17 9ZM11 16H18", 2: "M10 9L22 23M22 9L10 23", 3: "M10 9L16 16L22 9M16 16V23", 5: "M8 22V10H13Q20 10 16 16H8M13 16L19 22M23 10V22", 6: "M9 10H23M9 16H23M9 22H23"}.get(index, "M10 16H22")
-		shape = "<path d='%s' stroke='#e8f1f1'/>" % shape
-	var svg := "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='#17232d' stroke='#637d8a'/><g fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>%s</g></svg>" % shape
-	var image := Image.new()
-	image.load_svg_from_string(svg)
-	var texture := ImageTexture.create_from_image(image)
-	icons[key] = texture
-	return texture
+	return prompts.parse_path(action) if using_controller() else null
 
 
 func decorate(button: Button, action: String) -> void:
 	# Standard menu confirmation needs no icon; show only dedicated shortcuts.
 	button.icon = icon_for(action) if action != "confirm_placement" else null
 	button.add_theme_constant_override("icon_max_width", 24)
-	button.tooltip_text = button.text if action == "confirm_placement" else "%s · %s" % [button.text, hint(action)]
+	button.tooltip_text = "%s · %s" % [button.text, hint(action)] if using_controller() and action != "confirm_placement" else button.text
 
 
 func refresh_prompts() -> void:
@@ -264,9 +208,9 @@ func refresh_prompts() -> void:
 	decorate(pause.resume_button, "confirm_placement")
 	decorate(pause.end_run_button, "confirm_placement")
 	pause.keys.text = "Esc / P to resume"
-	pause.keys.visible = family == Family.KEYBOARD
+	pause.keys.visible = not using_controller()
 	decorate(main.get_node("ResultsScreen").continue_button, "confirm_placement")
 	var indicator = main.get_node("GameHUD").brightness_indicator
-	indicator.tooltip_text = "Brightness · %s to cycle" % hint("cycle_brightness")
+	indicator.tooltip_text = "Brightness · %s to cycle" % hint("cycle_brightness") if using_controller() else "Click to cycle brightness"
 	indicator.prompt_icon = icon_for("cycle_brightness")
 	indicator.queue_redraw()

@@ -127,7 +127,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if using_controller and main.phase == main.Phase.PREPARATION and _in_placement_mode():
 		# D-pad navigates the toolbar; only the active pad's stick moves the cursor.
-		var device: int = main.get_node("Controls").active_device
+		var device: int = get_node("/root/ControllerIcons")._last_controller
 		var direction := Vector2(Input.get_joy_axis(device, JOY_AXIS_LEFT_X), Input.get_joy_axis(device, JOY_AXIS_LEFT_Y))
 		if direction.length() <= 0.3 or get_viewport().gui_get_focus_owner() != null:
 			direction = Vector2.ZERO

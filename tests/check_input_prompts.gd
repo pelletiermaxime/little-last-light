@@ -1,6 +1,5 @@
 extends SceneTree
 
-const CONTROLS = preload("res://input_controls.gd")
 var scene: Node2D
 var controls: Node
 
@@ -16,6 +15,13 @@ func press(button: JoyButton) -> void:
 	event.pressed = true
 	root.push_input(event)
 	event.pressed = false
+	root.push_input(event)
+
+
+func keyboard() -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = KEY_Z
+	event.pressed = true
 	root.push_input(event)
 
 
@@ -36,37 +42,39 @@ func check() -> void:
 	controls = scene.get_node("Controls")
 	var build = scene.get_node("BuildController")
 	var prep = scene.get_node("PreparationUI")
-	assert(CONTROLS.detect_family("Sony DualSense Wireless Controller") == CONTROLS.Family.PLAYSTATION)
-	assert(CONTROLS.detect_family("PS4 Controller") == CONTROLS.Family.PLAYSTATION)
-	assert(CONTROLS.detect_family("Xbox Wireless Controller") == CONTROLS.Family.XBOX)
-	assert(CONTROLS.detect_family("XInput Gamepad") == CONTROLS.Family.XBOX)
-	assert(CONTROLS.detect_family("USB Gamepad") == CONTROLS.Family.GENERIC)
-	controls.set_device(CONTROLS.Family.PLAYSTATION, 3)
+	await process_frame
+	var prompts := root.get_node("ControllerIcons")
+	press(JOY_BUTTON_RIGHT_STICK)
+	assert(controls.using_controller() and build.using_controller)
 	assert(build.build_button.icon != null and not prep.back_button.text.contains("Esc"))
-	var ps_icon: Texture2D = build.build_button.icon
-	controls.set_device(CONTROLS.Family.XBOX, 3)
-	assert(build.build_button.icon != ps_icon, "Xbox and PlayStation have distinct glyphs")
-	assert(controls.hint("confirm_placement") == "A")
-	controls.set_device(CONTROLS.Family.GENERIC, 3)
-	assert(controls.hint("confirm_placement") == "Bottom button")
+	# A synthetic, disconnected device exercises the addon's default fallback.
+	assert(build.build_button.icon == prompts.parse_path("build_turret"))
+	for action in ["build_turret", "cancel_placement", "toggle_build_controls", "sell_turret", "cycle_brightness", "pause_run", "confirm_placement"]:
+		var icon: Texture2D = controls.icon_for(action)
+		assert(icon != null and icon.resource_path.begins_with("res://addons/controller_icons/assets/"), "Every controller prompt must use addon artwork: " + action)
+	assert(build.cancel_button.icon == prompts.parse_path("cancel_placement"))
+	assert(build.sell_button.icon == prompts.parse_path("sell_turret"))
+	assert(prep.show_button.icon == prompts.parse_path("toggle_build_controls"))
+	assert(scene.get_node("GameHUD").brightness_indicator.prompt_icon == prompts.parse_path("cycle_brightness"))
+	assert(controls.hint("sell_turret") == prompts.parse_path_to_tts("sell_turret"))
 	var drift := InputEventJoypadMotion.new()
 	drift.device = 3
 	drift.axis = JOY_AXIS_LEFT_X
 	drift.axis_value = 0.1
-	controls.set_device(CONTROLS.Family.KEYBOARD)
+	keyboard()
 	root.push_input(drift)
-	assert(controls.family == CONTROLS.Family.KEYBOARD, "Drift does not switch prompts")
+	assert(not controls.using_controller(), "Drift does not switch prompts")
 	assert(prep.place_button.icon == null)
-	controls.set_device(CONTROLS.Family.PLAYSTATION, 3)
+	press(JOY_BUTTON_RIGHT_STICK)
 	var mouse := InputEventMouseMotion.new()
 	mouse.relative = Vector2(0.1, 0)
 	root.push_input(mouse)
-	assert(controls.family == CONTROLS.Family.PLAYSTATION, "Mouse jitter does not switch prompts")
-	mouse.relative = Vector2(10, 0)
+	assert(controls.using_controller(), "Mouse jitter does not switch prompts")
+	mouse.relative = Vector2(100, 0)
 	root.push_input(mouse)
-	assert(controls.family == CONTROLS.Family.KEYBOARD and not build.using_controller)
+	assert(not controls.using_controller() and not build.using_controller)
 	# The first controller confirm activates the focused home action once.
-	controls.set_device(CONTROLS.Family.GENERIC, 3)
+	press(JOY_BUTTON_RIGHT_STICK)
 	prep.place_button.grab_focus()
 	move_stick(JOY_AXIS_LEFT_Y, 0.8)
 	var first_step := root.gui_get_focus_owner()
@@ -129,7 +137,7 @@ func check() -> void:
 	key.physical_keycode = KEY_Z
 	key.pressed = true
 	root.push_input(key)
-	assert(controls.family == CONTROLS.Family.KEYBOARD)
+	assert(not controls.using_controller())
 	press(JOY_BUTTON_B)
 	build.start_button.grab_focus()
 	press(JOY_BUTTON_A)
@@ -146,10 +154,11 @@ func check() -> void:
 	assert(not paused and scene.phase == scene.Phase.RESULTS)
 	press(JOY_BUTTON_A)
 	assert(scene.phase == scene.Phase.PREPARATION and not scene.lantern.running, "Continue cannot immediately start another run")
-	controls.set_device(CONTROLS.Family.XBOX, 3)
-	controls._connection_changed(3, false)
-	assert(controls.family == CONTROLS.Family.KEYBOARD and not build.using_controller)
+	press(JOY_BUTTON_RIGHT_STICK)
+	prompts._on_joy_connection_changed(3, false)
+	assert(controls.using_controller() == not Input.get_connected_joypads().is_empty(), "Addon keeps another connected controller active on disconnect")
+	assert(build.using_controller == controls.using_controller())
 	scene.free()
 	DirAccess.remove_absolute(path)
-	print("PASS: controller families, glyphs, prompt switching, drift, menu focus, toolbar cursor, one-action confirm, upgrades, pause/results and disconnect")
+	print("PASS: addon detection, artwork, prompt switching, drift, menu focus, toolbar cursor, one-action confirm, upgrades, pause/results and disconnect")
 	quit()
