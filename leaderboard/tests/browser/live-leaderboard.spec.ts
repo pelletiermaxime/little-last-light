@@ -42,3 +42,36 @@ test('recovers after a subscription error', async ({ page }) => {
   server.fail(false)
   await expect(page.getByRole('cell', { name: 'EmberKeeper' })).toBeVisible()
 })
+
+test('shows run energy and the saved turret pattern, including live updates and legacy runs', async ({ page }, testInfo) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  const turretLayout = { width: 960, height: 720, turrets: [{ x: 0.25, y: 0.4 }, { x: 0.75, y: 0.6 }] }
+  const detailed = { ...keeper, energyEarned: 125.75, energyInvested: 20, turretLayout }
+  const legacy = { ...keeper, rank: 2, username: 'OlderKeeper', totalEnergy: 5000 }
+  const server = await mockConvex(page, { '0.1.0': [detailed, legacy] })
+  await page.goto('/?version=0.1.0')
+  await expect(page.getByLabel('Energy earned: 125', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Defense investment: 20', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Defense investment: Not recorded', { exact: true })).toBeVisible()
+  await expect(page.getByText('5,000', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Turret layout not recorded', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Energy earned: Not recorded', { exact: true })).toBeVisible()
+  const toggle = page.getByLabel("View EmberKeeper's turret layout")
+  await toggle.focus()
+  await page.keyboard.press('Enter')
+  const diagram = page.getByRole('img', { name: "EmberKeeper's run layout: 2 turrets", exact: true })
+  await expect(diagram).toBeVisible()
+  await expect(diagram).toHaveAttribute('viewBox', '0 0 960 720')
+  await expect(diagram.locator('g')).toHaveCount(2)
+  await expect(diagram.locator('g').first()).toHaveAttribute('transform', 'translate(240 288)')
+  await expect(diagram.locator('g').last()).toHaveAttribute('transform', 'translate(720 432)')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('run-details.png'), fullPage: true })
+  server.publish({ '0.1.0': [{ ...detailed, energyEarned: 0, energyInvested: 0, turretLayout: { width: 720, height: 960, turrets: [] } }, legacy] })
+  await expect(page.getByLabel('Energy earned: 0', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Defense investment: 0', { exact: true })).toBeVisible()
+  await expect(page.getByRole('img', { name: "EmberKeeper's run layout: 0 turrets", exact: true })).toHaveAttribute('viewBox', '0 0 720 960')
+  await expect(page.getByText('0 turrets · Positions at run end · Arena center marked', { exact: true })).toBeVisible()
+  expect(errors).toEqual([])
+})

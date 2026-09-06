@@ -1,6 +1,7 @@
 import type { Page, WebSocketRoute } from '@playwright/test'
+import type { TurretLayout } from '../../convex/runDetails'
 
-export interface Score { rank: number; username: string; durationMs: number; achievedAt: number }
+export interface Score { rank: number; username: string; durationMs: number; achievedAt: number; energyEarned?: number; energyInvested?: number; totalEnergy?: number; turretLayout?: TurretLayout }
 interface Query { queryId: number; udfPath: string; args: [{ version?: string }] }
 
 export async function mockConvex(page: Page, initial: Record<string, Score[]> = {}) {

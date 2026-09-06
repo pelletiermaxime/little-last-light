@@ -68,6 +68,12 @@ func refresh() -> void:
 	skip.visible = offered
 	if offered:
 		prompt.text = "New personal best · v%s\nPublish %.3f seconds with a public username?" % [pending.version, float(pending.durationMs) / 1000.0]
+		if pending.has("energyInvested"):
+			prompt.text += "\nDefense investment: %d energy." % int(pending.energyInvested)
+		if pending.has("energyEarned"):
+			prompt.text += "\nEnergy earned this run: %d." % int(pending.energyEarned)
+		if pending.has("turretLayout"):
+			prompt.text += "\nYour %d-turret layout will be public." % pending.turretLayout.turrets.size()
 	publish.disabled = not sending.is_empty() or api_url.is_empty()
 	skip.disabled = not sending.is_empty()
 	username.editable = sending.is_empty()
@@ -100,8 +106,8 @@ func _publish() -> void:
 	if not main.save_progress():
 		notice.text = "Save your progress successfully before publishing."
 		return
-	sending = main.leaderboard_profile.pending.duplicate()
-	var payload := sending.duplicate()
+	sending = main.leaderboard_profile.pending.duplicate(true)
+	var payload := sending.duplicate(true)
 	payload.username = name_text
 	payload.token = main.leaderboard_profile.token
 	notice.text = "Publishing…"

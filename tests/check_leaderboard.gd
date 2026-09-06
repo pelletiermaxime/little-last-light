@@ -43,6 +43,14 @@ func check() -> void:
 	finish(scene, 65.125)
 	expect(panel.publish.visible and scene.leaderboard_profile.pending.durationMs == 65125, "New best offers precise score")
 	expect(panel.publish.disabled, "Unconfigured build stays local")
+	var first_offer: Dictionary = scene.leaderboard_profile.pending.duplicate(true)
+	expect(first_offer.energyEarned == 0 and first_offer.energyInvested == 0, "The free starting turret has zero investment")
+	expect(first_offer.turretLayout.turrets.size() == 1, "Captures actual turret, not placement preview")
+	var arena: Vector2 = scene.get_arena_rect().size
+	var turret_point: Vector2 = scene.get_node("Turret").position / arena
+	expect(first_offer.turretLayout == {"width": arena.x, "height": arena.y, "turrets": [{"x": turret_point.x, "y": turret_point.y}]}, "Layout captures normalized positions and arena aspect ratio")
+	scene.get_node("Turret").position = Vector2(30, 40)
+	expect(scene.leaderboard_profile.pending == first_offer, "Moving a turret cannot change the completed run snapshot")
 	var token: String = scene.leaderboard_profile.token
 	scene.leaderboard_profile.username = "Keeper"
 	scene.save_progress()
@@ -53,6 +61,10 @@ func check() -> void:
 	panel = scene.get_node("GameHUD").leaderboard
 	expect(scene.best_time == 65.125 and scene.leaderboard_profile.token == token, "Best and identity survive restart")
 	expect(panel.username.text == "Keeper" and panel.publish.visible, "Name and pending offer survive restart")
+	var restored: Dictionary = scene.leaderboard_profile.pending
+	expect(restored.energyEarned == first_offer.energyEarned and restored.energyInvested == first_offer.energyInvested, "Energy survives saving and reopening")
+	expect(restored.turretLayout.width == arena.x and restored.turretLayout.height == arena.y and restored.turretLayout.turrets.size() == 1, "Arena and turret count survive reopening")
+	expect(is_equal_approx(restored.turretLayout.turrets[0].x, turret_point.x) and is_equal_approx(restored.turretLayout.turrets[0].y, turret_point.y), "Original run positions survive reopening after layout changes")
 	panel.username.grab_focus()
 	var event := InputEventKey.new()
 	event.keycode = KEY_B
@@ -94,7 +106,9 @@ func check() -> void:
 	pause_screen.end_run_button.pressed.emit()
 	expect(not paused and scene.phase == scene.Phase.PREPARATION, "Ending a paused run returns to interactive preparation")
 	expect(scene.last_run.voluntary and scene.best_time == 12.345, "End Run records the voluntary personal best")
-	expect(scene.leaderboard_profile.pending == {"version": "0.2.0", "durationMs": 12345}, "End Run offers its record for the correct version")
+	expect(scene.leaderboard_profile.pending.version == "0.2.0" and scene.leaderboard_profile.pending.durationMs == 12345, "End Run offers its record for the correct version")
+	expect(scene.leaderboard_profile.pending.energyEarned == 7.0 and scene.leaderboard_profile.pending.energyInvested == 0.0, "Unspent savings and run earnings do not count as defense investment")
+	expect(scene.get_node("GameHUD").leaderboard.prompt.text.contains("layout will be public"), "Publish offer discloses shared layout")
 	expect(scene.get_node("GameHUD").leaderboard.publish.visible, "End Run immediately displays the opt-in offer")
 	expect(scene.banked_energy == 107.0, "End Run banks energy alongside the leaderboard record")
 	scene.free()
@@ -102,7 +116,9 @@ func check() -> void:
 	scene = game("0.2.0")
 	expect(scene.best_time == 12.345 and scene.leaderboard_profile.pending.durationMs == 12345, "Voluntary record and pending publication survive reopening")
 	expect(scene.banked_energy == 107.0, "Leaderboard persistence preserves End Run earnings")
-	var release_offer: Dictionary = scene.leaderboard_profile.pending.duplicate()
+	var release_offer: Dictionary = scene.leaderboard_profile.pending.duplicate(true)
+	scene.get_node("BuildController").reset_layout()
+	expect(scene.leaderboard_profile.pending == release_offer, "Reset layout cannot change a pending run")
 	scene.free()
 	await process_frame
 	scene = game("dev")
@@ -131,6 +147,38 @@ func check() -> void:
 	await process_frame
 	scene = game("0.3.0")
 	expect(scene.legacy_best_time == 99, "Legacy record preserved after migration")
+	scene.leaderboard_profile.pending = {"version": "0.3.0", "durationMs": 1000}
+	scene.save_progress()
+	scene.free()
+	await process_frame
+	scene = game("0.3.0")
+	expect(scene.save_is_readable and scene.leaderboard_profile.pending.version == "0.3.0" and scene.leaderboard_profile.pending.durationMs == 1000 and scene.leaderboard_profile.pending.size() == 2, "Old pending offers remain publishable without invented run details")
+	# Buy two turrets for 20 + 30 energy. Savings and later earnings must not
+	# change the investment, and resetting the layout must preserve this record.
+	scene.banked_energy = 1000.0
+	var builder = scene.get_node("BuildController")
+	builder.begin_placement()
+	expect(builder.try_place(Vector2(80, 80)), "Buy the first paid turret")
+	builder.begin_placement()
+	expect(builder.try_place(Vector2(160, 80)), "Buy the second paid turret")
+	scene.start_run()
+	scene.lantern.elapsed = 10.0
+	scene.lantern.energy = 60.0
+	scene.lantern.take_damage(1000)
+	expect(scene.leaderboard_profile.pending.energyInvested == 50.0 and scene.leaderboard_profile.pending.energyEarned == 60.0, "Death records 20 + 30 investment independently of savings and earnings")
+	expect(not scene.leaderboard_profile.pending.has("totalEnergy"), "New offers no longer submit available energy")
+	expect(scene.banked_energy == 1010.0, "Recording investment does not change the economy")
+	builder.reset_layout()
+	expect(scene.leaderboard_profile.pending.energyInvested == 50.0, "Refunding a defense preserves the previous run investment")
+	scene.save_progress()
+	scene.free()
+	await process_frame
+	scene = game("0.3.0")
+	expect(scene.leaderboard_profile.pending.energyInvested == 50.0, "Run investment survives reopening with a different current layout")
+	scene.start_run()
+	scene.lantern.elapsed = 11.0
+	scene.end_run(true)
+	expect(scene.leaderboard_profile.pending.energyInvested == 0.0, "The next run uses the reset free defense budget")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:

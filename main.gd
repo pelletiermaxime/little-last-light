@@ -31,6 +31,7 @@ var save_message: String = ""
 var previous_viewport_size: Vector2
 var save_is_readable: bool = true
 var last_run: Dictionary = {}
+var run_energy_invested: float = 0.0
 # Running from the editor uses local records; export templates use the stamped release.
 var game_version: String = "dev" if OS.has_feature("editor") else str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
 var version_bests: Dictionary = {}
@@ -66,6 +67,8 @@ func start_run() -> void:
 	if phase != Phase.PREPARATION or $BuildController.placing:
 		return
 	_clear_enemies()
+	# Snapshot the defense budget before the run. Unspent savings do not help survival.
+	run_energy_invested = $BuildController.layout_refund()
 	lantern.health = lantern.max_health
 	lantern.energy = 0.0
 	lantern.elapsed = 0.0
@@ -95,7 +98,13 @@ func end_run(voluntary: bool = false) -> void:
 	best_time = maxf(best_time, lantern.elapsed)
 	version_bests[game_version] = best_time
 	if last_run.new_best and game_version != "dev":
-		leaderboard_profile.pending = {"version": game_version, "durationMs": maxi(1, int(lantern.elapsed * 1000.0))}
+		leaderboard_profile.pending = {
+			"version": game_version,
+			"durationMs": maxi(1, int(lantern.elapsed * 1000.0)),
+			"energyEarned": lantern.energy,
+			"energyInvested": run_energy_invested,
+			"turretLayout": _run_turret_layout(),
+		}
 	var result := "Run ended" if voluntary else "The light went out"
 	summary = "%s · %ds survived · +%d energy\nImprove your layout and try again. Best: %ds" % [result, int(lantern.elapsed), int(lantern.energy), int(best_time)]
 	banked_energy += lantern.energy
@@ -104,6 +113,15 @@ func end_run(voluntary: bool = false) -> void:
 	_set_turrets_active(false)
 	lantern._update_status()
 	save_progress()
+
+
+func _run_turret_layout() -> Dictionary:
+	var size := get_arena_rect().size
+	var turrets: Array = []
+	for turret in get_tree().get_nodes_in_group("turrets"):
+		var point: Vector2 = turret.position / size
+		turrets.append({"x": point.x, "y": point.y})
+	return {"width": size.x, "height": size.y, "turrets": turrets}
 
 
 func _clear_enemies() -> void:
@@ -293,6 +311,13 @@ func _valid_save(data: Variant) -> bool:
 			return false
 		if not is_finite(float(duration)) or duration < 1 or duration != floor(duration):
 			return false
+		for key in ["energyEarned", "energyInvested", "totalEnergy"]:
+			if pending.has(key):
+				var value = pending[key]
+				if not (value is int or value is float) or not is_finite(float(value)) or value < 0:
+					return false
+		if pending.has("turretLayout") and not _valid_run_layout(pending.turretLayout):
+			return false
 	for key in ["energy", "best_time"]:
 		var value = data.get(key)
 		if not (value is float or value is int):
@@ -309,5 +334,22 @@ func _valid_save(data: Variant) -> bool:
 			if not (value is float or value is int):
 				return false
 			if not is_finite(float(value)) or value < 0.0 or value > 1.0:
+				return false
+	return true
+
+
+func _valid_run_layout(layout: Variant) -> bool:
+	if not layout is Dictionary or not layout.get("turrets") is Array:
+		return false
+	for key in ["width", "height"]:
+		var size = layout.get(key)
+		if not (size is int or size is float) or not is_finite(float(size)) or size <= 0:
+			return false
+	for point in layout.turrets:
+		if not point is Dictionary:
+			return false
+		for key in ["x", "y"]:
+			var value = point.get(key)
+			if not (value is int or value is float) or not is_finite(float(value)) or value < 0 or value > 1:
 				return false
 	return true

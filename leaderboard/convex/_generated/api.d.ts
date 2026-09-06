@@ -9,6 +9,7 @@
  */
 
 import type * as http from "../http.js";
+import type * as runDetails from "../runDetails.js";
 import type * as scores from "../scores.js";
 import type * as validation from "../validation.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   http: typeof http;
+  runDetails: typeof runDetails;
   scores: typeof scores;
   validation: typeof validation;
 }>;

@@ -2,6 +2,7 @@ import { httpRouter } from 'convex/server'
 import { httpAction } from './_generated/server'
 import { api, internal } from './_generated/api'
 import { validVersion, validateScore } from './validation'
+import { MAX_SCORE_BODY_LENGTH } from './runDetails'
 
 const http = httpRouter()
 const headers = {
@@ -24,7 +25,7 @@ http.route({ path: '/scores', method: 'OPTIONS', handler: httpAction(async () =>
 http.route({ path: '/scores', method: 'POST', handler: httpAction(async (ctx, request) => {
   if (!request.headers.get('content-type')?.startsWith('application/json')) return json({ error: 'Expected JSON.' }, 415)
   const body = await request.text()
-  if (body.length > 2048) return json({ error: 'Request is too large.' }, 413)
+  if (body.length > MAX_SCORE_BODY_LENGTH) return json({ error: 'Request is too large.' }, 413)
   let score: ReturnType<typeof validateScore>
   try { score = validateScore(JSON.parse(body)) }
   catch (error) { return json({ error: error instanceof Error ? error.message : 'Invalid score.' }, 400) }
