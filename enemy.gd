@@ -3,6 +3,7 @@ extends Node2D
 const CONTACT_DISTANCE: float = 20.0
 const CONTACT_TOLERANCE: float = 0.1
 
+@export var contact_distance: float = CONTACT_DISTANCE
 @export var speed: float = 85.0
 # 75 degrees per second: a half-turn takes 2.4 seconds.
 @export var turn_speed: float = 5.0 * PI / 12.0
@@ -35,7 +36,7 @@ func _process(delta: float) -> void:
 
 	# Contact damage scales with time, so frame rate does not change its strength.
 	# Movement can stop a fraction of a pixel outside the intended distance.
-	if distance <= CONTACT_DISTANCE + CONTACT_TOLERANCE:
+	if distance <= contact_distance + CONTACT_TOLERANCE:
 		target.take_damage(contact_damage_per_second * delta)
 		return
 	if speed <= 0.0:
@@ -76,7 +77,7 @@ func _first_contact_fraction(movement: Vector2) -> float:
 	# only the endpoint could skip right through the lantern on a long frame.
 	var entry := Geometry2D.segment_intersects_circle(
 		global_position, global_position + movement,
-		target.global_position, CONTACT_DISTANCE
+		target.global_position, contact_distance
 	)
 	return entry if entry >= 0.0 else 1.0
 

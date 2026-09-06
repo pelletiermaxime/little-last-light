@@ -20,6 +20,8 @@ During a run, construction is locked and enemies spawn faster over time. Newly s
 
 M6 basic enemies move at a fixed **85 pixels/second**, versus the lantern's **220**, and turn at **75 degrees/second** instead of instantly changing direction (2.4 seconds for a half-turn). Their eyes face their travel direction. Open space lets you escape; sharp dodges make pursuers curve around. Enemy speed no longer rises over time. Existing spawn and health scaling are temporary tuning, pending a roster of enemies with different movement patterns.
 
+**Water boss:** The Drencher arrives once at 5:00, with 700 HP and a three-second warning. It slowly pursues the lantern and leaves temporary water puddles. Fresh puddles warn for 0.6 seconds, then deal 8 damage/second while touching the lantern; overlapping puddles do not stack damage. Defeat it with your turrets to clear the water and continue the run.
+
 **Long-term run goal:** survive until a final boss arrives at **15:00**, then defeat it to win. Future difficulty should come from enemy patterns, combinations, and tougher bosses while preserving the lantern's movement advantage. The boss, victory flow, and encounter schedule are planned, not implemented in M6.
 
 Progress saves locally to `user://progress-v1.json` after purchases, upgrades, sales, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening restores energy, turret positions, paid purchase prices, and global upgrade levels. Existing saves migrate automatically.
@@ -52,6 +54,7 @@ The results screen offers to publish a new survival record with a username; pend
 - [Charging enemy walkthrough](docs/milestone-8.md)
 - [Upgrades, selling, and run results (M9)](docs/milestone-9.md)
 - [Swarm performance and leaderboard run details (M10)](docs/milestone-10.md)
+- [The Drencher water boss (M11)](docs/milestone-11.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 

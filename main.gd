@@ -6,6 +6,8 @@ const SIDEBAR_WIDTH: float = 320.0
 
 const ENEMY_SCENE: PackedScene = preload("res://enemy.tscn")
 const CHARGER_SCENE: PackedScene = preload("res://charger.tscn")
+const BOSS_SCRIPT = preload("res://water_boss.gd")
+const BOSS_TIME: float = 300.0
 const FIRST_CHARGER_TIME: float = 20.0
 const CHARGER_INTERVAL: float = 8.0
 const MIN_CHARGER_INTERVAL: float = 5.0
@@ -29,6 +31,7 @@ var fire_rate_level: int = 0
 var health_level: int = 0
 var best_time: float = 0.0
 var spawn_progress: float = 0.0
+var boss_spawned: bool = false
 var next_charger_time: float = FIRST_CHARGER_TIME
 var autosave_elapsed: float = 0.0
 var summary: String = "Arrange your defense, then start your first run."
@@ -148,6 +151,7 @@ func start_run() -> void:
 	lantern.hit_flash = 0.0
 	lantern._center_in_viewport()
 	spawn_progress = 0.0
+	boss_spawned = false
 	next_charger_time = FIRST_CHARGER_TIME
 	autosave_elapsed = 0.0
 	phase = Phase.RUNNING
@@ -211,7 +215,12 @@ func _run_turret_layout() -> Dictionary:
 
 
 func _clear_enemies() -> void:
+	for hazard in get_tree().get_nodes_in_group("hazards"):
+		hazard.process_mode = Node.PROCESS_MODE_DISABLED
+		hazard.remove_from_group("hazards")
+		hazard.queue_free()
 	for enemy in get_tree().get_nodes_in_group("enemies"):
+		enemy.remove_from_group("bosses")
 		enemy.remove_from_group("chargers")
 		enemy.process_mode = Node.PROCESS_MODE_DISABLED
 		enemy.remove_from_group("enemies")
@@ -243,6 +252,8 @@ func current_enemy_speed() -> float:
 func _process(delta: float) -> void:
 	if phase != Phase.RUNNING:
 		return
+	if not boss_spawned and lantern.elapsed >= BOSS_TIME:
+		_spawn_boss()
 	spawn_progress += delta / current_spawn_interval()
 	if spawn_progress >= 1.0:
 		spawn_progress -= 1.0
@@ -255,6 +266,23 @@ func _process(delta: float) -> void:
 	if autosave_elapsed >= 5.0:
 		autosave_elapsed = 0.0
 		save_progress()
+
+
+func _spawn_boss() -> void:
+	if phase != Phase.RUNNING or boss_spawned:
+		return
+	boss_spawned = true
+	var boss := BOSS_SCRIPT.new()
+	boss.target = lantern
+	# Arrive at the farthest inset corner, giving space and a visible warning.
+	var size := get_arena_rect().size
+	var corners: Array[Vector2] = [Vector2(44, 44), Vector2(size.x - 44, 44), size - Vector2(44, 44), Vector2(44, size.y - 44)]
+	boss.position = corners[0]
+	for point in corners:
+		if point.distance_squared_to(lantern.position) > boss.position.distance_squared_to(lantern.position):
+			boss.position = point
+	add_child(boss)
+	$GameHUD.refresh()
 
 
 func _spawn_enemy() -> void:

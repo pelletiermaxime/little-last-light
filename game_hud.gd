@@ -13,6 +13,8 @@ var scroll: ScrollContainer
 var heading: Label
 var subheading: Label
 var health_text: Label
+var boss_text: Label
+var boss_bar: ProgressBar
 var health_bar: ProgressBar
 var earnings: Label
 var detail: Label
@@ -50,6 +52,13 @@ func _ready() -> void:
 	health_bar.add_theme_stylebox_override("background", _style(Color("#283744")))
 	health_bar.add_theme_stylebox_override("fill", _style(GOLD))
 	panel.add_child(health_bar)
+	boss_text = _label(panel, 18, Color("#82e2ec"))
+	boss_bar = ProgressBar.new()
+	boss_bar.custom_minimum_size.y = 10
+	boss_bar.show_percentage = false
+	boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_bar.add_theme_stylebox_override("fill", _style(Color("#82e2ec")))
+	panel.add_child(boss_bar)
 	earnings = _label(panel, 30, GOLD)
 	detail = _label(panel, 16, MUTED)
 	brightness_box = VBoxContainer.new()
@@ -120,6 +129,16 @@ func refresh() -> void:
 	if is_instance_valid(leaderboard):
 		leaderboard.refresh()
 	var running: bool = lantern.running
+	var bosses := get_tree().get_nodes_in_group("bosses").filter(func(boss: Node): return not boss.is_queued_for_deletion())
+	boss_text.visible = running and main.boss_spawned
+	boss_bar.visible = running and not bosses.is_empty()
+	if running and not bosses.is_empty():
+		var boss = bosses[0]
+		boss_text.text = "THE DRENCHER · %d / %d HP\n%s" % [int(ceil(boss.health)), int(boss.max_health), "Incoming! Keep clear of the blue ring." if boss.arrival_remaining > 0 else "Avoid its water trail."]
+		boss_bar.max_value = boss.max_health
+		boss_bar.value = boss.health
+	elif running and main.boss_spawned:
+		boss_text.text = "THE DRENCHER DEFEATED"
 	earnings.visible = running or not main.last_run.is_empty()
 	health_bar.visible = running
 	brightness_box.visible = running
