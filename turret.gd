@@ -1,5 +1,8 @@
 extends Node2D
 
+# Idle turrets poll at most ten times per second, even with a large swarm.
+const IDLE_SEARCH_INTERVAL: float = 0.1
+
 @export var attack_range: float = 220.0
 @export var fire_interval: float = 1.5
 @export var damage: float = 1.0
@@ -12,7 +15,10 @@ var shot_endpoint: Vector2 = Vector2.ZERO
 
 func _process(delta: float) -> void:
 	cooldown = maxf(0.0, cooldown - delta)
+	var was_firing := shot_time > 0.0
 	shot_time = maxf(0.0, shot_time - delta)
+	if was_firing and shot_time <= 0.0:
+		queue_redraw()
 
 	if cooldown <= 0.0:
 		var enemy: Node2D = _find_nearest_enemy()
@@ -22,13 +28,14 @@ func _process(delta: float) -> void:
 			shot_time = 0.12
 			cooldown = fire_interval
 			enemy.take_damage(damage)
-
-	queue_redraw()
+			queue_redraw()
+		else:
+			cooldown = IDLE_SEARCH_INTERVAL
 
 
 func _find_nearest_enemy() -> Node2D:
 	var nearest: Node2D = null
-	var nearest_distance: float = attack_range
+	var nearest_distance_squared: float = attack_range * attack_range
 
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := node as Node2D
@@ -36,13 +43,13 @@ func _find_nearest_enemy() -> Node2D:
 		if enemy == null or enemy.is_queued_for_deletion():
 			continue
 
-		var distance: float = global_position.distance_to(
+		var distance_squared: float = global_position.distance_squared_to(
 			enemy.global_position
 		)
 
-		if distance < nearest_distance:
+		if distance_squared < nearest_distance_squared:
 			nearest = enemy
-			nearest_distance = distance
+			nearest_distance_squared = distance_squared
 
 	return nearest
 
