@@ -129,10 +129,10 @@ func refresh() -> void:
 	if running:
 		heading.text = "KEEP THE LIGHT ALIVE"
 		subheading.text = format_time(lantern.elapsed)
-		health_text.text = "HEALTH  %d / %d%s" % [int(ceil(lantern.health)), int(lantern.max_health), "  ·  DANGER" if lantern.health <= 25 else ""]
+		health_text.text = "HEALTH  %d / %d%s" % [int(ceil(lantern.health)), int(lantern.max_health), "  ·  DANGER" if lantern.health <= lantern.max_health * 0.25 else ""]
 		health_bar.max_value = lantern.max_health
 		health_bar.value = lantern.health
-		health_bar.modulate = Color("#ff806e") if lantern.health <= 25 else Color.WHITE
+		health_bar.modulate = Color("#ff806e") if lantern.health <= lantern.max_health * 0.25 else Color.WHITE
 		earnings.text = "+%d energy" % int(lantern.energy)
 		detail.text = "Earned this run · banked when it ends\nIn reserve: %d energy" % int(main.banked_energy)
 		var risk: Array[String] = ["LOW attraction", "MEDIUM attraction", "HIGH attraction"]
@@ -157,7 +157,7 @@ func refresh() -> void:
 			heading.text = "RUN ENDED"
 		heading.text += " · " + ("dev" if main.game_version == "dev" else "v" + main.game_version)
 		subheading.text = "Prepare your next run" if not main.last_run.is_empty() else "Build your refuge"
-		health_text.text = "Full health on every start"
+		health_text.text = "%d HP · Full health on every start" % int(lantern.max_health)
 		if not main.last_run.is_empty():
 			earnings.text = "+%d energy earned" % int(main.last_run.energy)
 			detail.text = "Survived %s  ·  Best %s%s" % [format_time(main.last_run.duration), format_time(main.best_time), "\nNew personal best" if main.last_run.new_best else ""]

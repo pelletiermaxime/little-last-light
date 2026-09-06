@@ -74,7 +74,7 @@ function time(ms: number) {
         </table></div>
       </div>
       <p class="footnote">Top 100 · Best published run per device and version · Longer is better</p>
-      <p class="data-note">Invested: energy spent on the defense used for this run. The starting turret is free; unspent energy is excluded. Earned: energy generated during the run. Compare survival time alongside investment to see how much progression supported each defense. Older runs may not have this data.</p>
+      <p class="data-note">Invested: energy spent on the turrets and persistent damage, fire rate, and health upgrades used for this run. The starting turret is free; unspent energy is excluded. Earned: energy generated during the run. Compare survival time alongside investment to see how much progression supported each defense. Older runs may not have this data.</p>
     </section>
     <footer>Beat your personal best, choose a username, and publish from the game.<br>No account needed. These are community-submitted, unverified runs.</footer>
   </main>

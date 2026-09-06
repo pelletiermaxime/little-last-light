@@ -16,6 +16,11 @@ var state: State = State.APPROACH
 var state_remaining: float = 0.0
 
 
+func _create_body() -> void:
+	# Chargers draw their own animated warning and diamond, not the basic body.
+	pass
+
+
 func _ready() -> void:
 	super._ready()
 	add_to_group("chargers")

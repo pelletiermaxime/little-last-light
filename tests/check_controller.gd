@@ -68,6 +68,7 @@ func check() -> void:
 	press(JOY_BUTTON_X)
 	assert(not build.placing, "Controller cannot build during combat")
 	scene.lantern.take_damage(1000)
+	scene.continue_to_preparation()
 	press(JOY_BUTTON_START)
 	assert(scene.lantern.running, "Controller starts another run after defeat")
 	scene.free()

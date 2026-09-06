@@ -16,17 +16,21 @@ DualSense / gamepad controls: **left stick or D-pad** moves the lantern during a
 
 Start in **Preparation**. Click an existing turret to move it for free, or build with **B**. Extra turrets cost **20, 30, 40, 50… energy**. Left-click to confirm a valid position; **Escape** cancels. Controls live in a separate right sidebar. The entire arena is buildable except for its edge margin and occupied turret positions. Click **Start run** or press **Enter** when ready; the arena keeps the same bounds during combat.
 
-During a run, construction is locked and enemies spawn faster over time. Newly spawned enemies need one additional turret hit every 30 seconds; their health bars show remaining health. Enemies touching the lantern drain health. At zero health, enemies clear and your earnings are banked for preparation. Turrets and unspent energy carry into the next run.
+During a run, construction is locked and enemies spawn faster over time. Newly spawned enemies need one additional turret hit every 30 seconds; their health bars show remaining health. Enemies touching the lantern drain health. At zero health, enemies clear and your earnings are banked. A dedicated results screen shows survival time, earned energy, your best, and the leaderboard submission controls. Continue returns to preparation. Turrets and unspent energy carry into the next run.
 
 M6 basic enemies move at a fixed **85 pixels/second**, versus the lantern's **220**, and turn at **75 degrees/second** instead of instantly changing direction (2.4 seconds for a half-turn). Their eyes face their travel direction. Open space lets you escape; sharp dodges make pursuers curve around. Enemy speed no longer rises over time. Existing spawn and health scaling are temporary tuning, pending a roster of enemies with different movement patterns.
 
 **Long-term run goal:** survive until a final boss arrives at **15:00**, then defeat it to win. Future difficulty should come from enemy patterns, combinations, and tougher bosses while preserving the lantern's movement advantage. The boss, victory flow, and encounter schedule are planned, not implemented in M6.
 
-Progress saves locally to `user://progress-v1.json` after purchases, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening returns to preparation with saved energy and turret positions. Turret upgrades are future work.
+Progress saves locally to `user://progress-v1.json` after purchases, upgrades, sales, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening restores energy, turret positions, paid purchase prices, and global upgrade levels. Existing saves migrate automatically.
 
-**End Run** on the pause screen banks and saves all earned energy and returns to preparation. Desktop preparation also has **Quit Game**, which saves before closing. The desktop game starts maximized.
+**End Run** on the pause screen banks and saves all earned energy and opens the results screen. Continue returns to preparation. Desktop preparation also has **Quit Game**, which saves before closing. The desktop game starts maximized.
 
-**Reset layout** in preparation refunds all purchased turrets (20 + 30 + 40… energy), restores one free starter to its original position, and saves the result. Use its button, **R**, or **Triangle / Y** on a controller. Best survival and other earned energy remain intact. It is unavailable during a run, including while paused.
+**Global upgrades** in preparation affect every existing and future turret. Damage gains +1 per level (60, 120, 240, 480 energy); fire rate gains +25% of its original rate per level (50, 100, 200, 400 energy). Each has four levels. Use the buttons, **G / F**, or controller **L1 / R1**. The sidebar scrolls on shorter windows.
+
+**Sell selected turret** refunds its original purchase price: select a purchased turret as if moving it, then use the button, **X**, or controller **L3**. The free starter cannot be sold. New-turret prices still depend on how many you currently own.
+
+**Reset layout** refunds the actual recorded cost of all purchased turrets, restores one free starter to its original position, and saves. Use its button, **R**, or controller **Triangle / Y**. Global upgrades, records, and other earned energy remain intact. Upgrading, selling, and resetting are available only in preparation, never during a paused run.
 
 ## Online leaderboard
 
@@ -46,6 +50,7 @@ The preparation sidebar offers to publish a new survival record with a username.
 - [Slower enemies and committed pursuit walkthrough](docs/milestone-6.md)
 - [Versioned online leaderboard walkthrough](docs/milestone-7.md)
 - [Charging enemy walkthrough](docs/milestone-8.md)
+- [Global turret upgrades and selling (M9 playtest)](docs/milestone-9.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 
@@ -72,3 +77,5 @@ Pull requests only build and upload artifacts; they do not publish. You can also
 The Web preset has threads disabled, allowing it to run on Pages without custom cross-origin isolation headers. Desktop downloads are unsigned. Extract the Windows zip and run `little-last-light.exe`; extract the Linux tarball and run `./little-last-light.x86_64` (the archive preserves executable permissions).
 
 To reproduce the build locally on Linux, install Godot 4.7.2, its matching export templates, Python 3, `zip`, and `tar`, then run `bash scripts/build-release.sh`. Fetch the repository tags first to calculate the current version. Set `GODOT_BIN` if the executable has another name. The script imports assets before exporting and writes the site to `export/web`, release archives to `export/downloads`, and version/changelog metadata to `export/release`. When upgrading Godot, update `GODOT_VERSION` in the workflow and use matching local templates.
+
+**Lantern health:** start with 25 HP. Preparation offers four permanent +15 HP upgrades (40, 80, 160, 320 energy), up to 85 HP. Buy with the Lantern HP button, H, or controller R3. Every run starts at your upgraded maximum; resetting the turret layout preserves health upgrades.

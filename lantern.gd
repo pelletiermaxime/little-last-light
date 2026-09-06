@@ -7,7 +7,7 @@ const ENERGY_RATES: Array[float] = [1.0, 3.0, 6.0]
 const LIGHT_SCALES: Array[float] = [1.0, 1.4, 1.9]
 
 @export var move_speed: float = 220.0
-@export var max_health: float = 100.0
+@export var max_health: float = 25.0
 
 var health: float
 var running: bool = false
@@ -44,7 +44,8 @@ func take_damage(amount: float) -> void:
 		return
 	health = maxf(0.0, health - amount)
 	hit_flash = 0.15
-	_update_status()
+	# The HUD samples health at 10 Hz. A crowd must not rebuild the entire UI
+	# once per contact per frame; death still refreshes immediately via end_run.
 	queue_redraw()
 	if health <= 0.0:
 		died.emit()

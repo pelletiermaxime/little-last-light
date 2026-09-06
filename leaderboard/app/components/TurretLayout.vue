@@ -18,7 +18,10 @@ const radius = computed(() => Math.max(7, Math.min(props.layout.width, props.lay
         <circle :r="radius" fill="#9bddff" />
       </g>
     </svg>
-    <figcaption><span class="turret-dot" aria-hidden="true" /> {{ layout.turrets.length }} {{ layout.turrets.length === 1 ? 'turret' : 'turrets' }} · Positions at run end · Arena center marked</figcaption>
+    <figcaption>
+      <span><span class="turret-dot" aria-hidden="true" /> {{ layout.turrets.length }} {{ layout.turrets.length === 1 ? 'turret' : 'turrets' }} · Positions at run end · Arena center marked</span>
+      <template v-if="layout.upgrades"><br><span>Upgrades · Damage level {{ layout.upgrades.damage }} · Fire rate level {{ layout.upgrades.fireRate }} · Health level {{ layout.upgrades.health }}</span></template>
+    </figcaption>
   </figure>
 </template>
 

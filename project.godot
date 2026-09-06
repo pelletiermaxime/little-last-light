@@ -24,6 +24,26 @@ window/stretch/aspect="expand"
 
 [input]
 
+upgrade_damage={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":71), Object(InputEventJoypadButton,"device":-1,"button_index":4)]
+}
+
+upgrade_health={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":72), Object(InputEventJoypadButton,"device":-1,"button_index":8)]
+}
+
+upgrade_fire_rate={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":70), Object(InputEventJoypadButton,"device":-1,"button_index":5)]
+}
+
+sell_turret={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":88), Object(InputEventJoypadButton,"device":-1,"button_index":7)]
+}
+
 reset_layout={
 "deadzone": 0.2,
 "events": [Object(InputEventKey,"physical_keycode":82), Object(InputEventJoypadButton,"device":-1,"button_index":3)]

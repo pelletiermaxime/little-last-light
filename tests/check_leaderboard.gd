@@ -29,6 +29,7 @@ func game(version: String) -> Node2D:
 
 
 func finish(scene: Node2D, seconds: float) -> void:
+	scene.continue_to_preparation()
 	scene.start_run()
 	scene.lantern.elapsed = seconds
 	scene.lantern.take_damage(1000)
@@ -48,7 +49,7 @@ func check() -> void:
 	expect(first_offer.turretLayout.turrets.size() == 1, "Captures actual turret, not placement preview")
 	var arena: Vector2 = scene.get_arena_rect().size
 	var turret_point: Vector2 = scene.get_node("Turret").position / arena
-	expect(first_offer.turretLayout == {"width": arena.x, "height": arena.y, "turrets": [{"x": turret_point.x, "y": turret_point.y}]}, "Layout captures normalized positions and arena aspect ratio")
+	expect(first_offer.turretLayout == {"width": arena.x, "height": arena.y, "turrets": [{"x": turret_point.x, "y": turret_point.y}], "upgrades": {"damage": 0, "fireRate": 0, "health": 0}}, "Layout captures normalized positions, arena aspect ratio and upgrades")
 	scene.get_node("Turret").position = Vector2(30, 40)
 	expect(scene.leaderboard_profile.pending == first_offer, "Moving a turret cannot change the completed run snapshot")
 	var token: String = scene.leaderboard_profile.token
@@ -98,13 +99,14 @@ func check() -> void:
 	finish(scene, 5)
 	expect(scene.last_run.new_best and scene.version_bests["0.1.0"] == 80, "New release record keeps older version history")
 	# M6's voluntary End Run must use the same record and saving path as death.
+	scene.continue_to_preparation()
 	scene.start_run()
 	scene.lantern.elapsed = 12.345
 	scene.lantern.energy = 7.0
 	var pause_screen = scene.get_node("PauseScreen")
 	pause_screen.pause()
 	pause_screen.end_run_button.pressed.emit()
-	expect(not paused and scene.phase == scene.Phase.PREPARATION, "Ending a paused run returns to interactive preparation")
+	expect(not paused and scene.phase == scene.Phase.RESULTS, "Ending a paused run opens results")
 	expect(scene.last_run.voluntary and scene.best_time == 12.345, "End Run records the voluntary personal best")
 	expect(scene.leaderboard_profile.pending.version == "0.2.0" and scene.leaderboard_profile.pending.durationMs == 12345, "End Run offers its record for the correct version")
 	expect(scene.leaderboard_profile.pending.energyEarned == 7.0 and scene.leaderboard_profile.pending.energyInvested == 0.0, "Unspent savings and run earnings do not count as defense investment")
@@ -168,6 +170,7 @@ func check() -> void:
 	expect(scene.leaderboard_profile.pending.energyInvested == 50.0 and scene.leaderboard_profile.pending.energyEarned == 60.0, "Death records 20 + 30 investment independently of savings and earnings")
 	expect(not scene.leaderboard_profile.pending.has("totalEnergy"), "New offers no longer submit available energy")
 	expect(scene.banked_energy == 1010.0, "Recording investment does not change the economy")
+	scene.continue_to_preparation()
 	builder.reset_layout()
 	expect(scene.leaderboard_profile.pending.energyInvested == 50.0, "Refunding a defense preserves the previous run investment")
 	scene.save_progress()
@@ -179,6 +182,16 @@ func check() -> void:
 	scene.lantern.elapsed = 11.0
 	scene.end_run(true)
 	expect(scene.leaderboard_profile.pending.energyInvested == 0.0, "The next run uses the reset free defense budget")
+	scene.continue_to_preparation()
+	expect(scene.buy_upgrade("damage") and scene.buy_upgrade("damage") and scene.buy_upgrade("fire_rate") and scene.buy_upgrade("health"), "Purchase persistent upgrades for the next run")
+	scene.start_run()
+	scene.lantern.elapsed = 12.0
+	scene.end_run(true)
+	expect(scene.leaderboard_profile.pending.energyInvested == 270.0, "Investment includes damage 60 + 120, fire rate 50 and health 40 exactly once")
+	expect(scene.leaderboard_profile.pending.turretLayout.upgrades == {"damage": 2, "fireRate": 1, "health": 1}, "Published configuration includes the actual upgrade levels")
+	scene.continue_to_preparation()
+	expect(scene.buy_upgrade("health"), "Purchase another upgrade after the recorded run")
+	expect(scene.leaderboard_profile.pending.energyInvested == 270.0 and scene.leaderboard_profile.pending.turretLayout.upgrades.health == 1, "Later upgrades do not rewrite recorded investment or configuration")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:

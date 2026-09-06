@@ -33,6 +33,7 @@ func check() -> void:
 	scene.save_path = path
 	root.add_child(scene)
 	await process_frame
+	scene.continue_to_preparation()
 	scene.start_run()
 	scene.set_process(false)
 	scene.lantern.set_process(false)
@@ -150,12 +151,13 @@ func check() -> void:
 	expect(get_nodes_in_group("chargers").is_empty(), "End Run clears charger membership immediately")
 	scene._spawn_charger()
 	expect(get_nodes_in_group("chargers").is_empty(), "Preparation cannot spawn chargers")
+	scene.continue_to_preparation()
 	scene.start_run()
 	expect(scene.next_charger_time == 20.0, "Fresh run resets introduction time")
 	enemy = fixture()
 	scene.lantern.health = 10.0
 	enemy._process(2.0)
-	expect(scene.phase == scene.Phase.PREPARATION, "Fatal charge uses normal defeat cleanup")
+	expect(scene.phase == scene.Phase.RESULTS, "Fatal charge uses normal defeat cleanup")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:

@@ -19,9 +19,11 @@ func check() -> void:
 	root.add_child(scene)
 	scene.process_mode = Node.PROCESS_MODE_DISABLED
 	var build = scene.get_node("BuildController")
+	scene.continue_to_preparation()
 	scene.start_run()
 	scene.lantern.elapsed = 123.0
 	scene.end_run(true)
+	scene.continue_to_preparation()
 	scene.banked_energy = 120.5
 	for point in [Vector2(100,100), Vector2(200,100), Vector2(300,100)]:
 		build.begin_placement()
@@ -54,6 +56,7 @@ func check() -> void:
 	expect(not build.placing and is_equal_approx(scene.banked_energy, 120.5), "Unpurchased ghost never earns a refund")
 	var saved = JSON.parse_string(FileAccess.get_file_as_string(path))
 	expect(saved.turrets.size() == 1 and is_equal_approx(saved.energy, 120.5), "Reset writes the refunded bank and single-turret layout")
+	scene.continue_to_preparation()
 	scene.start_run()
 	build._update_interface()
 	expect(not build.reset_button.visible and not build.reset_layout(), "Combat blocks reset even when called directly")

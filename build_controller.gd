@@ -18,6 +18,10 @@ var overview: Label
 var start_button: Button
 var reset_button: Button
 var quit_button: Button
+var sell_button: Button
+var damage_button: Button
+var rate_button: Button
+var health_button: Button
 var bar: VBoxContainer
 var selected_turret: Node2D
 var placement_hint: Label
@@ -99,10 +103,35 @@ func _ready() -> void:
 	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(main.start_run)
 	buttons.add_child(start_button)
+	sell_button = Button.new()
+	sell_button.custom_minimum_size.y = 44
+	sell_button.focus_mode = Control.FOCUS_NONE
+	sell_button.pressed.connect(sell_selected_turret)
+	buttons.add_child(sell_button)
+	var upgrades_title := Label.new()
+	upgrades_title.text = "UPGRADES"
+	upgrades_title.add_theme_color_override("font_color", Color("#ffcf7a"))
+	upgrades_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	buttons.add_child(upgrades_title)
+	damage_button = Button.new()
+	damage_button.custom_minimum_size.y = 60
+	damage_button.focus_mode = Control.FOCUS_NONE
+	damage_button.pressed.connect(func(): main.buy_upgrade("damage"))
+	buttons.add_child(damage_button)
+	rate_button = Button.new()
+	rate_button.custom_minimum_size.y = 60
+	rate_button.focus_mode = Control.FOCUS_NONE
+	rate_button.pressed.connect(func(): main.buy_upgrade("fire_rate"))
+	buttons.add_child(rate_button)
+	health_button = Button.new()
+	health_button.custom_minimum_size.y = 60
+	health_button.focus_mode = Control.FOCUS_NONE
+	health_button.pressed.connect(func(): main.buy_upgrade("health"))
+	buttons.add_child(health_button)
 	reset_button = Button.new()
 	reset_button.custom_minimum_size.y = 44
 	reset_button.focus_mode = Control.FOCUS_NONE
-	reset_button.tooltip_text = "Refund every purchased turret and return to one free starting turret. Your other progress stays saved."
+	reset_button.tooltip_text = "Refund purchased turrets and restore the free starter. Global upgrades stay unlocked."
 	reset_button.pressed.connect(reset_layout)
 	buttons.add_child(reset_button)
 	quit_button = Button.new()
@@ -159,10 +188,28 @@ func turret_cost() -> float:
 
 
 func layout_refund() -> float:
-	# Purchases cost 20, 30, 40...; the initial turret was free.
-	# Sum the prices paid, not today's next-turret price for every turret.
-	var purchased := maxi(0, get_tree().get_nodes_in_group("turrets").size() - 1)
-	return purchased * BASE_TURRET_COST + EXTRA_TURRET_COST * purchased * (purchased - 1) / 2.0
+	var refund := 0.0
+	for turret in get_tree().get_nodes_in_group("turrets"):
+		refund += turret.purchase_cost
+	return refund
+
+
+func sell_selected_turret() -> bool:
+	if main.phase != main.Phase.PREPARATION or not placing or not is_instance_valid(selected_turret):
+		return false
+	if not selected_turret.is_in_group("turrets") or selected_turret.purchase_cost <= 0.0:
+		return false
+	var sold := selected_turret
+	var refund: float = sold.purchase_cost
+	cancel_placement()
+	# Saving and a second click must see the removal immediately.
+	sold.remove_from_group("turrets")
+	sold.queue_free()
+	main.banked_energy += refund
+	main.save_progress()
+	_update_interface()
+	lantern._update_status()
+	return true
 
 
 func reset_layout() -> bool:
@@ -201,6 +248,22 @@ func _update_interface() -> void:
 	# Browser players close their tab; SceneTree.quit cannot close it for them.
 	quit_button.visible = preparing and not OS.has_feature("web")
 	reset_button.text = "Reset layout · +%d (%s)" % [int(layout_refund()), "Triangle" if using_controller else "R"]
+	sell_button.visible = preparing and is_instance_valid(selected_turret)
+	if sell_button.visible:
+		sell_button.disabled = selected_turret.purchase_cost <= 0.0
+		sell_button.text = "Keep free starter turret" if sell_button.disabled else "Sell selected · +%d (%s)" % [int(selected_turret.purchase_cost), "L3" if using_controller else "X"]
+	damage_button.text = "Damage %.0f to %.0f (%s)\n%d energy" % [main.turret_damage(), main.turret_damage() + 1, "L1" if using_controller else "G", int(main.upgrade_cost("damage"))]
+	rate_button.text = "Fire rate %.2f to %.2f/s (%s)\n%d energy" % [main.turret_shots_per_second(), main.turret_shots_per_second() + 0.25 / 1.5, "R1" if using_controller else "F", int(main.upgrade_cost("fire_rate"))]
+	damage_button.disabled = placing or main.banked_energy < main.upgrade_cost("damage") or main.damage_level >= main.MAX_UPGRADE_LEVEL
+	rate_button.disabled = placing or main.banked_energy < main.upgrade_cost("fire_rate") or main.fire_rate_level >= main.MAX_UPGRADE_LEVEL
+	if main.damage_level >= main.MAX_UPGRADE_LEVEL:
+		damage_button.text = "Damage %.0f · MAX" % main.turret_damage()
+	if main.fire_rate_level >= main.MAX_UPGRADE_LEVEL:
+		rate_button.text = "Fire rate %.2f/s · MAX" % main.turret_shots_per_second()
+	health_button.text = "Lantern HP %.0f to %.0f (%s)\n%d energy" % [main.lantern_max_health(), main.lantern_max_health() + 15, "R3" if using_controller else "H", int(main.upgrade_cost("health"))]
+	health_button.disabled = placing or main.banked_energy < main.upgrade_cost("health") or main.health_level >= main.MAX_UPGRADE_LEVEL
+	if main.health_level >= main.MAX_UPGRADE_LEVEL:
+		health_button.text = "Lantern HP %.0f · MAX" % main.lantern_max_health()
 	start_button.disabled = placing
 	build_button.text = "Build turret — %d energy (%s)" % [int(turret_cost()), "Square" if using_controller else "B"]
 	cancel_button.text = "Cancel (%s)" % ("Circle" if using_controller else "Esc")
@@ -209,15 +272,15 @@ func _update_interface() -> void:
 	var remaining := maxi(0, int(ceil(turret_cost() - main.banked_energy)))
 	overview.text = "AVAILABLE  %d energy\n%s" % [int(main.banked_energy), "Next turret affordable" if remaining == 0 else "%d more for next turret" % remaining]
 	if placing:
-		hint.text = "Move turret for free · Click to confirm · Esc to cancel" if is_instance_valid(selected_turret) else "Place new turret · Click to buy · Esc to cancel"
+		hint.text = "Move for free, or sell below.\nClick to place · Esc to cancel" if is_instance_valid(selected_turret) else "Place new turret · Click to buy · Esc to cancel"
 	elif not preparing:
 		hint.text = "New enemies: %d hits · Tougher every 30s · Brightness attracts more" % int(main.current_enemy_health())
 	elif main.banked_energy < turret_cost():
-		hint.text = "Reposition turrets for free.\nClick one to move it."
+		hint.text = "Click a turret to move or sell.\nGlobal upgrades affect every turret."
 	else:
-		hint.text = "Add a turret, or click one to move it for free."
+		hint.text = "Add a turret, upgrade all, or select one to move / sell."
 	if preparing and using_controller:
-		hint.text = "Left stick / D-pad: cursor\nCross: select / place\nSquare: buy · Circle: cancel"
+		hint.text = "Cross: select / place · L3: sell\nL1: damage · R1: fire rate\nSquare: buy · Circle: cancel"
 
 
 func _cursor_position() -> Vector2:
@@ -241,6 +304,8 @@ func _draw() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_echo():
+		return
 	if get_viewport().gui_get_focus_owner() is LineEdit:
 		return
 	if main.phase != main.Phase.PREPARATION:
@@ -250,6 +315,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("reset_layout"):
 		reset_layout()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("sell_turret"):
+		sell_selected_turret()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("upgrade_damage"):
+		main.buy_upgrade("damage")
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("upgrade_health"):
+		main.buy_upgrade("health")
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("upgrade_fire_rate"):
+		main.buy_upgrade("fire_rate")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("cancel_placement"):
 		cancel_placement()
@@ -329,6 +406,8 @@ func try_place(point: Vector2) -> bool:
 		if main.banked_energy < cost:
 			return false
 		var turret := TURRET_SCENE.instantiate() as Node2D
+		turret.purchase_cost = cost
+		main.configure_turret(turret)
 		turret.process_mode = Node.PROCESS_MODE_DISABLED
 		get_parent().add_child(turret)
 		turret.global_position = point

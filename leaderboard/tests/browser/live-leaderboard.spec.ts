@@ -46,13 +46,13 @@ test('recovers after a subscription error', async ({ page }) => {
 test('shows run energy and the saved turret pattern, including live updates and legacy runs', async ({ page }, testInfo) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
-  const turretLayout = { width: 960, height: 720, turrets: [{ x: 0.25, y: 0.4 }, { x: 0.75, y: 0.6 }] }
-  const detailed = { ...keeper, energyEarned: 125.75, energyInvested: 20, turretLayout }
+  const turretLayout = { width: 960, height: 720, turrets: [{ x: 0.25, y: 0.4 }, { x: 0.75, y: 0.6 }], upgrades: { damage: 2, fireRate: 1, health: 1 } }
+  const detailed = { ...keeper, energyEarned: 125.75, energyInvested: 290, turretLayout }
   const legacy = { ...keeper, rank: 2, username: 'OlderKeeper', totalEnergy: 5000 }
   const server = await mockConvex(page, { '0.1.0': [detailed, legacy] })
   await page.goto('/?version=0.1.0')
   await expect(page.getByLabel('Energy earned: 125', { exact: true })).toBeVisible()
-  await expect(page.getByLabel('Defense investment: 20', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Defense investment: 290', { exact: true })).toBeVisible()
   await expect(page.getByLabel('Defense investment: Not recorded', { exact: true })).toBeVisible()
   await expect(page.getByText('5,000', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Turret layout not recorded', { exact: true })).toBeVisible()
@@ -62,6 +62,7 @@ test('shows run energy and the saved turret pattern, including live updates and 
   await page.keyboard.press('Enter')
   const diagram = page.getByRole('img', { name: "EmberKeeper's run layout: 2 turrets", exact: true })
   await expect(diagram).toBeVisible()
+  await expect(page.getByText('Upgrades · Damage level 2 · Fire rate level 1 · Health level 1', { exact: true })).toBeVisible()
   await expect(diagram).toHaveAttribute('viewBox', '0 0 960 720')
   await expect(diagram.locator('g')).toHaveCount(2)
   await expect(diagram.locator('g').first()).toHaveAttribute('transform', 'translate(240 288)')

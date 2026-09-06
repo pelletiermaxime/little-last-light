@@ -9,7 +9,7 @@ import { MAX_SCORE_BODY_LENGTH, MAX_TURRETS } from './runDetails'
 const modules = import.meta.glob('./**/*.{ts,js}')
 const token = 'a'.repeat(64)
 const payload = { token, version: '0.1.0', username: 'Keeper', durationMs: 65000 }
-const turretLayout = { width: 960, height: 720, turrets: [{ x: 0.25, y: 0.4 }, { x: 0.75, y: 0.6 }] }
+const turretLayout = { width: 960, height: 720, turrets: [{ x: 0.25, y: 0.4 }, { x: 0.75, y: 0.6 }], upgrades: { damage: 0, fireRate: 0, health: 0 } }
 const detailedPayload = { ...payload, energyEarned: 125.75, energyInvested: 20, turretLayout }
 const post = (t: ReturnType<typeof convexTest>, data: unknown) => t.fetch('/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
 const board = async (t: ReturnType<typeof convexTest>, version = '0.1.0') => (await t.fetch(`/scores?version=${version}`)).json()
@@ -81,6 +81,10 @@ describe('HTTP leaderboard contract', () => {
       { energyEarned: -1 }, { energyInvested: -1 }, { energyInvested: '20' }, { energyInvested: null },
       { energyEarned: 10, totalEnergy: 9 },
       { turretLayout: null }, { turretLayout: {} },
+      { turretLayout: { ...turretLayout, upgrades: null } },
+      { turretLayout: { ...turretLayout, upgrades: { damage: -1, fireRate: 0, health: 0 } } },
+      { turretLayout: { ...turretLayout, upgrades: { damage: 0, fireRate: 1.5, health: 0 } } },
+      { turretLayout: { ...turretLayout, upgrades: { damage: 0, fireRate: 0 } } },
       { turretLayout: { ...turretLayout, width: 0 } },
       { turretLayout: { ...turretLayout, height: 16385 } },
       { turretLayout: { ...turretLayout, turrets: 'bad' } },

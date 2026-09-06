@@ -12,12 +12,18 @@ const CONTACT_TOLERANCE: float = 0.1
 var health: float
 
 var target: Node2D
-var heading: Vector2 = Vector2.ZERO
+var heading: Vector2 = Vector2.ZERO:
+	set(value):
+		heading = value
+		if is_instance_valid(body):
+			body.rotation = value.angle() if not value.is_zero_approx() else -PI / 2.0
+var body: Node2D
 
 
 func _ready() -> void:
 	health = max_health
 	add_to_group("enemies")
+	_create_body()
 	queue_redraw()
 	
 
@@ -48,7 +54,21 @@ func _process(delta: float) -> void:
 	# A curved approach may miss it entirely, even when it is very close.
 	if fraction < 1.0:
 		target.take_damage(contact_damage_per_second * delta * (1.0 - fraction))
-	queue_redraw()
+
+
+func _create_body() -> void:
+	# Godot caches these draw commands. Rotate the canvas item to aim the eyes
+	# instead of rebuilding circles for every pursuer on every frame.
+	body = Node2D.new()
+	body.rotation = heading.angle() if not heading.is_zero_approx() else -PI / 2.0
+	body.draw.connect(_draw_body)
+	add_child(body)
+
+
+func _draw_body() -> void:
+	body.draw_circle(Vector2.ZERO, 10.0, Color("#826caa"))
+	body.draw_circle(Vector2(4, 3), 2.0, Color("#ffe0a3"))
+	body.draw_circle(Vector2(4, -3), 2.0, Color("#ffe0a3"))
 
 
 func _first_contact_fraction(movement: Vector2) -> float:
@@ -71,12 +91,7 @@ func take_damage(amount: float) -> void:
 
 
 func _draw() -> void:
-	# Eyes face the direction of travel, making pursuit commitment visible.
-	var forward := heading if not heading.is_zero_approx() else Vector2.UP
-	var side := forward.orthogonal()
-	draw_circle(Vector2.ZERO, 10.0, Color("#826caa"))
-	draw_circle(forward * 4.0 - side * 3.0, 2.0, Color("#ffe0a3"))
-	draw_circle(forward * 4.0 + side * 3.0, 2.0, Color("#ffe0a3"))
+	# Health bars remain upright, and only change when taking damage.
 	if max_health > 1.0:
 		draw_rect(Rect2(-12, -18, 24, 3), Color("#35414e"))
 		draw_rect(Rect2(-12, -18, 24 * health / max_health, 3), Color("#efb17b"))
