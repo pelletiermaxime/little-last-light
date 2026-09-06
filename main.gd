@@ -1,6 +1,6 @@
 extends Node2D
 
-enum Phase { PREPARATION, RUNNING }
+enum Phase { PREPARATION, RUNNING, RESULTS }
 
 const SIDEBAR_WIDTH: float = 320.0
 
@@ -16,12 +16,16 @@ const SPAWN_INTERVALS: Array[float] = [2.0, 1.2, 0.65]
 const PRESSURE_RAMP_SECONDS: float = 20.0
 const TOUGHNESS_STEP_SECONDS: float = 30.0
 const BASE_ENEMY_SPEED: float = 85.0
+const MAX_UPGRADE_LEVEL: int = 4
 
 @export var save_path: String = "user://progress-v1.json"
 @onready var lantern: Node2D = $Lantern
 
 var phase: Phase = Phase.PREPARATION
 var banked_energy: float = 0.0
+var damage_level: int = 0
+var fire_rate_level: int = 0
+var health_level: int = 0
 var best_time: float = 0.0
 var spawn_progress: float = 0.0
 var next_charger_time: float = FIRST_CHARGER_TIME
@@ -43,12 +47,71 @@ func _ready() -> void:
 	$Turret.position = lantern.position + Vector2(80.0, 0.0)
 	lantern.died.connect(_on_lantern_died)
 	load_progress()
+	configure_lantern()
+	for turret in get_tree().get_nodes_in_group("turrets"):
+		configure_turret(turret)
 	if leaderboard_profile.token.is_empty():
 		leaderboard_profile.token = Crypto.new().generate_random_bytes(32).hex_encode()
 	_set_turrets_active(false)
 	lantern._update_status()
 	get_viewport().size_changed.connect(_resize_layout)
 	get_tree().auto_accept_quit = false
+
+
+func turret_damage() -> float:
+	return 1.0 + damage_level
+
+
+func turret_shots_per_second() -> float:
+	return (1.0 + 0.25 * fire_rate_level) / 1.5
+
+
+func lantern_max_health() -> float:
+	return 25.0 + 15.0 * health_level
+
+
+func configure_lantern() -> void:
+	# Only called in preparation, after loading or purchasing an upgrade.
+	lantern.max_health = lantern_max_health()
+	lantern.health = lantern.max_health
+
+
+func configure_turret(turret: Node2D) -> void:
+	turret.damage = turret_damage()
+	turret.fire_interval = 1.0 / turret_shots_per_second()
+
+
+func upgrade_cost(kind: String) -> float:
+	match kind:
+		"damage": return 60.0 * pow(2.0, damage_level)
+		"fire_rate": return 50.0 * pow(2.0, fire_rate_level)
+		"health": return 40.0 * pow(2.0, health_level)
+	return INF
+
+
+func buy_upgrade(kind: String) -> bool:
+	if phase != Phase.PREPARATION or $BuildController.placing:
+		return false
+	if kind not in ["damage", "fire_rate", "health"]:
+		return false
+	var level: int = {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level}[kind]
+	var cost := upgrade_cost(kind)
+	if level >= MAX_UPGRADE_LEVEL or banked_energy < cost:
+		return false
+	banked_energy -= cost
+	if kind == "damage":
+		damage_level += 1
+	elif kind == "fire_rate":
+		fire_rate_level += 1
+	else:
+		health_level += 1
+		configure_lantern()
+	for turret in get_tree().get_nodes_in_group("turrets"):
+		configure_turret(turret)
+	save_progress()
+	$BuildController._update_interface()
+	lantern._update_status()
+	return true
 
 
 func _notification(what: int) -> void:
@@ -88,7 +151,8 @@ func _on_lantern_died() -> void:
 func end_run(voluntary: bool = false) -> void:
 	if phase != Phase.RUNNING:
 		return
-	phase = Phase.PREPARATION
+	phase = Phase.RESULTS
+	get_tree().paused = false
 	lantern.running = false
 	# Capture the result before banking clears this run's energy.
 	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time, "voluntary": voluntary}
@@ -104,6 +168,16 @@ func end_run(voluntary: bool = false) -> void:
 	_set_turrets_active(false)
 	lantern._update_status()
 	save_progress()
+	$ResultsScreen.show_results()
+
+
+func continue_to_preparation() -> void:
+	if phase != Phase.RESULTS:
+		return
+	phase = Phase.PREPARATION
+	$ResultsScreen.hide_results()
+	$BuildController._update_interface()
+	lantern._update_status()
 
 
 func _clear_enemies() -> void:
@@ -215,12 +289,16 @@ func save_progress() -> bool:
 		else:
 			return false
 	var positions: Array = []
+	var purchase_costs: Array = []
 	var size := get_arena_rect().size
 	for turret in get_tree().get_nodes_in_group("turrets"):
 		var point: Vector2 = turret.position / size
 		positions.append([point.x, point.y])
+		purchase_costs.append(turret.purchase_cost)
 	# Include current earnings without banking them twice in the live game.
 	var data := {"version": 1, "energy": banked_energy + lantern.energy, "best_time": best_time, "turrets": positions, "version_bests": version_bests, "legacy_best_time": legacy_best_time, "leaderboard": leaderboard_profile}
+	data.turret_costs = purchase_costs
+	data.upgrades = {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level}
 	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if file == null:
 		save_message = "Could not save progress. Keep this window open and retry."
@@ -251,6 +329,10 @@ func load_progress() -> void:
 		return
 	var data: Dictionary = parser.data
 	banked_energy = float(data.energy)
+	var upgrades: Dictionary = data.get("upgrades", {})
+	damage_level = int(upgrades.get("damage", 0))
+	fire_rate_level = int(upgrades.get("fire_rate", 0))
+	health_level = int(upgrades.get("health", 0))
 	# A legacy record's release cannot be inferred; preserve it separately.
 	legacy_best_time = float(data.get("legacy_best_time", data.best_time if not data.has("version_bests") else 0.0))
 	version_bests = data.get("version_bests", {})
@@ -259,8 +341,13 @@ func load_progress() -> void:
 	for turret in get_tree().get_nodes_in_group("turrets"):
 		turret.remove_from_group("turrets")
 		turret.queue_free()
-	for coordinates in data.turrets:
+	for index in range(data.turrets.size()):
+		var coordinates: Array = data.turrets[index]
 		var turret := TURRET_SCENE.instantiate() as Node2D
+		# Before selling existed, saved order was starter, then purchases at 20, 30…
+		var original_cost := 0.0 if index == 0 else 20.0 + 10.0 * (index - 1)
+		turret.purchase_cost = float(data.turret_costs[index]) if data.has("turret_costs") else original_cost
+		configure_turret(turret)
 		add_child(turret)
 		turret.position = Vector2(coordinates[0], coordinates[1]) * get_arena_rect().size
 	summary = "Welcome back. Your energy and turret layout are ready.\nBest run: %ds" % int(best_time)
@@ -269,6 +356,15 @@ func load_progress() -> void:
 func _valid_save(data: Variant) -> bool:
 	if not data is Dictionary or data.get("version") != 1:
 		return false
+	var upgrades = data.get("upgrades", {})
+	if not upgrades is Dictionary:
+		return false
+	for kind in ["damage", "fire_rate", "health"]:
+		var level = upgrades.get(kind, 0)
+		if not (level is int or level is float) or not is_finite(float(level)):
+			return false
+		if level < 0 or level > MAX_UPGRADE_LEVEL or level != floor(level):
+			return false
 	var records = data.get("version_bests", {})
 	if not records is Dictionary:
 		return false
@@ -302,6 +398,16 @@ func _valid_save(data: Variant) -> bool:
 	var positions = data.get("turrets")
 	if not positions is Array or positions.is_empty():
 		return false
+	if data.has("turret_costs"):
+		var costs = data.turret_costs
+		if not costs is Array or costs.size() != positions.size():
+			return false
+		for index in range(costs.size()):
+			var cost = costs[index]
+			if not (cost is int or cost is float) or not is_finite(float(cost)):
+				return false
+			if (index == 0 and cost != 0) or (index > 0 and (cost < 20 or fmod(float(cost), 10.0) != 0.0)):
+				return false
 	for point in positions:
 		if not point is Array or point.size() != 2:
 			return false

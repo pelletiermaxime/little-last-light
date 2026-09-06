@@ -1,5 +1,7 @@
 # Reset turret layout and refund energy
 
+This is the historical M6 implementation. **M9 now stores each turret's actual purchase price**, sums those prices for refunds, and preserves global upgrades when resetting. See [the M9 lesson](milestone-9.md) for the current behavior; the count-based formula below describes the earlier version.
+
 During preparation, the Reset layout button shows how much energy it will refund. R or controller Triangle/Y triggers the same action. It removes purchased turrets, restores one free turret to the original starting position, and saves the refunded balance and layout. Best survival and existing earned energy are preserved. A paused run is still a run, so reset is unavailable there.
 
 The refund follows the existing price ladder. For `n` purchased turrets it is `20*n + 10*n*(n-1)/2`: three purchases refund 20 + 30 + 40 = 90, rather than three times the current next price. One turret is excluded because the starter was free. This relies on the game's current deterministic prices; if future versions introduce discounts, upgrades, or different prices, they should persist the actual refundable investment rather than infer it from count.

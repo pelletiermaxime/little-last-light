@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://fps_counter.gd" id="5_fps"]
 [ext_resource type="Script" path="res://game_hud.gd" id="6_hud"]
 [ext_resource type="Script" path="res://pause_screen.gd" id="7_pause"]
+[ext_resource type="Script" path="res://results_screen.gd" id="8_results"]
 
 [node name="Main" type="Node2D" unique_id=49982640]
 script = ExtResource("1_h2yge")
@@ -40,3 +41,6 @@ theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 16
 text = "FPS: …"
 script = ExtResource("5_fps")
+
+[node name="ResultsScreen" type="CanvasLayer" parent="."]
+script = ExtResource("8_results")

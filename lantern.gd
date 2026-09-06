@@ -7,7 +7,7 @@ const ENERGY_RATES: Array[float] = [1.0, 3.0, 6.0]
 const LIGHT_SCALES: Array[float] = [1.0, 1.4, 1.9]
 
 @export var move_speed: float = 220.0
-@export var max_health: float = 100.0
+@export var max_health: float = 25.0
 
 var health: float
 var running: bool = false

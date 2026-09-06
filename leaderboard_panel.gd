@@ -54,7 +54,7 @@ func _restore_username() -> void:
 
 
 func refresh() -> void:
-	visible = main.phase == main.Phase.PREPARATION
+	visible = main.phase != main.Phase.RUNNING
 	var pending: Dictionary = main.leaderboard_profile.pending
 	if pending != displayed_pending:
 		displayed_pending = pending.duplicate()

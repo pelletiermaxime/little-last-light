@@ -11,6 +11,7 @@ func check() -> void:
 	scene.save_path = test_path
 	root.add_child(scene)
 	current_scene = scene
+	scene.continue_to_preparation()
 	scene.start_run()
 	var lantern = scene.get_node("Lantern")
 	scene.set_process(false)
@@ -50,15 +51,16 @@ func check() -> void:
 	lantern.take_damage(1000)
 	lantern.take_damage(1000)
 	assert(lantern.health == 0 and deaths == 1, "Death emits once and health clamps")
-	assert(scene.phase == scene.Phase.PREPARATION and not lantern.running, "Death returns to preparation")
+	assert(scene.phase == scene.Phase.RESULTS and not lantern.running, "Death opens results")
 	var energy: float = lantern.energy
 	var progress: float = scene.spawn_progress
 	await process_frame
 	await process_frame
 	assert(lantern.energy == energy and scene.spawn_progress == progress, "Run freezes")
+	scene.get_node("ResultsScreen").continue_button.pressed.emit()
 	scene.get_node("BuildController").start_button.pressed.emit()
 	assert(not paused and scene.phase == scene.Phase.RUNNING, "Start begins a fresh run")
-	assert(current_scene.lantern.health == 100.0, "Restart restores health")
+	assert(current_scene.lantern.health == current_scene.lantern.max_health, "Restart restores health")
 	assert(current_scene.lantern.energy < 1.0 and get_nodes_in_group("enemies").is_empty(), "Fresh run state")
 	print("PASS: 72 contact approaches, damage, death, preparation freeze, fresh run")
 	scene.free()

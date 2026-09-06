@@ -29,6 +29,7 @@ func game(version: String) -> Node2D:
 
 
 func finish(scene: Node2D, seconds: float) -> void:
+	scene.continue_to_preparation()
 	scene.start_run()
 	scene.lantern.elapsed = seconds
 	scene.lantern.take_damage(1000)
@@ -86,13 +87,14 @@ func check() -> void:
 	finish(scene, 5)
 	expect(scene.last_run.new_best and scene.version_bests["0.1.0"] == 80, "New release record keeps older version history")
 	# M6's voluntary End Run must use the same record and saving path as death.
+	scene.continue_to_preparation()
 	scene.start_run()
 	scene.lantern.elapsed = 12.345
 	scene.lantern.energy = 7.0
 	var pause_screen = scene.get_node("PauseScreen")
 	pause_screen.pause()
 	pause_screen.end_run_button.pressed.emit()
-	expect(not paused and scene.phase == scene.Phase.PREPARATION, "Ending a paused run returns to interactive preparation")
+	expect(not paused and scene.phase == scene.Phase.RESULTS, "Ending a paused run opens results")
 	expect(scene.last_run.voluntary and scene.best_time == 12.345, "End Run records the voluntary personal best")
 	expect(scene.leaderboard_profile.pending == {"version": "0.2.0", "durationMs": 12345}, "End Run offers its record for the correct version")
 	expect(scene.get_node("GameHUD").leaderboard.publish.visible, "End Run immediately displays the opt-in offer")

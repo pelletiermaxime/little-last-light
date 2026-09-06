@@ -35,6 +35,7 @@ func check() -> void:
 	expect(build.turret_cost() == 30.0, "Preview and moving a turret do not change price")
 	expect(build.try_place(empty_bottom), "Free relocation can use empty bottom area")
 	expect(scene.banked_energy == 0.0, "Relocation still free")
+	scene.continue_to_preparation()
 	scene.start_run()
 	expect(scene.get_arena_rect() == arena, "Arena dimensions do not change on Start")
 	expect(scene.lantern.position == arena.get_center(), "Lantern starts at arena center")
@@ -81,6 +82,7 @@ func check() -> void:
 	scene.lantern.elapsed += 30.0
 	expect(scene.current_enemy_health() > previous, "Toughness continues after spawn interval reaches its floor")
 	scene.lantern.take_damage(1000)
+	scene.continue_to_preparation()
 	scene.start_run()
 	expect(scene.current_enemy_health() == 1.0, "Next run resets toughness")
 	expect(scene.current_enemy_speed() == 85.0, "Next run resets enemy speed")
