@@ -82,14 +82,15 @@ func check() -> void:
 	expect(turret.shot_time == 0.0 and turret_redraws == 2, "Expired shot is erased without ongoing redraws")
 	expect(enemy.health == previous_health - turret.damage, "Shot interval is still respected")
 	var stale_text: String = hud.health_text.text
+	var health_before_hits: float = scene.lantern.health
 	for hit in range(100):
 		scene.lantern.take_damage(0.1)
-	expect(is_equal_approx(scene.lantern.health, 90.0), "All crowd damage is applied immediately")
+	expect(is_equal_approx(scene.lantern.health, health_before_hits - 10.0), "All crowd damage is applied immediately")
 	expect(hud.health_text.text == stale_text, "Contact hits do not each rebuild the HUD")
 	hud._process(0.1)
-	expect(is_equal_approx(hud.health_bar.value, 90.0), "HUD samples accumulated damage at its normal cadence")
+	expect(is_equal_approx(hud.health_bar.value, health_before_hits - 10.0), "HUD samples accumulated damage at its normal cadence")
 	scene.lantern.take_damage(1000.0)
-	expect(scene.phase == scene.Phase.PREPARATION and not hud.health_bar.visible, "Death refreshes the HUD immediately")
+	expect(scene.phase == scene.Phase.RESULTS and not hud.health_bar.visible, "Death refreshes the HUD immediately")
 	scene.free()
 	DirAccess.remove_absolute(test_path)
 	if failures == 0:
