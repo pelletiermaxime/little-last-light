@@ -34,7 +34,7 @@ Progress saves locally to `user://progress-v1.json` after purchases, upgrades, s
 
 ## Online leaderboard
 
-The preparation sidebar offers to publish a new survival record with a username. Publication is optional; failed attempts can be retried, and records are separate for every game version. Saved energy and turret layouts continue across versions. The Nuxt website and Convex backend live in [`leaderboard/`](leaderboard/README.md), including setup, deployment, and verification instructions. Online publishing requires configuring this game's own backend and website URLs; unconfigured builds keep records locally.
+The results screen offers to publish a new survival record with a username; pending offers remain available in preparation. New records include earned energy, defense investment, and a turret-layout diagram with upgrade levels. Publication is optional; failed attempts can be retried, and records are separate for every game version. Saved energy and turret layouts continue across versions. The Nuxt website and Convex backend live in [`leaderboard/`](leaderboard/README.md), including setup, deployment, and verification instructions. Online publishing requires configuring this game's own backend and website URLs; unconfigured builds keep records locally.
 
 ## Learn and explore
 
@@ -50,7 +50,8 @@ The preparation sidebar offers to publish a new survival record with a username.
 - [Slower enemies and committed pursuit walkthrough](docs/milestone-6.md)
 - [Versioned online leaderboard walkthrough](docs/milestone-7.md)
 - [Charging enemy walkthrough](docs/milestone-8.md)
-- [Global turret upgrades and selling (M9 playtest)](docs/milestone-9.md)
+- [Upgrades, selling, and run results (M9)](docs/milestone-9.md)
+- [Swarm performance and leaderboard run details (M10)](docs/milestone-10.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 
