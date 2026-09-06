@@ -28,6 +28,7 @@ func _process(delta: float) -> void:
 			shot_time = 0.12
 			cooldown = fire_interval
 			enemy.take_damage(damage)
+			get_node("/root/GameAudio").play(&"shot")
 			queue_redraw()
 		else:
 			cooldown = IDLE_SEARCH_INTERVAL

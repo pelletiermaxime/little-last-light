@@ -297,7 +297,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			main.get_node("PreparationUI").open_view(0)
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("start_run"):
+	# Focused buttons confirm on release; do not start a run on their key press.
+	elif event.is_action_pressed("start_run") and get_viewport().gui_get_focus_owner() == null:
 		main.start_run()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("confirm_placement"):
@@ -391,14 +392,17 @@ func try_place(point: Vector2) -> bool:
 		get_parent().add_child(turret)
 		turret.global_position = point
 		main.banked_energy -= cost
-	cancel_placement()
+	cancel_placement(false)
 	main.save_progress()
+	get_node("/root/GameAudio").play(&"place")
 	return true
 
 
-func cancel_placement() -> void:
+func cancel_placement(with_sound: bool = true) -> void:
 	if not placing:
 		return
+	if with_sound:
+		get_node("/root/GameAudio").play(&"back")
 	placing = false
 	if is_instance_valid(selected_turret):
 		selected_turret.show()

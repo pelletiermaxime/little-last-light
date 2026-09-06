@@ -57,6 +57,8 @@ func _ready() -> void:
 
 
 func show_page(records: bool) -> void:
+	if overlay.visible and showing_records != records:
+		get_node("/root/GameAudio").play(&"confirm" if records else &"back")
 	showing_records = records
 	summary_page.visible = not records
 	content.visible = records

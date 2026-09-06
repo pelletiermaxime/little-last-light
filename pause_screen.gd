@@ -6,6 +6,7 @@ var resume_button: Button
 var end_run_button: Button
 var summary: Label
 var keys: Label
+var settings_button: Button
 
 
 func _ready() -> void:
@@ -70,6 +71,11 @@ func _ready() -> void:
 	end_note.add_theme_font_size_override("font_size", 14)
 	end_note.add_theme_color_override("font_color", Color("#9aaebc"))
 	column.add_child(end_note)
+	settings_button = Button.new()
+	settings_button.text = "Settings"
+	settings_button.custom_minimum_size.y = 44
+	settings_button.pressed.connect(func(): main.get_node("SettingsScreen").open(settings_button))
+	column.add_child(settings_button)
 	keys = Label.new()
 	keys.text = "Esc / P to resume"
 	keys.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -96,6 +102,8 @@ func _input(event: InputEvent) -> void:
 func pause() -> void:
 	if main.phase != main.Phase.RUNNING:
 		return
+	get_node("/root/GameAudio").stop_combat()
+	get_node("/root/GameAudio").play(&"confirm")
 	var lantern = main.get_node("Lantern")
 	main.get_node("GameHUD").refresh()
 	summary.text = "%s survived · %d energy earned" % [main.get_node("GameHUD").format_time(lantern.elapsed), int(lantern.energy)]
@@ -105,6 +113,8 @@ func pause() -> void:
 
 
 func resume() -> void:
+	if overlay.visible:
+		get_node("/root/GameAudio").play(&"back")
 	get_tree().paused = false
 	overlay.hide()
 	resume_button.release_focus()

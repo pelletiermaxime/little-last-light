@@ -3,15 +3,15 @@
 [ext_resource type="Script" uid="uid://cit3707eae47i" path="res://main.gd" id="1_h2yge"]
 [ext_resource type="Script" uid="uid://b2bk4an1dwj4l" path="res://lantern.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" path="res://turret.tscn" id="3_turret"]
-[ext_resource type="Script" path="res://build_controller.gd" id="4_build"]
-[ext_resource type="Script" path="res://fps_counter.gd" id="5_fps"]
-[ext_resource type="Script" path="res://game_hud.gd" id="6_hud"]
-[ext_resource type="Script" path="res://pause_screen.gd" id="7_pause"]
-[ext_resource type="Script" path="res://results_screen.gd" id="8_results"]
+[ext_resource type="Script" uid="uid://kki6w5g2yjaf" path="res://build_controller.gd" id="4_build"]
+[ext_resource type="Script" uid="uid://bj5jcbmv6xnqg" path="res://fps_counter.gd" id="5_fps"]
+[ext_resource type="Script" uid="uid://cajliahllx4q5" path="res://game_hud.gd" id="6_hud"]
+[ext_resource type="Script" uid="uid://xkr43hvvfiym" path="res://pause_screen.gd" id="7_pause"]
+[ext_resource type="Script" uid="uid://8nnqcv2q7at1" path="res://results_screen.gd" id="8_results"]
+[ext_resource type="Script" uid="uid://cu1n7br1swqk2" path="res://preparation_ui.gd" id="9_preparation"]
+[ext_resource type="Script" uid="uid://cw3o8kcv3s0dn" path="res://input_controls.gd" id="10_controls"]
 
-[ext_resource type="Script" path="res://preparation_ui.gd" id="9_preparation"]
-
-[ext_resource type="Script" path="res://input_controls.gd" id="10_controls"]
+[ext_resource type="Script" path="res://settings_screen.gd" id="11_settings"]
 
 [node name="Main" type="Node2D" unique_id=49982640]
 script = ExtResource("1_h2yge")
@@ -19,28 +19,24 @@ script = ExtResource("1_h2yge")
 [node name="Lantern" type="Node2D" parent="." unique_id=118638199]
 script = ExtResource("1_ig7tw")
 
-[node name="Turret" parent="." instance=ExtResource("3_turret")]
+[node name="Turret" parent="." unique_id=10347000 instance=ExtResource("3_turret")]
 position = Vector2(80, 0)
 
-[node name="BuildController" type="Node2D" parent="."]
+[node name="BuildController" type="Node2D" parent="." unique_id=106348138]
 script = ExtResource("4_build")
 
-[node name="GameHUD" type="CanvasLayer" parent="."]
+[node name="GameHUD" type="CanvasLayer" parent="." unique_id=484882946]
 script = ExtResource("6_hud")
 
-[node name="PreparationUI" type="CanvasLayer" parent="."]
+[node name="PreparationUI" type="CanvasLayer" parent="." unique_id=1837750420]
 script = ExtResource("9_preparation")
 
-[node name="Diagnostics" type="CanvasLayer" parent="."]
+[node name="Diagnostics" type="CanvasLayer" parent="." unique_id=1338618221]
 layer = 10
 
-[node name="PauseScreen" type="CanvasLayer" parent="."]
-script = ExtResource("7_pause")
-
-[node name="FPS" type="Label" parent="Diagnostics"]
+[node name="FPS" type="Label" parent="Diagnostics" unique_id=1782875845]
 offset_left = 12.0
 offset_top = 130.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 1
@@ -49,8 +45,14 @@ theme_override_font_sizes/font_size = 16
 text = "FPS: …"
 script = ExtResource("5_fps")
 
-[node name="ResultsScreen" type="CanvasLayer" parent="."]
+[node name="PauseScreen" type="CanvasLayer" parent="." unique_id=1760616288]
+script = ExtResource("7_pause")
+
+[node name="ResultsScreen" type="CanvasLayer" parent="." unique_id=293653646]
 script = ExtResource("8_results")
 
-[node name="Controls" type="Node" parent="."]
+[node name="SettingsScreen" type="CanvasLayer" parent="."]
+script = ExtResource("11_settings")
+
+[node name="Controls" type="Node" parent="." unique_id=1983997394]
 script = ExtResource("10_controls")

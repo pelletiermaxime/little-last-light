@@ -57,7 +57,9 @@ The results screen offers to publish a new survival record with a username; pend
 - [Upgrades, selling, and run results (M9)](docs/milestone-9.md)
 - [Swarm performance and leaderboard run details (M10)](docs/milestone-10.md)
 - [The Drencher water boss (M11)](docs/milestone-11.md)
-- [Full arena and preparation cards (M12 playtest)](docs/milestone-12.md)
+- [Full arena and preparation cards (M12)](docs/milestone-12.md)
+- [Sound effects and settings (M13)](docs/milestone-13.md)
+- [Audio and display settings](docs/settings.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 

@@ -21,6 +21,13 @@ func _ready() -> void:
 	# LinkButton defaults to accessibility-only focus in this Godot version.
 	for button in main.get_node("GameHUD").leaderboard.find_children("*", "BaseButton", true, false):
 		button.focus_mode = Control.FOCUS_ALL
+	var prep = main.get_node("PreparationUI")
+	var build = main.get_node("BuildController")
+	var pause = main.get_node("PauseScreen")
+	var results = main.get_node("ResultsScreen")
+	var settings = main.get_node("SettingsScreen")
+	# These actions play their own cue after validating the game action.
+	get_node("/root/GameAudio").bind_buttons(main, [prep.place_button, prep.upgrades_button, prep.records_button, prep.back_button, prep.hide_button, prep.show_button, build.start_button, build.cancel_button, build.damage_button, build.rate_button, build.health_button, pause.resume_button, pause.end_run_button, pause.settings_button, prep.settings_button, settings.volume_button, settings.mute_button, settings.display_mode_button, settings.fps_button, settings.vsync_button, settings.done_button, results.page_button, results.continue_button])
 
 
 func using_controller() -> bool:
@@ -47,10 +54,16 @@ func _exit_tree() -> void:
 
 func _input(event: InputEvent) -> void:
 	prompts._input(event)
+	var settings = main.get_node("SettingsScreen")
+	if settings.is_open() and event is InputEventKey:
+		if not event.is_echo() and (event.is_action_pressed("cancel_placement") or event.is_action_pressed("pause_run")):
+			settings.close()
+			get_viewport().set_input_as_handled()
+		return
 	if event is not InputEventJoypadButton and event is not InputEventJoypadMotion:
 		return
 	var preparation = main.get_node("PreparationUI")
-	var placement: bool = main.phase == main.Phase.PREPARATION and preparation.view == preparation.View.PLACEMENT and not get_tree().paused
+	var placement: bool = not settings.is_open() and main.phase == main.Phase.PREPARATION and preparation.view == preparation.View.PLACEMENT and not get_tree().paused
 	if event is InputEventJoypadMotion:
 		if event.axis not in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y]:
 			return
@@ -79,6 +92,19 @@ func _input(event: InputEvent) -> void:
 		return
 	if not _menu_open():
 		return # Combat actions remain in Lantern and PauseScreen.
+	if settings.is_open():
+		if event.is_action_pressed("cancel_placement") or event.is_action_pressed("pause_run"):
+			settings.close()
+		elif event.is_action_pressed("confirm_placement"):
+			var focused := get_viewport().gui_get_focus_owner()
+			if focused is BaseButton and focused in menu_controls():
+				focused.pressed.emit()
+		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
+			move_focus(-1)
+		elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
+			move_focus(1)
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("pause_run") and get_tree().paused:
 		main.get_node("PauseScreen").resume()
 	elif event.is_action_pressed("cancel_placement"):
@@ -152,7 +178,9 @@ func _release_focus() -> void:
 
 func menu_controls() -> Array[Control]:
 	var scope: Node = main.get_node("PreparationUI")
-	if get_tree().paused:
+	if main.get_node("SettingsScreen").is_open():
+		scope = main.get_node("SettingsScreen")
+	elif get_tree().paused:
 		scope = main.get_node("PauseScreen")
 	elif main.phase == main.Phase.RESULTS:
 		scope = main.get_node("ResultsScreen")

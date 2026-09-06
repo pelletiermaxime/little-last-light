@@ -17,6 +17,7 @@ var footer: GridContainer
 var place_button: Button
 var upgrades_button: Button
 var records_button: Button
+var settings_button: Button
 var back_button: Button
 var hide_button: Button
 var show_button: Button
@@ -67,6 +68,7 @@ func _ready() -> void:
 	show_button = _button("Show controls · Tab", _toggle_controls, self)
 	show_button.position = Vector2(16, 16)
 	records_button = _button("Records", func(): open_view(View.RECORDS), footer)
+	settings_button = _button("Settings", func(): main.get_node("SettingsScreen").open(settings_button), footer)
 	build.quit_button.reparent(footer)
 	build.quit_button.custom_minimum_size.x = 0
 	build.quit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -75,6 +77,7 @@ func _ready() -> void:
 	build.bar.hide()
 	get_viewport().size_changed.connect(refresh)
 	refresh()
+	build.start_button.call_deferred("grab_focus")
 
 
 func _button(text: String, callback: Callable, parent: Node = null) -> Button:
@@ -91,12 +94,13 @@ func open_view(next: View) -> void:
 	if main.phase != main.Phase.PREPARATION:
 		return
 	if view != next:
-		build.cancel_placement()
+		get_node("/root/GameAudio").play(&"back" if next == View.HOME else &"confirm")
+		build.cancel_placement(false)
 		controls_hidden = false
 	view = next
 	refresh()
 	if view == View.HOME:
-		place_button.grab_focus()
+		build.start_button.grab_focus()
 	elif view == View.UPGRADES or view == View.RECORDS:
 		var controls := main.get_node_or_null("Controls")
 		if controls != null and controls.is_node_ready():
@@ -111,6 +115,7 @@ func _toggle_controls() -> void:
 	if view != View.PLACEMENT:
 		return
 	controls_hidden = not controls_hidden
+	get_node("/root/GameAudio").play(&"confirm")
 	refresh()
 
 
@@ -150,6 +155,7 @@ func refresh() -> void:
 	back_button.visible = not home and not (placement and build.placing)
 	hide_button.visible = placement
 	records_button.visible = home
+	settings_button.visible = home
 	build.quit_button.visible = home and not OS.has_feature("web")
 	records_host.visible = records
 	var hud = main.get_node("GameHUD")

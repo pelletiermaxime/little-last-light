@@ -43,6 +43,7 @@ func take_damage(amount: float) -> void:
 	if not running or health <= 0.0 or amount <= 0.0:
 		return
 	health = maxf(0.0, health - amount)
+	get_node("/root/GameAudio").play(&"damage")
 	hit_flash = 0.15
 	# The HUD samples health at 10 Hz. A crowd must not rebuild the entire UI
 	# once per contact per frame; death still refreshes immediately via end_run.
@@ -79,9 +80,10 @@ func _center_in_viewport() -> void:
 
 
 func set_brightness(level: int) -> void:
-	if not running or level < 0 or level >= BRIGHTNESS_NAMES.size():
+	if not running or level < 0 or level >= BRIGHTNESS_NAMES.size() or level == brightness:
 		return
 	brightness = level
+	get_node("/root/GameAudio").play(&"brightness")
 	_update_status()
 	queue_redraw()
 

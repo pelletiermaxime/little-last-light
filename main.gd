@@ -129,6 +129,7 @@ func buy_upgrade(kind: String) -> bool:
 	save_progress()
 	$BuildController._update_interface()
 	lantern._update_status()
+	get_node("/root/GameAudio").play(&"upgrade")
 	return true
 
 
@@ -139,6 +140,7 @@ func _notification(what: int) -> void:
 
 func quit_game() -> void:
 	# Share the normal window-close save behavior with the preparation button.
+	get_node("/root/DisplaySettings").remember_window_size()
 	if save_progress() or not save_is_readable:
 		get_tree().quit()
 
@@ -146,6 +148,7 @@ func quit_game() -> void:
 func start_run() -> void:
 	if phase != Phase.PREPARATION or $BuildController.placing:
 		return
+	get_node("/root/GameAudio").play(&"confirm")
 	_clear_enemies()
 	# Snapshot the defense budget before the run. Unspent savings do not help survival.
 	run_energy_invested = defense_investment()
@@ -201,6 +204,7 @@ func end_run(voluntary: bool = false) -> void:
 func continue_to_preparation() -> void:
 	if phase != Phase.RESULTS:
 		return
+	get_node("/root/GameAudio").play(&"confirm")
 	phase = Phase.PREPARATION
 	$ResultsScreen.hide_results()
 	$PreparationUI.open_view(0)
