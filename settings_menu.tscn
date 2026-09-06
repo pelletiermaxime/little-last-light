@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://cnaypxw2cudkc"]
+
+[ext_resource type="Theme" uid="uid://d3e03j0r3ahsb" path="res://game_theme.tres" id="1_0cmel"]
+[ext_resource type="Script" uid="uid://d0ssxn2pi5h7t" path="res://settings_menu.gd" id="1_ufg0w"]
+
+[node name="SettingsMenu" type="Control" unique_id=1329041614]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_0cmel")
+script = ExtResource("1_ufg0w")
+
+[node name="Background" type="ColorRect" parent="." unique_id=483567706]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.04, 0.06, 0.96)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=578121350]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=482432932]
+custom_minimum_size = Vector2(440, 300)
+layout_mode = 2
+
+[node name="Padding" type="MarginContainer" parent="Center/Panel" unique_id=69472675]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Content" type="VBoxContainer" parent="Center/Panel/Padding" unique_id=400640308]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Center/Panel/Padding/Content" unique_id=839927051]
+layout_mode = 2
+theme_type_variation = &"SettingsTitle"
+text = "Settings"
+
+[node name="AudioHeading" type="Label" parent="Center/Panel/Padding/Content"]
+layout_mode = 2
+theme_type_variation = &"SettingsSection"
+text = "Audio"
+
+[node name="VolumeButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=1613223932]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Volume: 50%"
+
+[node name="SoundButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=1177099185]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Sound: On"
+
+[node name="DisplayHeading" type="Label" parent="Center/Panel/Padding/Content"]
+layout_mode = 2
+theme_type_variation = &"SettingsSection"
+text = "Display"
+
+[node name="DisplayModeButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=1162407150]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Display mode: Windowed"
+
+[node name="FPSButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=235037075]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "FPS limit: Unlimited"
+
+[node name="VSyncButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=110723459]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "VSync: On"
+
+[node name="DisplayNote" type="Label" parent="Center/Panel/Padding/Content"]
+layout_mode = 2
+theme_type_variation = &"SettingsNote"
+text = "VSync may cap FPS at your display's refresh rate."
+autowrap_mode = 3
+
+[node name="DoneButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=544479408]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Done"
+
+[connection signal="pressed" from="Center/Panel/Padding/Content/VolumeButton" to="." method="_on_volume_button_pressed"]
+[connection signal="pressed" from="Center/Panel/Padding/Content/SoundButton" to="." method="_on_sound_button_pressed"]
+[connection signal="pressed" from="Center/Panel/Padding/Content/DisplayModeButton" to="." method="_on_display_mode_button_pressed"]
+[connection signal="pressed" from="Center/Panel/Padding/Content/FPSButton" to="." method="_on_fps_button_pressed"]
+[connection signal="pressed" from="Center/Panel/Padding/Content/VSyncButton" to="." method="_on_vsync_button_pressed"]
+[connection signal="pressed" from="Center/Panel/Padding/Content/DoneButton" to="." method="_on_done_button_pressed"]

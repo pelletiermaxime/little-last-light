@@ -89,7 +89,7 @@ func _ready() -> void:
 	panel.add_child(threat)
 	controls = STYLE.label("", 14)
 	panel.add_child(controls)
-	leaderboard = preload("res://leaderboard_panel.gd").new()
+	leaderboard = preload("res://leaderboard_panel.tscn").instantiate()
 	leaderboard.main = main
 	panel.add_child(leaderboard)
 	get_viewport().size_changed.connect(_layout)

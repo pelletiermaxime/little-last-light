@@ -60,6 +60,7 @@ The results screen offers to publish a new survival record with a username; pend
 - [Full arena and preparation cards (M12)](docs/milestone-12.md)
 - [Sound effects and settings (M13)](docs/milestone-13.md)
 - [Audio and display settings](docs/settings.md)
+- [Editing menu scenes and the shared Theme](docs/menu-scenes.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
 - [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
 

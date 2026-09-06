@@ -16,41 +16,22 @@ var showing_records := false
 
 
 func _ready() -> void:
+	show()
 	main = get_parent()
 	layer = 25
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	overlay = ColorRect.new()
-	overlay.color = Color(0.025, 0.04, 0.06, 0.94)
-	add_child(overlay)
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	card = PanelContainer.new()
-	card.add_theme_stylebox_override("panel", STYLE.panel())
-	overlay.add_child(card)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 16)
-	card.add_child(column)
-	summary_page = VBoxContainer.new()
-	summary_page.add_theme_constant_override("separation", 16)
-	column.add_child(summary_page)
-	title = STYLE.label("", 30, Color("#ffcf7a"))
-	stats = STYLE.label("", 24)
-	best = STYLE.label("", 16, Color("#9aaebc"))
-	for label in [title, stats, best]:
-		summary_page.add_child(label)
-	content = VBoxContainer.new()
-	column.add_child(content)
-	save_notice = STYLE.label("", 14, Color("#ff997d"))
-	column.add_child(save_notice)
-	# The footer never belongs to either page: Continue is always reachable.
-	page_button = Button.new()
-	STYLE.button(page_button)
+	overlay = $Overlay
+	card = $Overlay/Card
+	summary_page = $Overlay/Card/Content/SummaryPage
+	title = $Overlay/Card/Content/SummaryPage/Title
+	stats = $Overlay/Card/Content/SummaryPage/Stats
+	best = $Overlay/Card/Content/SummaryPage/Best
+	content = $Overlay/Card/Content/RecordsHost
+	save_notice = $Overlay/Card/Content/SaveNotice
+	page_button = $Overlay/Card/Content/PageButton
+	continue_button = $Overlay/Card/Content/ContinueButton
 	page_button.pressed.connect(func(): show_page(not showing_records))
-	column.add_child(page_button)
-	continue_button = Button.new()
-	continue_button.text = "Continue to preparation"
-	STYLE.button(continue_button, true)
 	continue_button.pressed.connect(main.continue_to_preparation)
-	column.add_child(continue_button)
 	get_viewport().size_changed.connect(_layout)
 	show_page(false)
 	overlay.hide()

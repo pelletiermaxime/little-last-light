@@ -1,0 +1,84 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://game_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://pause_screen.gd" id="2_script"]
+
+[node name="PauseScreen" type="CanvasLayer"]
+script = ExtResource("2_script")
+
+[node name="Overlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1
+anchor_bottom = 1
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.04, 0.06, 0.85)
+theme = ExtResource("1_theme")
+
+[node name="Card" type="PanelContainer" parent="Overlay"]
+theme_type_variation = &"DialogPanel"
+offset_right = 360
+offset_bottom = 440
+
+[node name="Content" type="VBoxContainer" parent="Overlay/Card"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="Overlay/Card/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "Paused"
+autowrap_mode = 3
+theme_type_variation = &"SettingsTitle"
+horizontal_alignment = 1
+
+[node name="Summary" type="Label" parent="Overlay/Card/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "00:00 survived · 0 energy earned"
+autowrap_mode = 3
+horizontal_alignment = 1
+
+[node name="Note" type="Label" parent="Overlay/Card/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "Take your time. The run is frozen."
+autowrap_mode = 3
+theme_type_variation = &"SettingsNote"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="Overlay/Card/Content"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Resume"
+
+[node name="EndRunButton" type="Button" parent="Overlay/Card/Content"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "End Run"
+tooltip_text = "Keep your earned energy and return to turret preparation."
+
+[node name="EndNote" type="Label" parent="Overlay/Card/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "End Run keeps all energy earned."
+autowrap_mode = 3
+theme_type_variation = &"SettingsNote"
+horizontal_alignment = 1
+
+[node name="SettingsButton" type="Button" parent="Overlay/Card/Content"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Settings"
+
+[node name="Keys" type="Label" parent="Overlay/Card/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "Esc / P to resume"
+autowrap_mode = 3
+theme_type_variation = &"SettingsNote"
+horizontal_alignment = 1

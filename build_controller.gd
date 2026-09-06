@@ -20,7 +20,6 @@ var sell_button: Button
 var damage_button: Button
 var rate_button: Button
 var health_button: Button
-var bar: VBoxContainer
 var selected_turret: Node2D
 var placement_hint: Label
 var controller_cursor: Vector2
@@ -36,89 +35,27 @@ func _ready() -> void:
 	preview.remove_from_group("turrets")
 	add_child(preview)
 	preview.hide()
-	var layer := CanvasLayer.new()
-	layer.layer = 5
-	add_child(layer)
-	placement_hint = Label.new()
-	var tooltip_style := StyleBoxFlat.new()
-	tooltip_style.bg_color = Color(0.025, 0.035, 0.05, 0.97)
-	tooltip_style.content_margin_left = 8
-	tooltip_style.content_margin_right = 8
-	tooltip_style.content_margin_top = 5
-	tooltip_style.content_margin_bottom = 5
-	placement_hint.add_theme_stylebox_override("normal", tooltip_style)
-	placement_hint.add_theme_font_size_override("font_size", 17)
-	placement_hint.add_theme_color_override("font_shadow_color", Color.BLACK)
-	placement_hint.add_theme_constant_override("shadow_offset_x", 2)
-	placement_hint.add_theme_constant_override("shadow_offset_y", 2)
-	placement_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(placement_hint)
-	placement_hint.hide()
-	bar = VBoxContainer.new()
-	layer.add_child(bar)
-	bar.add_theme_constant_override("separation", 14)
-	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var buttons := VBoxContainer.new()
-	buttons.add_theme_constant_override("separation", 10)
-	buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.add_child(buttons)
-	build_button = Button.new()
-	build_button.text = "Build turret (B)"
-	build_button.custom_minimum_size = Vector2(280, 44)
-	build_button.focus_mode = Control.FOCUS_NONE
+	placement_hint = $PlacementUI/PlacementHint
+	var preparation := main.get_node("PreparationUI")
+	var actions := preparation.get_node("Card/Padding/Content/Actions")
+	build_button = actions.get_node("BuildButton")
+	cancel_button = actions.get_node("CancelButton")
+	start_button = actions.get_node("StartButton")
+	sell_button = actions.get_node("SellButton")
+	reset_button = actions.get_node("ResetButton")
+	damage_button = actions.get_node("DamageButton")
+	rate_button = actions.get_node("RateButton")
+	health_button = actions.get_node("HealthButton")
+	quit_button = preparation.get_node("Card/Padding/Content/Footer/QuitButton")
 	build_button.pressed.connect(begin_placement)
-	buttons.add_child(build_button)
-	cancel_button = Button.new()
-	cancel_button.text = "Cancel (Esc)"
-	cancel_button.custom_minimum_size = Vector2(150, 44)
-	cancel_button.focus_mode = Control.FOCUS_NONE
 	cancel_button.pressed.connect(cancel_placement)
-	buttons.add_child(cancel_button)
-	start_button = Button.new()
-	start_button.text = "Start run (Enter)"
-	start_button.custom_minimum_size = Vector2(210, 44)
-	start_button.focus_mode = Control.FOCUS_NONE
 	start_button.pressed.connect(main.start_run)
-	buttons.add_child(start_button)
-	sell_button = Button.new()
-	sell_button.custom_minimum_size.y = 44
-	sell_button.focus_mode = Control.FOCUS_NONE
 	sell_button.pressed.connect(sell_selected_turret)
-	buttons.add_child(sell_button)
-	damage_button = Button.new()
-	damage_button.custom_minimum_size.y = 60
-	damage_button.focus_mode = Control.FOCUS_NONE
-	damage_button.pressed.connect(func(): main.buy_upgrade("damage"))
-	buttons.add_child(damage_button)
-	rate_button = Button.new()
-	rate_button.custom_minimum_size.y = 60
-	rate_button.focus_mode = Control.FOCUS_NONE
-	rate_button.pressed.connect(func(): main.buy_upgrade("fire_rate"))
-	buttons.add_child(rate_button)
-	health_button = Button.new()
-	health_button.custom_minimum_size.y = 60
-	health_button.focus_mode = Control.FOCUS_NONE
-	health_button.pressed.connect(func(): main.buy_upgrade("health"))
-	buttons.add_child(health_button)
-	reset_button = Button.new()
-	reset_button.custom_minimum_size.y = 44
-	reset_button.focus_mode = Control.FOCUS_NONE
-	reset_button.tooltip_text = "Refund purchased turrets and restore the free starter. Global upgrades stay unlocked."
 	reset_button.pressed.connect(reset_layout)
-	buttons.add_child(reset_button)
-	quit_button = Button.new()
-	quit_button.text = "Quit Game"
-	quit_button.custom_minimum_size.y = 44
-	quit_button.focus_mode = Control.FOCUS_NONE
-	quit_button.tooltip_text = "Save your progress and close the game."
+	damage_button.pressed.connect(func(): main.buy_upgrade("damage"))
+	rate_button.pressed.connect(func(): main.buy_upgrade("fire_rate"))
+	health_button.pressed.connect(func(): main.buy_upgrade("health"))
 	quit_button.pressed.connect(main.quit_game)
-	buttons.add_child(quit_button)
-	# The filled gold action makes the next run the clearest way forward.
-	var primary := StyleBoxFlat.new()
-	primary.bg_color = Color("#ffcf7a")
-	primary.set_corner_radius_all(5)
-	start_button.add_theme_stylebox_override("normal", primary)
-	start_button.add_theme_color_override("font_color", Color("#17212b"))
 	cancel_button.hide()
 	controller_cursor = main.get_arena_rect().get_center()
 	_update_interface()
@@ -209,7 +146,6 @@ func reset_layout() -> bool:
 func _update_interface() -> void:
 	# Parent _ready() has not run during this child's _ready(), so keep reads simple.
 	var preparing: bool = main.phase == main.Phase.PREPARATION
-	bar.hide()
 	build_button.visible = preparing
 	start_button.visible = preparing
 	reset_button.visible = preparing

@@ -1,0 +1,166 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://game_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://preparation_ui.gd" id="2_script"]
+
+[node name="PreparationUI" type="CanvasLayer"]
+script = ExtResource("2_script")
+
+[node name="Card" type="PanelContainer" parent="."]
+theme = ExtResource("1_theme")
+theme_type_variation = &"DialogPanel"
+offset_right = 660
+offset_bottom = 500
+
+[node name="Padding" type="MarginContainer" parent="Card"]
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="Card/Padding"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Card/Padding/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "Build your refuge"
+autowrap_mode = 3
+theme_type_variation = &"SettingsTitle"
+
+[node name="Balance" type="Label" parent="Card/Padding/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "0 energy · 1 turret · 85 HP"
+autowrap_mode = 3
+
+[node name="Description" type="Label" parent="Card/Padding/Content"]
+layout_mode = 2
+mouse_filter = 2
+text = "Place your defense. Choose your upgrades. See how long your light lasts."
+autowrap_mode = 3
+theme_type_variation = &"SettingsNote"
+
+[node name="Actions" type="GridContainer" parent="Card/Padding/Content"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 12
+
+[node name="StartButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Start run"
+theme_type_variation = &"PrimaryButton"
+
+[node name="PlaceButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Place turrets"
+
+[node name="UpgradesButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Buy upgrades"
+
+[node name="BuildButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "New turret"
+visible = false
+
+[node name="CancelButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel placement"
+visible = false
+
+[node name="SellButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sell turret"
+visible = false
+
+[node name="ResetButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Refund layout"
+visible = false
+
+[node name="DamageButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Damage"
+visible = false
+
+[node name="RateButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Fire rate"
+visible = false
+
+[node name="HealthButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Health"
+visible = false
+
+[node name="RecordsHost" type="VBoxContainer" parent="Card/Padding/Content"]
+layout_mode = 2
+visible = false
+
+[node name="Footer" type="GridContainer" parent="Card/Padding/Content"]
+layout_mode = 2
+theme_override_constants/v_separation = 12
+
+[node name="BackButton" type="Button" parent="Card/Padding/Content/Footer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Done · Esc"
+visible = false
+
+[node name="HideButton" type="Button" parent="Card/Padding/Content/Footer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Hide controls · Tab"
+visible = false
+
+[node name="RecordsButton" type="Button" parent="Card/Padding/Content/Footer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Records"
+
+[node name="SettingsButton" type="Button" parent="Card/Padding/Content/Footer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="Card/Padding/Content/Footer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Quit Game"
+
+[node name="ShowButton" type="Button" parent="."]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 0
+size_flags_horizontal = 3
+text = "Show controls · Tab"
+visible = false
+offset_left = 16
+offset_top = 16
+offset_right = 230
+offset_bottom = 60
+theme = ExtResource("1_theme")

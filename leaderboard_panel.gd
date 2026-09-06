@@ -34,59 +34,42 @@ var pager: HBoxContainer
 
 
 func _ready() -> void:
+	if main == null:
+		main = get_tree().current_scene as Node2D
 	api_url = str(ProjectSettings.get_setting("leaderboard/api_url", "")).trim_suffix("/")
-	add_theme_constant_override("separation", 8)
-	prompt = Label.new()
-	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(prompt)
-	username = LineEdit.new()
-	username.placeholder_text = "Username (3–20 letters, numbers, _)"
-	username.max_length = 20
-	username.accessibility_name = "Leaderboard username"
-	add_child(username)
-	publish = Button.new()
-	publish.text = "Publish my record"
+	prompt = $Submission/Prompt
+	username = $Submission/Username
+	publish = $Submission/PublishButton
+	skip = $Submission/SkipButton
+	notice = $Notice
+	submission = $Submission
+	rankings = $Rankings
+	rankings_button = $Tabs/RankingsButton
+	submission_button = $Tabs/SubmissionButton
+	scores_heading = $Rankings/Heading
+	scores_notice = $Rankings/Notice
+	scores_page = $Rankings/ScoresPage
+	scores_rows = $Rankings/ScoresPage/Rows
+	pager = $Rankings/Pager
+	previous_page = $Rankings/Pager/PreviousButton
+	next_page = $Rankings/Pager/NextButton
+	page_label = $Rankings/Pager/PageLabel
+	refresh_scores = $Rankings/RefreshButton
+	all_versions = $Rankings/AllVersions
+	scores_request = $ScoresRequest
+	request = $PublishRequest
 	publish.pressed.connect(_publish)
-	add_child(publish)
-	skip = Button.new()
-	skip.text = "No thanks"
 	skip.pressed.connect(_skip)
-	add_child(skip)
-	notice = Label.new()
-	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(notice)
-	scores_heading = Label.new()
-	scores_heading.add_theme_color_override("font_color", Color("#ffcf7a"))
-	add_child(scores_heading)
-	scores_notice = Label.new()
-	scores_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(scores_notice)
-	scores_page = VBoxContainer.new()
-	add_child(scores_page)
-	scores_rows = VBoxContainer.new()
-	scores_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scores_rows.add_theme_constant_override("separation", 10)
-	scores_page.add_child(scores_rows)
-	refresh_scores = Button.new()
-	refresh_scores.text = "Refresh leaderboard"
 	refresh_scores.pressed.connect(_load_scores)
-	add_child(refresh_scores)
-	var site_url := str(ProjectSettings.get_setting("leaderboard/site_url", ""))
-	if not site_url.is_empty():
-		all_versions = LinkButton.new()
-		all_versions.text = "All versions · online leaderboard"
-		all_versions.uri = site_url
-		add_child(all_versions)
-	scores_request = HTTPRequest.new()
-	scores_request.timeout = 15.0
+	rankings_button.pressed.connect(func(): show_submission(false))
+	submission_button.pressed.connect(func(): show_submission(true))
+	previous_page.pressed.connect(func(): _change_page(-1))
+	next_page.pressed.connect(func(): _change_page(1))
 	scores_request.request_completed.connect(_scores_completed)
-	add_child(scores_request)
-	request = HTTPRequest.new()
-	request.timeout = 15.0
-	request.body_size_limit = 8192
 	request.request_completed.connect(_completed)
-	add_child(request)
-	_create_pages()
+	all_versions.uri = str(ProjectSettings.get_setting("leaderboard/site_url", ""))
+	all_versions.visible = not all_versions.uri.is_empty()
+	show_submission(false)
 	call_deferred("_restore_username")
 	refresh()
 
@@ -174,13 +157,12 @@ func _render_scores() -> void:
 	for row in scores_rows.get_children():
 		row.free()
 	for score in score_data.slice(page_index * PAGE_SIZE, (page_index + 1) * PAGE_SIZE):
-		var row := Label.new()
-		row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var row := preload("res://leaderboard_row.tscn").instantiate() as Label
 		row.text = "#%d  %s\n%s" % [int(score.rank), str(score.username), _score_time(int(score.durationMs))]
 		if score.has("energyInvested"):
 			row.text += " · %d energy invested" % int(score.energyInvested)
 		if str(score.username) == main.leaderboard_profile.username:
-			row.add_theme_color_override("font_color", Color("#ffcf7a"))
+			row.theme_type_variation = &"AccentLabel"
 		scores_rows.add_child(row)
 	scores_page.visible = not score_data.is_empty()
 	pager.visible = score_data.size() > PAGE_SIZE
@@ -254,50 +236,6 @@ func _completed(result: int, code: int, _headers: PackedStringArray, body: Packe
 
 func _version_label(version: String) -> String:
 	return "dev" if version == "dev" else "v" + version
-
-
-func _page_button(text: String, callback: Callable, parent: Node) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	preload("res://ui_style.gd").button(button)
-	button.pressed.connect(callback)
-	parent.add_child(button)
-	return button
-
-
-func _create_pages() -> void:
-	var tabs := HBoxContainer.new()
-	add_child(tabs)
-	move_child(tabs, 0)
-	rankings_button = _page_button("Rankings", func(): show_submission(false), tabs)
-	submission_button = _page_button("Publish record", func(): show_submission(true), tabs)
-	submission = VBoxContainer.new()
-	submission.add_theme_constant_override("separation", 8)
-	add_child(submission)
-	for control in [prompt, username, publish, skip]:
-		control.reparent(submission)
-	rankings = VBoxContainer.new()
-	rankings.add_theme_constant_override("separation", 8)
-	add_child(rankings)
-	for control in [scores_heading, scores_notice, scores_page]:
-		control.reparent(rankings)
-	pager = HBoxContainer.new()
-	rankings.add_child(pager)
-	previous_page = _page_button("Previous", func(): _change_page(-1), pager)
-	page_label = Label.new()
-	page_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	pager.add_child(page_label)
-	next_page = _page_button("Next", func(): _change_page(1), pager)
-	refresh_scores.reparent(rankings)
-	if all_versions != null:
-		all_versions.reparent(rankings)
-		all_versions.text = "All versions online"
-	for button in [publish, skip, refresh_scores]:
-		preload("res://ui_style.gd").button(button)
-	move_child(notice, get_child_count() - 1)
-	pager.hide()
-	show_submission(false)
 
 
 func show_submission(show_form: bool) -> void:

@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://game_theme.tres" id="1_theme"]
+
+[node name="ScoreRow" type="Label"]
+
+theme = ExtResource("1_theme")
+autowrap_mode = 3
+mouse_filter = 2
+text = "#1  Player\n00:00.000 · 0 energy invested"

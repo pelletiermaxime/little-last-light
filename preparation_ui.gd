@@ -30,64 +30,39 @@ func _ready() -> void:
 	layer = 6
 	main = get_parent()
 	build = main.get_node("BuildController")
-	card = PanelContainer.new()
-	card_style = STYLE.panel()
+	card = $Card
+	scroll = $Card/Padding
+	content = $Card/Padding/Content
+	title = $Card/Padding/Content/Title
+	balance = $Card/Padding/Content/Balance
+	description = $Card/Padding/Content/Description
+	actions = $Card/Padding/Content/Actions
+	footer = $Card/Padding/Content/Footer
+	records_host = $Card/Padding/Content/RecordsHost
+	place_button = $Card/Padding/Content/Actions/PlaceButton
+	upgrades_button = $Card/Padding/Content/Actions/UpgradesButton
+	back_button = $Card/Padding/Content/Footer/BackButton
+	hide_button = $Card/Padding/Content/Footer/HideButton
+	records_button = $Card/Padding/Content/Footer/RecordsButton
+	settings_button = $Card/Padding/Content/Footer/SettingsButton
+	show_button = $ShowButton
+	place_button.pressed.connect(func(): open_view(View.PLACEMENT))
+	upgrades_button.pressed.connect(func(): open_view(View.UPGRADES))
+	back_button.pressed.connect(func(): open_view(View.HOME))
+	hide_button.pressed.connect(_toggle_controls)
+	show_button.pressed.connect(_toggle_controls)
+	records_button.pressed.connect(func(): open_view(View.RECORDS))
+	settings_button.pressed.connect(func(): main.get_node("SettingsScreen").open(settings_button))
+	# Preparation changes background opacity; never mutate the shared Theme.
+	card_style = card.get_theme_stylebox("panel").duplicate()
 	card.add_theme_stylebox_override("panel", card_style)
-	add_child(card)
-	scroll = MarginContainer.new()
-	card.add_child(scroll)
-	content = VBoxContainer.new()
-	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 12)
-	scroll.add_child(content)
-	title = STYLE.label("Build your refuge", 26, Color("#ffcf7a"))
-	content.add_child(title)
-	balance = STYLE.label("", 16)
-	content.add_child(balance)
-	description = STYLE.label("", 14, Color("#a6bdc7"))
-	content.add_child(description)
-	actions = GridContainer.new()
-	actions.add_theme_constant_override("h_separation", 10)
-	actions.add_theme_constant_override("v_separation", 12)
-	content.add_child(actions)
-	place_button = _button("Place turrets", func(): open_view(View.PLACEMENT))
-	upgrades_button = _button("Buy upgrades", func(): open_view(View.UPGRADES))
-	for button in [build.start_button, build.build_button, build.cancel_button, build.sell_button, build.reset_button, build.damage_button, build.rate_button, build.health_button]:
-		button.reparent(actions)
-		button.custom_minimum_size.x = 0
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		STYLE.button(button, button == build.start_button)
-	actions.move_child(build.start_button, 0)
-	records_host = VBoxContainer.new()
-	content.add_child(records_host)
-	footer = GridContainer.new()
-	footer.add_theme_constant_override("v_separation", 12)
-	content.add_child(footer)
-	back_button = _button("Done · Esc", func(): open_view(View.HOME), footer)
-	hide_button = _button("Hide controls · Tab", _toggle_controls, footer)
-	show_button = _button("Show controls · Tab", _toggle_controls, self)
-	show_button.position = Vector2(16, 16)
-	records_button = _button("Records", func(): open_view(View.RECORDS), footer)
-	settings_button = _button("Settings", func(): main.get_node("SettingsScreen").open(settings_button), footer)
-	build.quit_button.reparent(footer)
-	build.quit_button.custom_minimum_size.x = 0
-	build.quit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	STYLE.button(build.quit_button)
-	# BuildController creates the actions; this card owns their presentation.
-	build.bar.hide()
+	for parent in [actions, footer]:
+		for button in parent.get_children():
+			for state in ["normal", "hover", "pressed", "disabled"]:
+				button.add_theme_stylebox_override(state, button.get_theme_stylebox(state).duplicate())
 	get_viewport().size_changed.connect(refresh)
 	refresh()
 	build.start_button.call_deferred("grab_focus")
-
-
-func _button(text: String, callback: Callable, parent: Node = null) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	STYLE.button(button)
-	(parent if parent != null else actions).add_child(button)
-	button.pressed.connect(callback)
-	return button
 
 
 func open_view(next: View) -> void:
@@ -125,7 +100,6 @@ func refresh() -> void:
 	var preparing: bool = main.phase == main.Phase.PREPARATION
 	card.visible = preparing and not (view == View.PLACEMENT and controls_hidden)
 	show_button.visible = preparing and view == View.PLACEMENT and controls_hidden
-	build.bar.hide()
 	if not preparing:
 		return
 	var home := view == View.HOME
