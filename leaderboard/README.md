@@ -49,6 +49,8 @@ The first deployment uses Wrangler Direct Upload. Subsequent publication is thro
 
 There is no version registration step. Each score carries the game's release version, and the website discovers versions from published scores automatically. A direct link such as `/?version=0.0.1` works even before that release has any scores.
 
+The exact version `dev` is also accepted for editor playtests. It supports the same opt-in uploads and rankings as releases, with its own best score per device. `/?version=dev` opens that board even before its first score. This game version is independent of the Convex development/production deployment: locally launched games use their configured API, which is production by default.
+
 The existing Pages game deployment stays in place; the website has a separate hosting lifecycle. CI validates the website and backend without needing a Convex account.
 
 ## Configured development deployment

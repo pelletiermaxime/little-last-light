@@ -13,8 +13,6 @@ var placing: bool = false
 var preview: Node2D
 var build_button: Button
 var cancel_button: Button
-var hint: Label
-var overview: Label
 var start_button: Button
 var reset_button: Button
 var quit_button: Button
@@ -25,7 +23,6 @@ var health_button: Button
 var bar: VBoxContainer
 var selected_turret: Node2D
 var placement_hint: Label
-var sidebar: ColorRect
 var controller_cursor: Vector2
 var using_controller: bool = false
 const CURSOR_SPEED: float = 360.0
@@ -42,14 +39,6 @@ func _ready() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 5
 	add_child(layer)
-	# Background sits below the lantern HUD; controls stay above it.
-	var background_layer := CanvasLayer.new()
-	background_layer.layer = 2
-	add_child(background_layer)
-	sidebar = ColorRect.new()
-	sidebar.color = Color("#18242e")
-	background_layer.add_child(sidebar)
-	sidebar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	placement_hint = Label.new()
 	var tooltip_style := StyleBoxFlat.new()
 	tooltip_style.bg_color = Color(0.025, 0.035, 0.05, 0.97)
@@ -69,18 +58,6 @@ func _ready() -> void:
 	layer.add_child(bar)
 	bar.add_theme_constant_override("separation", 14)
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overview = Label.new()
-	overview.add_theme_font_size_override("font_size", 18)
-	overview.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overview.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	bar.add_child(overview)
-	overview.add_theme_color_override("font_color", Color("#ffcf7a"))
-	hint = Label.new()
-	hint.add_theme_font_size_override("font_size", 18)
-	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	bar.add_child(hint)
-	hint.add_theme_color_override("font_color", Color("#a8bbc8"))
 	var buttons := VBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 10)
 	buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -108,11 +85,6 @@ func _ready() -> void:
 	sell_button.focus_mode = Control.FOCUS_NONE
 	sell_button.pressed.connect(sell_selected_turret)
 	buttons.add_child(sell_button)
-	var upgrades_title := Label.new()
-	upgrades_title.text = "UPGRADES"
-	upgrades_title.add_theme_color_override("font_color", Color("#ffcf7a"))
-	upgrades_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	buttons.add_child(upgrades_title)
 	damage_button = Button.new()
 	damage_button.custom_minimum_size.y = 60
 	damage_button.focus_mode = Control.FOCUS_NONE
@@ -148,22 +120,18 @@ func _ready() -> void:
 	start_button.add_theme_stylebox_override("normal", primary)
 	start_button.add_theme_color_override("font_color", Color("#17212b"))
 	cancel_button.hide()
-	_layout_sidebar()
 	controller_cursor = main.get_arena_rect().get_center()
-	get_viewport().size_changed.connect(_layout_sidebar)
 	_update_interface()
 
 
-func _layout_sidebar() -> void:
-	var arena: Rect2 = main.get_arena_rect()
-	sidebar.position = Vector2(arena.end.x, 0)
-	sidebar.size = Vector2(main.SIDEBAR_WIDTH, arena.size.y)
-	# GameHUD places the preparation controls in its shared scrollable column.
-
-
 func _process(delta: float) -> void:
-	if using_controller and main.phase == main.Phase.PREPARATION:
-		var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if using_controller and main.phase == main.Phase.PREPARATION and _in_placement_mode():
+		# D-pad navigates the toolbar; only the active pad's stick moves the cursor.
+		var device: int = main.get_node("Controls").active_device
+		var direction := Vector2(Input.get_joy_axis(device, JOY_AXIS_LEFT_X), Input.get_joy_axis(device, JOY_AXIS_LEFT_Y))
+		if direction.length() <= 0.3 or get_viewport().gui_get_focus_owner() != null:
+			direction = Vector2.ZERO
+		direction = direction.limit_length()
 		var arena: Rect2 = main.get_arena_rect()
 		controller_cursor = (controller_cursor + direction * CURSOR_SPEED * delta).clamp(arena.position, arena.end - Vector2.ONE)
 	queue_redraw()
@@ -173,7 +141,7 @@ func _process(delta: float) -> void:
 		var reason := placement_error(preview.global_position)
 		var valid := reason.is_empty()
 		preview.modulate = Color(0.6, 1.0, 0.7, 0.65) if valid else Color(1.0, 0.3, 0.3, 0.65)
-		var confirm := "Cross" if using_controller else "Click"
+		var confirm: String = main.get_node("Controls").hint("confirm_placement") if using_controller else "Click"
 		placement_hint.text = ((confirm + " to move here · Free") if is_instance_valid(selected_turret) else (confirm + " to build · %d energy" % int(turret_cost()))) if valid else reason
 		placement_hint.modulate = Color("#a5edb7") if valid else Color("#ffb4a8")
 		placement_hint.reset_size()
@@ -241,61 +209,50 @@ func reset_layout() -> bool:
 func _update_interface() -> void:
 	# Parent _ready() has not run during this child's _ready(), so keep reads simple.
 	var preparing: bool = main.phase == main.Phase.PREPARATION
-	bar.visible = preparing
+	bar.hide()
 	build_button.visible = preparing
 	start_button.visible = preparing
 	reset_button.visible = preparing
 	# Browser players close their tab; SceneTree.quit cannot close it for them.
 	quit_button.visible = preparing and not OS.has_feature("web")
-	reset_button.text = "Reset layout · +%d (%s)" % [int(layout_refund()), "Triangle" if using_controller else "R"]
+	reset_button.text = "Reset layout · +%d (%s)" % [int(layout_refund()), "Confirm" if using_controller else "R"]
 	sell_button.visible = preparing and is_instance_valid(selected_turret)
 	if sell_button.visible:
 		sell_button.disabled = selected_turret.purchase_cost <= 0.0
-		sell_button.text = "Keep free starter turret" if sell_button.disabled else "Sell selected · +%d (%s)" % [int(selected_turret.purchase_cost), "L3" if using_controller else "X"]
-	damage_button.text = "Damage %.0f to %.0f (%s)\n%d energy" % [main.turret_damage(), main.turret_damage() + 1, "L1" if using_controller else "G", int(main.upgrade_cost("damage"))]
-	rate_button.text = "Fire rate %.2f to %.2f/s (%s)\n%d energy" % [main.turret_shots_per_second(), main.turret_shots_per_second() + 0.25 / 1.5, "R1" if using_controller else "F", int(main.upgrade_cost("fire_rate"))]
+		sell_button.text = "Keep free starter turret" if sell_button.disabled else "Sell selected · +%d (%s)" % [int(selected_turret.purchase_cost), "R1 / RB" if using_controller else "X"]
+	damage_button.text = "Damage %.0f to %.0f (%s)\n%d energy" % [main.turret_damage(), main.turret_damage() + 1, "Confirm" if using_controller else "G", int(main.upgrade_cost("damage"))]
+	rate_button.text = "Fire rate %.2f to %.2f/s (%s)\n%d energy" % [main.turret_shots_per_second(), main.turret_shots_per_second() + 0.25 / 1.5, "Confirm" if using_controller else "F", int(main.upgrade_cost("fire_rate"))]
 	damage_button.disabled = placing or main.banked_energy < main.upgrade_cost("damage") or main.damage_level >= main.MAX_UPGRADE_LEVEL
 	rate_button.disabled = placing or main.banked_energy < main.upgrade_cost("fire_rate") or main.fire_rate_level >= main.MAX_UPGRADE_LEVEL
 	if main.damage_level >= main.MAX_UPGRADE_LEVEL:
 		damage_button.text = "Damage %.0f · MAX" % main.turret_damage()
 	if main.fire_rate_level >= main.MAX_UPGRADE_LEVEL:
 		rate_button.text = "Fire rate %.2f/s · MAX" % main.turret_shots_per_second()
-	health_button.text = "Lantern HP %.0f to %.0f (%s)\n%d energy" % [main.lantern_max_health(), main.lantern_max_health() + 15, "R3" if using_controller else "H", int(main.upgrade_cost("health"))]
+	health_button.text = "Lantern HP %.0f to %.0f (%s)\n%d energy" % [main.lantern_max_health(), main.lantern_max_health() + 15, "Confirm" if using_controller else "H", int(main.upgrade_cost("health"))]
 	health_button.disabled = placing or main.banked_energy < main.upgrade_cost("health") or main.health_level >= main.MAX_UPGRADE_LEVEL
 	if main.health_level >= main.MAX_UPGRADE_LEVEL:
 		health_button.text = "Lantern HP %.0f · MAX" % main.lantern_max_health()
 	start_button.disabled = placing
-	build_button.text = "Build turret — %d energy (%s)" % [int(turret_cost()), "Square" if using_controller else "B"]
-	cancel_button.text = "Cancel (%s)" % ("Circle" if using_controller else "Esc")
-	start_button.text = "Start run (%s)" % ("Options" if using_controller else "Enter")
+	build_button.text = "Build turret — %d energy (%s)" % [int(turret_cost()), "Confirm" if using_controller else "B"]
+	cancel_button.text = "Cancel (%s)" % ("Back" if using_controller else "Esc")
+	start_button.text = "Start run (%s)" % ("Menu" if using_controller else "Enter")
 	build_button.disabled = placing or main.banked_energy < turret_cost()
-	var remaining := maxi(0, int(ceil(turret_cost() - main.banked_energy)))
-	overview.text = "AVAILABLE  %d energy\n%s" % [int(main.banked_energy), "Next turret affordable" if remaining == 0 else "%d more for next turret" % remaining]
-	if placing:
-		hint.text = "Move for free, or sell below.\nClick to place · Esc to cancel" if is_instance_valid(selected_turret) else "Place new turret · Click to buy · Esc to cancel"
-	elif not preparing:
-		hint.text = "New enemies: %d hits · Tougher every 30s · Brightness attracts more" % int(main.current_enemy_health())
-	elif main.banked_energy < turret_cost():
-		hint.text = "Click a turret to move or sell.\nGlobal upgrades affect every turret."
-	else:
-		hint.text = "Add a turret, upgrade all, or select one to move / sell."
-	if preparing and using_controller:
-		hint.text = "Cross: select / place · L3: sell\nL1: damage · R1: fire rate\nSquare: buy · Circle: cancel"
+	var preparation := main.get_node_or_null("PreparationUI")
+	if preparation != null and preparation.is_node_ready():
+		preparation.refresh()
+
+
+func _in_placement_mode() -> bool:
+	var preparation := main.get_node_or_null("PreparationUI")
+	return preparation != null and preparation.view == preparation.View.PLACEMENT
 
 
 func _cursor_position() -> Vector2:
 	return controller_cursor if using_controller else get_global_mouse_position()
 
 
-func _input(event: InputEvent) -> void:
-	if event is InputEventJoypadButton and event.pressed or event is InputEventJoypadMotion and absf(event.axis_value) > 0.2:
-		using_controller = true
-	elif event is InputEventMouseMotion or event is InputEventMouseButton or event is InputEventKey:
-		using_controller = false
-
-
 func _draw() -> void:
-	if not using_controller or main.phase != main.Phase.PREPARATION:
+	if not using_controller or main.phase != main.Phase.PREPARATION or not _in_placement_mode():
 		return
 	var point := to_local(controller_cursor)
 	draw_arc(point, 10.0, 0.0, TAU, 32, Color.WHITE, 2.0)
@@ -320,22 +277,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		sell_selected_turret()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("upgrade_damage"):
+		if not placing:
+			main.get_node("PreparationUI").open_view(2)
 		main.buy_upgrade("damage")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("upgrade_health"):
+		if not placing:
+			main.get_node("PreparationUI").open_view(2)
 		main.buy_upgrade("health")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("upgrade_fire_rate"):
+		if not placing:
+			main.get_node("PreparationUI").open_view(2)
 		main.buy_upgrade("fire_rate")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("cancel_placement"):
-		cancel_placement()
+		if placing:
+			cancel_placement()
+		else:
+			main.get_node("PreparationUI").open_view(0)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("start_run"):
 		main.start_run()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("confirm_placement"):
-		_select_or_place(controller_cursor)
+		if _in_placement_mode():
+			_select_or_place(controller_cursor)
+		else:
+			main.get_node("PreparationUI").open_view(1)
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var point: Vector2 = get_canvas_transform().affine_inverse() * event.position
@@ -344,6 +313,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _select_or_place(point: Vector2) -> void:
+	if not _in_placement_mode():
+		return
+	var ui = main.get_node("PreparationUI")
+	if ui.blocks_point(point):
+		if using_controller:
+			ui.activate_at(point)
+		return
 	if placing:
 		try_place(point)
 	else:
@@ -354,6 +330,8 @@ func _select_or_place(point: Vector2) -> void:
 
 
 func begin_placement() -> void:
+	if main.phase == main.Phase.PREPARATION:
+		main.get_node("PreparationUI").open_view(1)
 	if placing or main.phase != main.Phase.PREPARATION or main.banked_energy < turret_cost():
 		return
 	selected_turret = null
@@ -363,6 +341,7 @@ func begin_placement() -> void:
 func begin_move(turret: Node2D) -> void:
 	if placing or main.phase != main.Phase.PREPARATION or not is_instance_valid(turret) or not turret.is_in_group("turrets"):
 		return
+	main.get_node("PreparationUI").open_view(1)
 	selected_turret = turret
 	selected_turret.hide()
 	_show_preview()

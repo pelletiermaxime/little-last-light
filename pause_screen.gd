@@ -5,6 +5,7 @@ var overlay: ColorRect
 var resume_button: Button
 var end_run_button: Button
 var summary: Label
+var keys: Label
 
 
 func _ready() -> void:
@@ -69,8 +70,8 @@ func _ready() -> void:
 	end_note.add_theme_font_size_override("font_size", 14)
 	end_note.add_theme_color_override("font_color", Color("#9aaebc"))
 	column.add_child(end_note)
-	var keys := Label.new()
-	keys.text = "Esc / P / Options to resume"
+	keys = Label.new()
+	keys.text = "Esc / P to resume"
 	keys.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	keys.add_theme_font_size_override("font_size", 14)
 	keys.add_theme_color_override("font_color", Color("#9aaebc"))

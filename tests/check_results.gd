@@ -34,8 +34,10 @@ func check() -> void:
 	assert(not build.placing)
 	results.continue_button.pressed.emit()
 	assert(scene.phase == scene.Phase.PREPARATION and not results.overlay.visible)
-	assert(panel == hud.leaderboard and panel.get_parent() == hud.panel)
-	assert(hud.scroll.visible and panel.publish.visible)
+	assert(panel == hud.leaderboard and panel.get_parent() == scene.get_node("PreparationUI").records_host)
+	assert(not hud.scroll.visible and panel.publish.visible)
+	scene.get_node("PreparationUI").open_view(3)
+	assert(panel.is_visible_in_tree(), "Pending record remains reachable from preparation")
 	scene.start_run()
 	scene.lantern.elapsed = 150.0
 	scene.lantern.energy = 9.0

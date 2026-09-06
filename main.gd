@@ -2,8 +2,6 @@ extends Node2D
 
 enum Phase { PREPARATION, RUNNING, RESULTS }
 
-const SIDEBAR_WIDTH: float = 320.0
-
 const ENEMY_SCENE: PackedScene = preload("res://enemy.tscn")
 const CHARGER_SCENE: PackedScene = preload("res://charger.tscn")
 const BOSS_SCRIPT = preload("res://water_boss.gd")
@@ -20,6 +18,12 @@ const TOUGHNESS_STEP_SECONDS: float = 30.0
 const BASE_ENEMY_SPEED: float = 85.0
 const MAX_UPGRADE_LEVEL: int = 4
 const UPGRADE_BASE_COSTS: Dictionary = {"damage": 60.0, "fire_rate": 50.0, "health": 40.0}
+
+# The future settings menu can assign fps_limit; 0 means unlimited.
+@export_range(0, 360, 1, "or_greater") var fps_limit: int = 100:
+	set(value):
+		fps_limit = maxi(value, 0)
+		Engine.max_fps = fps_limit
 
 @export var save_path: String = "user://progress-v1.json"
 @onready var lantern: Node2D = $Lantern
@@ -40,7 +44,7 @@ var previous_viewport_size: Vector2
 var save_is_readable: bool = true
 var last_run: Dictionary = {}
 var run_energy_invested: float = 0.0
-# Running from the editor uses local records; export templates use the stamped release.
+# Editor runs share the dev leaderboard; exports use the stamped release.
 var game_version: String = "dev" if OS.has_feature("editor") else str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
 var version_bests: Dictionary = {}
 var legacy_best_time: float = 0.0
@@ -48,6 +52,7 @@ var leaderboard_profile: Dictionary = {"token": "", "username": "", "pending": {
 
 
 func _ready() -> void:
+	Engine.max_fps = fps_limit
 	previous_viewport_size = get_arena_rect().size
 	$Turret.position = lantern.position + Vector2(80.0, 0.0)
 	lantern.died.connect(_on_lantern_died)
@@ -174,7 +179,7 @@ func end_run(voluntary: bool = false) -> void:
 	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time, "voluntary": voluntary}
 	best_time = maxf(best_time, lantern.elapsed)
 	version_bests[game_version] = best_time
-	if last_run.new_best and game_version != "dev":
+	if last_run.new_best:
 		leaderboard_profile.pending = {
 			"version": game_version,
 			"durationMs": maxi(1, int(lantern.elapsed * 1000.0)),
@@ -198,6 +203,7 @@ func continue_to_preparation() -> void:
 		return
 	phase = Phase.PREPARATION
 	$ResultsScreen.hide_results()
+	$PreparationUI.open_view(0)
 	$BuildController._update_interface()
 	lantern._update_status()
 
@@ -313,12 +319,7 @@ func _spawn_charger() -> void:
 
 func get_arena_rect() -> Rect2:
 	var size := get_viewport_rect().size
-	return Rect2(Vector2.ZERO, Vector2(maxf(100.0, size.x - SIDEBAR_WIDTH), size.y))
-
-
-func _draw() -> void:
-	var arena := get_arena_rect()
-	draw_line(Vector2(arena.end.x, 0), arena.end, Color("#53697e"), 2.0)
+	return Rect2(Vector2.ZERO, size)
 
 
 func _random_edge_position() -> Vector2:

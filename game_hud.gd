@@ -1,122 +1,161 @@
 extends CanvasLayer
 
-# Presentation reads game state; it never owns health, currency, or saves.
-const INK := Color("#eff3f0")
-const MUTED := Color("#9aaebc")
-const GOLD := Color("#ffcf7a")
-const LIGHT_COLORS: Array[Color] = [Color("#9ddacb"), Color("#ffcf7a"), Color("#ff997d")]
-
+const STYLE = preload("res://ui_style.gd")
+const BOSS_VICTORY_DURATION := 3.0
+const BOSS_VICTORY_FADE := 1.0
 var main: Node2D
 var lantern: Node2D
+var scroll: Control
 var panel: VBoxContainer
-var scroll: ScrollContainer
 var heading: Label
 var subheading: Label
 var health_text: Label
+var health_bar: ProgressBar
 var boss_text: Label
 var boss_bar: ProgressBar
-var health_bar: ProgressBar
 var earnings: Label
 var detail: Label
-var brightness_box: VBoxContainer
-var light_buttons: Array[Button] = []
+var brightness_indicator: Button
 var threat: Label
 var controls: Label
 var save_notice: Label
-var refresh_elapsed: float = 0.0
-var displayed_brightness: int = -1
 var leaderboard: VBoxContainer
+var health_group: Control
+var timer_group: Control
+var boss_card: PanelContainer
+var boss_status: Control
+var boss_warning: Label
+var boss_was_alive := false
+var boss_victory_remaining := 0.0
+var refresh_elapsed := 0.0
+var displayed_brightness := -1
 
 
 func _ready() -> void:
 	layer = 4
 	main = get_parent()
 	lantern = main.get_node("Lantern")
-	# One scrollable column keeps long recaps and save warnings from overlapping
-	# placement controls on shorter windows.
-	scroll = ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll = Control.new()
+	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(scroll)
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Explicit text/bar bounds avoid container minimum heights stretching the HUD.
+	health_group = Control.new()
+	health_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scroll.add_child(health_group)
+	health_text = STYLE.label("", 15)
+	health_group.add_child(health_text)
+	health_bar = _bar(health_group, Color("#ffcf7a"))
+	timer_group = Control.new()
+	timer_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scroll.add_child(timer_group)
+	subheading = STYLE.label("", 28)
+	subheading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_group.add_child(subheading)
+	earnings = STYLE.label("", 14, Color("#ffcf7a"))
+	earnings.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_group.add_child(earnings)
+	boss_card = _card()
+	boss_warning = STYLE.label("THE DRENCHER\nIncoming!", 15, Color("#82e2ec"))
+	boss_warning.autowrap_mode = TextServer.AUTOWRAP_OFF
+	boss_card.add_child(boss_warning)
+	boss_status = Control.new()
+	boss_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scroll.add_child(boss_status)
+	boss_text = STYLE.label("", 15, Color("#82e2ec"))
+	boss_text.autowrap_mode = TextServer.AUTOWRAP_OFF
+	boss_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_status.add_child(boss_text)
+	boss_bar = _bar(boss_status, Color("#82e2ec"))
+	brightness_indicator = preload("res://brightness_indicator.gd").new()
+	scroll.add_child(brightness_indicator)
+	brightness_indicator.pressed.connect(func(): lantern.set_brightness((lantern.brightness + 1) % 3))
+	for label in [health_text, subheading, earnings, boss_text]:
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		label.add_theme_color_override("font_shadow_color", Color("#080d13"))
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 1)
+	save_notice = STYLE.label("", 14, Color("#ff997d"))
+	scroll.add_child(save_notice)
+	# Keep recap data and the single persistent request panel outside the live HUD.
 	panel = VBoxContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_constant_override("separation", 12)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scroll.add_child(panel)
-	heading = _label(panel, 13, GOLD)
-	subheading = _label(panel, 28, INK)
-	health_text = _label(panel, 15, MUTED)
-	health_bar = ProgressBar.new()
-	health_bar.custom_minimum_size.y = 8
-	health_bar.show_percentage = false
-	health_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	health_bar.add_theme_stylebox_override("background", _style(Color("#283744")))
-	health_bar.add_theme_stylebox_override("fill", _style(GOLD))
-	panel.add_child(health_bar)
-	boss_text = _label(panel, 18, Color("#82e2ec"))
-	boss_bar = ProgressBar.new()
-	boss_bar.custom_minimum_size.y = 10
-	boss_bar.show_percentage = false
-	boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	boss_bar.add_theme_stylebox_override("fill", _style(Color("#82e2ec")))
-	panel.add_child(boss_bar)
-	earnings = _label(panel, 30, GOLD)
-	detail = _label(panel, 16, MUTED)
-	brightness_box = VBoxContainer.new()
-	brightness_box.add_theme_constant_override("separation", 8)
-	panel.add_child(brightness_box)
-	_label(brightness_box, 13, MUTED).text = "BRIGHTNESS / ENERGY PER SECOND"
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	brightness_box.add_child(row)
-	for index in range(3):
-		var button := Button.new()
-		button.text = "%s\n+%d /s" % [lantern.BRIGHTNESS_NAMES[index], int(lantern.ENERGY_RATES[index])]
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size.y = 64
-		button.focus_mode = Control.FOCUS_NONE
-		button.add_theme_font_size_override("font_size", 15)
-		button.pressed.connect(lantern.set_brightness.bind(index))
-		row.add_child(button)
-		light_buttons.append(button)
-	threat = _label(brightness_box, 16, INK)
-	controls = _label(panel, 14, MUTED)
-	save_notice = _label(panel, 14, Color("#ff997d"))
+	add_child(panel)
+	panel.hide()
+	heading = STYLE.label("", 13)
+	panel.add_child(heading)
+	detail = STYLE.label("", 16)
+	panel.add_child(detail)
+	threat = STYLE.label("", 14)
+	panel.add_child(threat)
+	controls = STYLE.label("", 14)
+	panel.add_child(controls)
 	leaderboard = preload("res://leaderboard_panel.gd").new()
 	leaderboard.main = main
 	panel.add_child(leaderboard)
-	main.get_node("BuildController").bar.reparent(panel)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	refresh()
 
 
-func _label(parent: Node, font_size: int, color: Color) -> Label:
-	var label := Label.new()
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", color)
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(label)
-	return label
+func _card() -> PanelContainer:
+	var card := PanelContainer.new()
+	var style := STYLE.panel()
+	style.set_content_margin_all(12)
+	card.add_theme_stylebox_override("panel", style)
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scroll.add_child(card)
+	return card
 
 
-func _style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.set_corner_radius_all(4)
-	return style
+func _bar(parent: Node, color: Color) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size.y = 5
+	bar.show_percentage = false
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = color
+	fill.set_corner_radius_all(4)
+	bar.add_theme_stylebox_override("fill", fill)
+	parent.add_child(bar)
+	return bar
 
 
 func _layout() -> void:
-	scroll.position = Vector2(main.get_arena_rect().end.x + 20.0, 24.0)
-	scroll.size = Vector2(280, main.get_arena_rect().size.y - 48.0)
+	var size := get_viewport().get_visible_rect().size
+	health_group.position = Vector2(20, 18)
+	health_group.size = Vector2(minf(190, size.x * 0.38), 42)
+	health_text.position = Vector2.ZERO
+	health_text.size = Vector2(health_group.size.x, 22)
+	health_bar.position = Vector2(0, 28)
+	health_bar.size = Vector2(health_group.size.x, 5)
+	timer_group.size = Vector2(160, 64)
+	timer_group.position = Vector2((size.x - 160) / 2, 16 if size.x >= 700 else 72)
+	subheading.position = Vector2.ZERO
+	subheading.size = Vector2(160, 36)
+	earnings.position = Vector2(0, 38)
+	earnings.size = Vector2(160, 20)
+	boss_card.size = Vector2(minf(360, size.x - 32), 72)
+	boss_card.position = Vector2((size.x - boss_card.size.x) / 2, 94 if size.x >= 700 else 150)
+	boss_status.size = Vector2(minf(260, size.x - 32), 28)
+	boss_status.position = Vector2((size.x - boss_status.size.x) / 2, boss_card.position.y)
+	boss_text.size = Vector2(boss_status.size.x, 22)
+	boss_bar.position = Vector2(0, 24)
+	boss_bar.size = Vector2(boss_status.size.x, 4)
+	brightness_indicator.size = Vector2(190, 30)
+	brightness_indicator.position = Vector2((size.x - 190) / 2, size.y - 46)
+	save_notice.position = Vector2(16, size.y - 88)
+	save_notice.size = Vector2(size.x - 32, 36)
 
 
 func _process(delta: float) -> void:
-	# Ten UI updates per second are enough for numbers; world motion stays smooth.
+	boss_victory_remaining = maxf(0.0, boss_victory_remaining - delta)
+	if boss_victory_remaining > 0.0:
+		boss_text.modulate.a = minf(1.0, boss_victory_remaining / BOSS_VICTORY_FADE)
+	elif not boss_was_alive:
+		boss_status.hide()
 	refresh_elapsed += delta
 	if refresh_elapsed >= 0.1:
-		refresh_elapsed = 0.0
+		refresh_elapsed = 0
 		refresh()
 
 
@@ -129,57 +168,52 @@ func refresh() -> void:
 	if is_instance_valid(leaderboard):
 		leaderboard.refresh()
 	var running: bool = lantern.running
+	displayed_brightness = lantern.brightness
+	scroll.visible = running
+	health_bar.visible = running
+	brightness_indicator.visible = running
 	var bosses := get_tree().get_nodes_in_group("bosses").filter(func(boss: Node): return not boss.is_queued_for_deletion())
-	boss_text.visible = running and main.boss_spawned
+	if not running or not main.boss_spawned:
+		boss_was_alive = false
+		boss_victory_remaining = 0.0
+	elif not bosses.is_empty():
+		boss_was_alive = true
+		boss_victory_remaining = 0.0
+	elif boss_was_alive:
+		boss_was_alive = false
+		boss_victory_remaining = BOSS_VICTORY_DURATION
+	boss_card.hide()
+	boss_status.hide()
 	boss_bar.visible = running and not bosses.is_empty()
+	boss_text.modulate.a = 1.0
 	if running and not bosses.is_empty():
 		var boss = bosses[0]
-		boss_text.text = "THE DRENCHER · %d / %d HP\n%s" % [int(ceil(boss.health)), int(boss.max_health), "Incoming! Keep clear of the blue ring." if boss.arrival_remaining > 0 else "Avoid its water trail."]
+		boss_card.visible = boss.arrival_remaining > 0
+		boss_status.visible = not boss_card.visible
+		boss_text.text = "THE DRENCHER · %d / %d" % [int(ceil(boss.health)), int(boss.max_health)]
 		boss_bar.max_value = boss.max_health
 		boss_bar.value = boss.health
-	elif running and main.boss_spawned:
+	elif running and boss_victory_remaining > 0.0:
+		boss_status.show()
 		boss_text.text = "THE DRENCHER DEFEATED"
-	earnings.visible = running or not main.last_run.is_empty()
-	health_bar.visible = running
-	brightness_box.visible = running
-	controls.visible = running
+		boss_text.modulate.a = minf(1.0, boss_victory_remaining / BOSS_VICTORY_FADE)
 	save_notice.text = main.save_message
 	save_notice.visible = not main.save_message.is_empty()
-	if running:
-		heading.text = "KEEP THE LIGHT ALIVE"
-		subheading.text = format_time(lantern.elapsed)
-		health_text.text = "HEALTH  %d / %d%s" % [int(ceil(lantern.health)), int(lantern.max_health), "  ·  DANGER" if lantern.health <= lantern.max_health * 0.25 else ""]
-		health_bar.max_value = lantern.max_health
-		health_bar.value = lantern.health
-		health_bar.modulate = Color("#ff806e") if lantern.health <= lantern.max_health * 0.25 else Color.WHITE
-		earnings.text = "+%d energy" % int(lantern.energy)
-		detail.text = "Earned this run · banked when it ends\nIn reserve: %d energy" % int(main.banked_energy)
-		var risk: Array[String] = ["LOW attraction", "MEDIUM attraction", "HIGH attraction"]
-		threat.text = "%s\nBasic enemies: %d hit%s to defeat" % [risk[lantern.brightness], int(main.current_enemy_health()), "" if main.current_enemy_health() == 1 else "s"]
-		if lantern.elapsed >= main.FIRST_CHARGER_TIME:
-			threat.text += "\nChargers: sidestep the amber line."
-		controls.text = "Move inside your turrets' reach.\n%s" % ("Left stick: move · Cross: brightness\nOptions: pause" if main.get_node("BuildController").using_controller else "WASD / arrows: move\nSpace: brightness · Esc / P: pause")
-		if displayed_brightness != lantern.brightness:
-			displayed_brightness = lantern.brightness
-			for index in range(3):
-				var selected := index == displayed_brightness
-				var color := LIGHT_COLORS[index]
-				light_buttons[index].add_theme_stylebox_override("normal", _style(color if selected else Color("#283744")))
-				light_buttons[index].add_theme_stylebox_override("hover", _style(color.lightened(0.1)))
-				light_buttons[index].add_theme_stylebox_override("pressed", _style(color.darkened(0.1)))
-				light_buttons[index].add_theme_color_override("font_color", Color("#111b23") if selected else INK)
-				light_buttons[index].add_theme_color_override("font_hover_color", Color("#111b23"))
-				light_buttons[index].add_theme_color_override("font_pressed_color", Color("#111b23"))
-	else:
-		heading.text = "THE LIGHT WENT OUT" if not main.last_run.is_empty() else "LITTLE LAST LIGHT"
-		if main.last_run.get("voluntary", false):
-			heading.text = "RUN ENDED"
-		heading.text += " · " + ("dev" if main.game_version == "dev" else "v" + main.game_version)
-		subheading.text = "Prepare your next run" if not main.last_run.is_empty() else "Build your refuge"
-		health_text.text = "%d HP · Full health on every start" % int(lantern.max_health)
-		if not main.last_run.is_empty():
-			earnings.text = "+%d energy earned" % int(main.last_run.energy)
-			detail.text = "Survived %s  ·  Best %s%s" % [format_time(main.last_run.duration), format_time(main.best_time), "\nNew personal best" if main.last_run.new_best else ""]
-		else:
-			earnings.text = "%d energy" % int(main.banked_energy)
-			detail.text = "Place your defense, then dodge within its reach.\nBest survival: %s" % format_time(main.best_time)
+	health_bar.max_value = lantern.max_health
+	health_bar.value = lantern.health
+	var danger: bool = lantern.health <= lantern.max_health * 0.25
+	health_text.text = "%d / %d HP%s" % [int(ceil(lantern.health)), int(lantern.max_health), " · DANGER" if danger else ""]
+	health_bar.modulate = Color("#ff806e") if danger else Color.WHITE
+	subheading.text = format_time(lantern.elapsed)
+	earnings.text = "+%d energy" % int(lantern.energy)
+	threat.text = "New enemies: %d hits" % int(main.current_enemy_health()) if running else ""
+	brightness_indicator.level = lantern.brightness
+	brightness_indicator.text = "%s · +%d/s" % [lantern.BRIGHTNESS_NAMES[lantern.brightness], int(lantern.ENERGY_RATES[lantern.brightness])]
+	if not running:
+		heading.text = ("RUN ENDED" if main.last_run.get("voluntary", false) else "THE LIGHT WENT OUT") if not main.last_run.is_empty() else "LITTLE LAST LIGHT"
+		heading.text += " · " + main.game_version
+		detail.text = "Survived %s · Best %s%s" % [format_time(main.last_run.get("duration", 0)), format_time(main.best_time), "\nNew personal best" if main.last_run.get("new_best", false) else ""]
+		earnings.text = "+%d energy earned" % int(main.last_run.get("energy", 0))
+	var preparation := main.get_node_or_null("PreparationUI")
+	if preparation != null and preparation.is_node_ready():
+		preparation.refresh()

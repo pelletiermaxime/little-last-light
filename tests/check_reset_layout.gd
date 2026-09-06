@@ -45,12 +45,14 @@ func check() -> void:
 	starter.position = Vector2(50, 50)
 	var event := InputEventJoypadButton.new()
 	event.device = 3
-	event.button_index = JOY_BUTTON_Y
+	scene.get_node("PreparationUI").open_view(1)
+	build.reset_button.grab_focus()
+	event.button_index = JOY_BUTTON_A
 	event.pressed = true
 	root.push_input(event)
 	event.pressed = false
 	root.push_input(event)
-	expect(starter.position.is_equal_approx(scene.get_arena_rect().get_center() + Vector2(80,0)), "Triangle/Y can reset layout from a controller")
+	expect(starter.position.is_equal_approx(scene.get_arena_rect().get_center() + Vector2(80,0)), "Confirm activates the selected refund button from a controller")
 	build.begin_placement()
 	build.reset_layout()
 	expect(not build.placing and is_equal_approx(scene.banked_energy, 120.5), "Unpurchased ghost never earns a refund")

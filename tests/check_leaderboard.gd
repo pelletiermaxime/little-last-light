@@ -128,15 +128,24 @@ func check() -> void:
 	finish(scene, 120.0)
 	panel = scene.get_node("GameHUD").leaderboard
 	expect(scene.best_time == 120.0 and scene.version_bests["0.2.0"] == 12.345, "Playtests do not change release bests")
-	expect(scene.leaderboard_profile.pending == release_offer, "Playtests preserve an unpublished release offer")
-	expect(not panel.publish.visible and panel.notice.text.contains("Development build"), "Dev explains that records stay local")
+	expect(scene.leaderboard_profile.pending.version == "dev" and scene.leaderboard_profile.pending.durationMs == 120000, "Dev records create their own publish offer")
+	expect(panel.publish.visible and panel.prompt.text.contains("dev"), "Dev offers public publishing")
 	panel.api_url = "https://example.convex.site"
+	panel.username.text = "DevKeeper"
 	panel._publish()
-	expect(panel.sending.is_empty(), "Dev cannot send leaderboard requests")
+	expect(panel.sending.version == "dev", "Dev can send leaderboard requests")
+	panel.request.cancel_request()
+	panel._completed(HTTPRequest.RESULT_CANT_CONNECT, 0, [], PackedByteArray())
+	expect(scene.leaderboard_profile.pending.version == "dev", "Failed dev publication remains retryable")
+	expect(panel._scores_url().ends_with("?version=dev"), "Dev reads only its own scores")
+	panel._scores_completed(HTTPRequest.RESULT_SUCCESS, 200, [], '[{"rank":1,"username":"DevKeeper","durationMs":120000}]'.to_utf8_buffer())
+	expect(panel.scores_page.visible and panel.scores_rows.get_child(0).text == "#1  DevKeeper\n02:00.000", "Dev displays published rankings inside the game")
+	expect(not panel.refresh_scores.disabled, "Dev rankings can be refreshed")
 	scene.free()
 	await process_frame
 	scene = game("dev")
 	expect(scene.best_time == 120.0 and scene.banked_energy == 107.0, "Dev record and progression survive reopening")
+	expect(scene.leaderboard_profile.pending.version == "dev", "Dev publish offer survives reopening")
 	scene.free()
 	await process_frame
 	var file := FileAccess.open(path, FileAccess.WRITE)

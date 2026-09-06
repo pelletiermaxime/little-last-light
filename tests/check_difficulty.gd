@@ -26,7 +26,7 @@ func check() -> void:
 	expect(build.turret_cost() == 30.0, "Second extra turret costs 30")
 	expect(build.placement_error(Vector2(3, 300)) == "Too close to the arena edge", "Edge rejection explained")
 	expect(build.placement_error(another.position) == "Too close to another turret", "Spacing rejection explained")
-	expect(build.placement_error(scene.get_node("GameHUD").scroll.position + Vector2(10, 10)) == "Place inside the arena", "Sidebar is outside arena")
+	expect(scene.get_arena_rect().size == scene.get_viewport_rect().size, "Arena fills the whole viewport")
 	expect(build.can_place_at(Vector2(30, 30)), "Former top-left HUD location is buildable")
 	var arena: Rect2 = scene.get_arena_rect()
 	var empty_bottom := Vector2(arena.size.x * 0.5, arena.size.y - 36)
@@ -89,5 +89,5 @@ func check() -> void:
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:
-		print("PASS: prices, arena/sidebar separation, buildable former HUD areas, consistent phases, spawn/movement bounds, multi-hit enemies, continuing pressure")
+		print("PASS: prices, full-window arena, buildable former HUD areas, consistent phases, spawn/movement bounds, multi-hit enemies, continuing pressure")
 	quit(0 if failures == 0 else 1)

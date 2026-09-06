@@ -22,23 +22,29 @@ func check() -> void:
 	var hud = scene.get_node("GameHUD")
 	var build = scene.get_node("BuildController")
 	var lantern = scene.lantern
-	expect(not hud.brightness_box.visible, "Preparation hides combat brightness controls")
-	hud.light_buttons[2].pressed.emit()
+	expect(not hud.brightness_indicator.visible, "Preparation hides combat brightness controls")
+	hud.brightness_indicator.pressed.emit()
 	expect(lantern.brightness == 0, "Hidden brightness actions cannot change preparation state")
 	expect(hud.format_time(125.9) == "02:05", "Survival time uses whole minutes and seconds")
 	scene.continue_to_preparation()
 	scene.start_run()
 	for level in range(3):
-		hud.light_buttons[level].pressed.emit()
+		lantern.set_brightness((level + 2) % 3)
+		hud.brightness_indicator.pressed.emit()
 		expect(lantern.brightness == level, "Brightness buttons select their own level")
 		expect(hud.displayed_brightness == level, "Selected brightness is immediately shown")
-		expect(hud.light_buttons[level].text.contains("+%d /s" % int(lantern.ENERGY_RATES[level])), "Income labels match gameplay rates")
+		expect(hud.brightness_indicator.text.contains("+%d/s" % int(lantern.ENERGY_RATES[level])), "Income labels match gameplay rates")
 	lantern.elapsed = 65.0
 	lantern.energy = 28.4
 	lantern.health = 6.0
 	hud.refresh()
 	expect(hud.health_bar.value == 6.0 and hud.health_text.text.contains("DANGER"), "Low health has a number, bar, and warning")
 	expect(hud.subheading.text == "01:05", "Run timer displays actual elapsed time")
+	expect(hud.brightness_indicator.level == 2, "Three segments indicate high brightness")
+	for frame in range(5):
+		await process_frame
+	expect(hud.health_group.size.y <= 42 and hud.timer_group.size.y <= 64, "HP and time stay compact after container layout")
+	expect(not hud.health_group is PanelContainer and not hud.timer_group is PanelContainer, "HP and time have no card backgrounds")
 	scene.banked_energy = 5.0
 	lantern.take_damage(100.0)
 	hud.refresh()
@@ -49,13 +55,13 @@ func check() -> void:
 	expect(hud.earnings.text == "+28 energy earned", "Recap retains earned amount after death")
 	lantern._process(0.2)
 	expect(lantern.hit_flash == 0.0 and lantern.energy == 0.0, "Hit feedback fades after death without producing preparation income")
-	expect(build.bar.get_parent() == hud.panel and hud.panel.get_parent() == hud.scroll, "Recap and actions share a scrollable column instead of overlapping")
-	expect(build.overview.text.contains("affordable"), "Recap identifies affordable next purchase")
+	expect(not scene.get_node("PreparationUI").card.visible and scene.get_node("ResultsScreen").overlay.visible, "Results replace preparation controls")
+	expect(not build.build_button.disabled, "Earned energy makes the next turret affordable")
 	scene.continue_to_preparation()
 	build.begin_placement()
 	expect(build.try_place(Vector2(100, 100)), "Purchase after recap succeeds")
 	build._update_interface()
-	expect(build.overview.text.contains("17 more"), "Purchase refreshes progress toward escalating next price")
+	expect(build.build_button.disabled and int(ceil(build.turret_cost() - scene.banked_energy)) == 17, "Purchase refreshes affordability at the next price")
 	scene.save_message = "Save test warning"
 	hud.refresh()
 	expect(hud.save_notice.visible and hud.save_notice.text == scene.save_message, "Save failures remain visible")

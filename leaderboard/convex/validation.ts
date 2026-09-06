@@ -1,7 +1,7 @@
 import { validateTurretLayout } from './runDetails'
 
 export function validVersion(version: string) {
-  return /^(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})$/.test(version)
+  return version === 'dev' || /^(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})$/.test(version)
 }
 
 export function validateScore(value: unknown) {

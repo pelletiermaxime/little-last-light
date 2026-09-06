@@ -45,7 +45,8 @@ func check() -> void:
 	build._process(0.1)
 	assert(build.controller_cursor.x > before.x, "Stick moves preparation cursor")
 	axis(0.0)
-	build.controller_cursor = scene.get_arena_rect().size * Vector2(0.2, 0.3)
+	# Keep this movement fixture clear of the interactive left-hand placement card.
+	build.controller_cursor = scene.get_arena_rect().size * Vector2(0.7, 0.3)
 	press(JOY_BUTTON_X)
 	press(JOY_BUTTON_A)
 	assert(not build.placing and scene.banked_energy == 20.0, "Cross buys at cursor")

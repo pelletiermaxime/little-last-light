@@ -16,6 +16,20 @@ const board = async (t: ReturnType<typeof convexTest>, version = '0.1.0') => (aw
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('HTTP leaderboard contract', () => {
+  it('publishes and reads dev scores separately from release scores', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = convexTest(schema, modules)
+    expect(await board(t, 'dev')).toEqual([])
+    expect((await post(t, detailedPayload)).status).toBe(200)
+    vi.setSystemTime(Date.now() + 6000)
+    expect((await post(t, { ...detailedPayload, version: 'dev', durationMs: 120000 })).status).toBe(200)
+    expect(await board(t, 'dev')).toMatchObject([{ rank: 1, username: 'Keeper', durationMs: 120000, turretLayout }])
+    expect(await board(t)).toMatchObject([{ durationMs: 65000 }])
+    expect(await t.query(api.scores.list, { version: 'dev' })).toMatchObject([{ durationMs: 120000 }])
+    expect(await (await t.fetch('/versions')).json()).toContain('dev')
+    expect((await post(t, { ...payload, version: 'development' })).status).toBe(400)
+  })
+
   it('isolates releases, orders scores, updates one record and keeps identity private', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     const t = convexTest(schema, modules)
