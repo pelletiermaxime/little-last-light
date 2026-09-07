@@ -28,6 +28,7 @@ var boss_card: PanelContainer
 var boss_status: Control
 var boss_warning: Label
 var boss_was_alive := false
+var last_boss_name := "THE DRENCHER"
 var boss_victory_remaining := 0.0
 var refresh_elapsed := 0.0
 var displayed_brightness := -1
@@ -204,11 +205,14 @@ func refresh() -> void:
 		var boss = bosses[0]
 		var final_boss: bool = boss.is_in_group("final_bosses")
 		var boss_name := "THE SNUFFER" if final_boss else "THE DRENCHER"
+		if boss.has_method("boss_title"):
+			boss_name = boss.boss_title()
+		last_boss_name = boss_name
 		boss_warning.text = boss_name + ("\nIncoming! The fight continues." if final_boss else "\nIncoming!")
 		boss_card.visible = boss.arrival_remaining > 0
 		boss_status.visible = not boss_card.visible
 		boss_text.text = "%s · %d / %d" % [boss_name, int(ceil(boss.health)), int(boss.max_health)]
-		if final_boss:
+		if boss.has_method("attack_caption"):
 			boss_text.text += "\n" + boss.attack_caption()
 			boss_status.size.y = 52
 			boss_text.size.y = 44
@@ -221,7 +225,7 @@ func refresh() -> void:
 		boss_bar.value = boss.health
 	elif running and boss_victory_remaining > 0.0:
 		boss_status.show()
-		boss_text.text = "THE DRENCHER DEFEATED"
+		boss_text.text = last_boss_name + " DEFEATED"
 		boss_text.modulate.a = minf(1.0, boss_victory_remaining / BOSS_VICTORY_FADE)
 	save_notice.text = main.save_message
 	save_notice.visible = not main.save_message.is_empty()

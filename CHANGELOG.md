@@ -8,6 +8,12 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Added
+
+- Added three opt-in boss playtests: the Rainkeeper's marked pools, the Tidekeeper's broken water fronts, and the Wickwatcher's brightness-charged rush. Each can be tested individually at one minute with a separate practice save.
+
+## [0.0.16] - 2026-09-07
+
 ### Changed
 
 - Release notes now use this maintained changelog instead of commit titles.
