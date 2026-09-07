@@ -34,6 +34,40 @@ def git(*args):
     return subprocess.check_output(["git", *args], text=True).strip()
 
 
+def changelog_sections(source):
+    """Read level-two release headings, preserving Markdown within each entry."""
+    sections = {}
+    heading = None
+    lines = []
+    for line in source.splitlines() + ["## "]:
+        if line.startswith("## "):
+            if heading is not None:
+                if heading in sections:
+                    raise ValueError(f"Duplicate changelog section: {heading}")
+                sections[heading] = "\n".join(lines).strip()
+            match = re.fullmatch(r"## \[(Unreleased|v?\d+\.\d+\.\d+)\](?: - \d{4}-\d{2}-\d{2})?", line)
+            heading = match[1].removeprefix("v") if match else None
+            lines = []
+        else:
+            lines.append(line)
+    return sections
+
+
+def release_changes(source, version, previous_source=""):
+    sections = changelog_sections(source)
+    if version in sections:
+        if not sections[version]:
+            raise ValueError(f"Empty changelog section for {version}")
+        return sections[version]
+    if "Unreleased" not in sections:
+        raise ValueError("CHANGELOG.md must contain an [Unreleased] section")
+    changes = sections["Unreleased"]
+    previous = changelog_sections(previous_source).get("Unreleased", "")
+    if not changes or changes == previous:
+        return "- No player-facing changes recorded for this release."
+    return changes
+
+
 def main():
     os.chdir(Path(__file__).resolve().parents[1])
     commit = git("rev-parse", "HEAD")
@@ -52,12 +86,14 @@ def main():
     tag = f"v{version}"
     previous = sorted(t for t in tags if version_tuple(t) < selected)
     previous = max(previous, key=version_tuple) if previous else None
-    revision = f"{previous}..{commit}" if previous else commit
-    changes = git("log", "--no-merges", "--format=- %s (%h)", revision)
+    previous_source = ""
+    if previous and "CHANGELOG.md" in git("ls-tree", "--name-only", previous, "CHANGELOG.md").splitlines():
+        previous_source = git("show", f"{previous}:CHANGELOG.md")
+    changes = release_changes(Path("CHANGELOG.md").read_text(), version, previous_source)
     notes = (
         f"# Little Last Light {tag}\n\n"
         f"Built from commit `{commit}`.\n\n"
-        "## Changes\n\n" + (changes or "- No additional commits.") + "\n\n"
+        "## Changes\n\n" + changes + "\n\n"
         "## Downloads\n\n"
         "Extract the Windows ZIP and run `little-last-light.exe`, or extract the Linux "
         "tarball and run `./little-last-light.x86_64`. These are unsigned x86_64 builds. "

@@ -42,6 +42,7 @@ var health_level: int = 0
 var energy_level: int = 0
 var proximity_level: int = 0
 var boss_reward_earned: bool = false
+var boss_reward_amount: float = 0.0
 var boss_reward_notice_until: float = 0.0
 var slow_levels: Dictionary = {"slow_rate": 0, "slow_strength": 0, "slow_duration": 0}
 var best_time: float = 0.0
@@ -212,6 +213,7 @@ func start_run() -> void:
 	spawn_progress = 0.0
 	boss_spawned = false
 	boss_reward_earned = false
+	boss_reward_amount = 0.0
 	boss_reward_notice_until = 0.0
 	final_boss_spawned = false
 	next_charger_time = FIRST_CHARGER_TIME
@@ -237,7 +239,7 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	var previous_clear := float(version_clears.get(game_version, 0.0))
 	var new_clear: bool = victory and (previous_clear == 0.0 or lantern.elapsed < previous_clear)
 	last_run = {"duration": lantern.elapsed, "survival": survival, "victory": victory, "energy": lantern.energy, "new_best": new_clear if victory else survival > best_time, "voluntary": voluntary}
-	last_run.boss_bonus = BOSS_ENERGY_REWARD if boss_reward_earned else 0.0
+	last_run.boss_bonus = boss_reward_amount
 	best_time = maxf(best_time, survival)
 	if new_clear:
 		version_clears[game_version] = lantern.elapsed
@@ -401,8 +403,9 @@ func _on_drencher_defeated() -> void:
 	if phase != Phase.RUNNING or lantern.health <= 0.0 or boss_reward_earned:
 		return
 	boss_reward_earned = true
+	boss_reward_amount = BOSS_ENERGY_REWARD * energy_multiplier()
 	boss_reward_notice_until = lantern.elapsed + 5.0
-	lantern.energy += BOSS_ENERGY_REWARD
+	lantern.energy += boss_reward_amount
 	save_progress()
 	$GameHUD.refresh()
 	get_node("/root/GameAudio").play(&"upgrade")

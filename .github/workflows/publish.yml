@@ -151,6 +151,7 @@ jobs:
           tag="$RELEASE_TAG"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" downloads/* --clobber
+            gh release edit "$tag" --notes-file metadata/notes.md
           else
             gh release create "$tag" downloads/* \
               --target "$COMMIT" \

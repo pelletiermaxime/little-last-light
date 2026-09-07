@@ -237,7 +237,7 @@ func refresh() -> void:
 		progress.get_child(main.MAX_UPGRADE_LEVEL).text = " %d/%d" % [levels[kind], main.MAX_UPGRADE_LEVEL]
 	upgrade_summaries["Damage turrets"].text = "%.1f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second()]
 	upgrade_summaries["Slow turrets"].text = "%.0f%% slow · lasts %.2fs\nActivates every %.1fs" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
-	upgrade_summaries["Lantern"].text = "%.0f maximum HP\n+%d%% passive energy" % [main.lantern_max_health(), main.energy_level * 25]
+	upgrade_summaries["Lantern"].text = "%.0f maximum HP\n+%d%% passive & boss energy" % [main.lantern_max_health(), main.energy_level * 25]
 	back_button.visible = not home and not (placement and build.placing)
 	hide_button.visible = placement
 	records_button.visible = home

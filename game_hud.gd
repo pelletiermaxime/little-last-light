@@ -235,7 +235,7 @@ func refresh() -> void:
 	earnings.text = "+%d energy" % int(lantern.energy)
 	schedule_text.text = main.ENCOUNTER_SCHEDULE.period(lantern.elapsed)
 	if main.boss_reward_earned and lantern.elapsed < main.boss_reward_notice_until:
-		schedule_text.text = "Drencher defeated · +%d energy" % int(main.BOSS_ENERGY_REWARD)
+		schedule_text.text = "Drencher defeated · +%d energy" % int(main.boss_reward_amount)
 	threat.text = "New enemies: %d hits" % int(main.current_enemy_health()) if running else ""
 	brightness_indicator.level = lantern.brightness
 	brightness_indicator.text = "%s · +%.1f/s" % [lantern.BRIGHTNESS_NAMES[lantern.brightness], lantern.current_energy_rate()]

@@ -21,6 +21,7 @@ func game() -> Node2D:
 	return scene
 
 func check() -> void:
+	DirAccess.remove_absolute(path)
 	var scene := game()
 	var prep = scene.get_node("PreparationUI")
 	prep.open_view(prep.View.UPGRADES)
@@ -43,17 +44,17 @@ func check() -> void:
 	expect(not scene.boss_reward_earned, "Damaging the boss gives no reward")
 	boss.take_damage(10000.0)
 	boss.take_damage(10000.0)
-	expect(scene.boss_reward_earned and is_equal_approx(scene.lantern.energy, 840.0), "Defeating the boss pays a fixed 300 once, without income amplification")
+	expect(scene.boss_reward_earned and is_equal_approx(scene.lantern.energy, 915.0), "Defeating the boss pays an amplified 375 once at energy level one")
 	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
-	expect(is_equal_approx(saved.energy, 2240.0), "Boss reward is saved immediately with current run earnings")
-	expect(scene.get_node("GameHUD").schedule_text.text.contains("+300 energy"), "Boss reward has visible feedback")
+	expect(is_equal_approx(saved.energy, 2315.0), "Boss reward is saved immediately with current run earnings")
+	expect(scene.get_node("GameHUD").schedule_text.text.contains("+375 energy"), "Boss reward has visible feedback")
 	scene.end_run(true)
-	expect(is_equal_approx(scene.banked_energy, 2240.0) and scene.last_run.boss_bonus == 300.0, "End Run banks the reward exactly once and retains its breakdown")
-	expect(scene.get_node("ResultsScreen").stats.text.contains("Includes 300 energy"), "Results identify the boss reward within the total")
+	expect(is_equal_approx(scene.banked_energy, 2315.0) and scene.last_run.boss_bonus == 375.0, "End Run banks the reward exactly once and retains its breakdown")
+	expect(scene.get_node("ResultsScreen").stats.text.contains("Includes 375 energy"), "Results identify the boss reward within the total")
 	scene.free()
 	await process_frame
 	scene = game()
-	expect(scene.energy_level == 1 and is_equal_approx(scene.banked_energy, 2240.0), "Income level and reward survive reopening")
+	expect(scene.energy_level == 1 and is_equal_approx(scene.banked_energy, 2315.0), "Income level and reward survive reopening")
 	scene.banked_energy = 5000.0
 	for cost in [200.0, 400.0, 800.0, 1600.0]:
 		expect(scene.upgrade_cost("energy") == cost and scene.buy_upgrade("energy"), "Remaining income upgrade levels use the doubling ladder")
@@ -67,6 +68,20 @@ func check() -> void:
 	scene._spawn_boss()
 	scene.end_run(true)
 	expect(scene.last_run.boss_bonus == 0.0 and is_equal_approx(scene.last_run.energy, 13.5), "Ending a run with a living boss never grants its reward")
+	for level in range(6):
+		scene.continue_to_preparation()
+		scene.energy_level = level
+		scene.start_run()
+		scene._set_turrets_active(false)
+		expect(scene.boss_reward_amount == 0.0, "New runs clear the previous reward amount")
+		scene._spawn_boss()
+		var next_boss = get_nodes_in_group("bosses")[0]
+		next_boss.take_damage(10000.0)
+		next_boss.take_damage(10000.0)
+		var expected := 300.0 + 75.0 * level
+		expect(scene.lantern.energy == expected and scene.boss_reward_amount == expected, "Boss reward scales once at energy level %d" % level)
+		scene.end_run(true)
+		expect(scene.last_run.boss_bonus == expected, "Results retain the scaled reward at level %d" % level)
 	scene.free()
 	await process_frame
 	# Older profiles default to no income upgrade; invalid levels remain rejected.
