@@ -35,6 +35,7 @@ const UPGRADE_BASE_COSTS: Dictionary = {"damage": 120.0, "fire_rate": 100.0, "he
 @onready var lantern: Node2D = $Lantern
 
 var phase: Phase = Phase.PREPARATION
+var pickups: Node2D
 var banked_energy: float = 0.0
 var damage_level: int = 0
 var fire_rate_level: int = 0
@@ -72,6 +73,8 @@ func _ready() -> void:
 	previous_viewport_size = get_arena_rect().size
 	$Turret.position = lantern.position + Vector2(80.0, 0.0)
 	lantern.died.connect(_on_lantern_died)
+	pickups = preload("res://run_pickups.gd").new()
+	add_child(pickups)
 	load_progress()
 	configure_lantern()
 	for turret in get_tree().get_nodes_in_group("turrets"):
@@ -201,6 +204,7 @@ func start_run() -> void:
 		return
 	get_node("/root/GameAudio").play(&"confirm")
 	_clear_enemies()
+	pickups.reset()
 	# Snapshot the defense budget before the run. Unspent savings do not help survival.
 	run_energy_invested = defense_investment()
 	lantern.health = lantern.max_health
@@ -234,6 +238,7 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	phase = Phase.RESULTS
 	get_tree().paused = false
 	lantern.running = false
+	pickups.reset()
 	# Capture the result before banking clears this run's energy.
 	var survival := minf(lantern.elapsed, final_boss_time)
 	var previous_clear := float(version_clears.get(game_version, 0.0))

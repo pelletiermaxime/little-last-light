@@ -8,6 +8,12 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Added
+
+- Early-run Kindling and Flare pickups reward movement with eight seconds of doubled passive energy or a nearby burst of damage. Walk into their marked circles before the countdown expires.
+
+## [0.0.16] - 2026-09-07
+
 ### Changed
 
 - Release notes now use this maintained changelog instead of commit titles.
