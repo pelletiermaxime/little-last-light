@@ -1,5 +1,16 @@
 # Sniper visual study
 
+The chosen **Watchlight** is now playable. For a fresh, funded local playtest
+with two Watchlights, one basic turret and one slow turret, run:
+
+```sh
+godot --path . --script res://previews/launch_watchlight_playtest.gd
+```
+
+This uses a temporary save and disables leaderboard requests. Add
+`-- --capture-watchlight` to capture placement/combat screenshots and exit.
+In the normal game, buy a Watchlight from the placement toolbar or press **N**.
+
 Run from the project directory:
 
 ```sh
@@ -15,9 +26,8 @@ flash. Click **Fire together** (Space), **Pause / Resume** (P), or **Slow motion
 Pause first, then fire to hold the shot for inspection. Targets are visual dummies;
 the preview does not simulate damage, range, or target selection.
 
-The reusable `sniper_visual.gd` draws the three appearances. A future combat
-turret can drive its design, charge, flash, aim angle, and shot endpoint. This
-preview does not add three purchasable turrets or alter the normal game scene.
+The reusable `sniper_visual.gd` draws the three appearances; `sniper_turret.gd`
+now drives the Watchlight in combat. The gallery still compares all three designs.
 The launcher never loads game progress and uses temporary display preferences.
 
 For reproducible ready/firing screenshots, add `-- --capture-snipers` to the

@@ -1,8 +1,8 @@
 extends Node2D
 
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
-const PULSE_TURRET_SCENE: PackedScene = preload("res://pulse_turret.tscn")
 const PULSE_COST_PREMIUM: float = 60.0
+const SNIPER_COST_PREMIUM: float = 60.0
 const BASE_TURRET_COST: float = 60.0
 const EXTRA_TURRET_COST: float = 25.0
 const PLACEMENT_MARGIN: float = 20.0
@@ -15,6 +15,7 @@ var placing: bool = false
 var preview: Node2D
 var build_button: Button
 var pulse_button: Button
+var sniper_button: Button
 var placement_type: String = "damage"
 var cancel_button: Button
 var start_button: Button
@@ -45,6 +46,7 @@ func _ready() -> void:
 	var actions := preparation.get_node("Card/Padding/Content/Actions")
 	build_button = actions.get_node("BuildButton")
 	pulse_button = actions.get_node("PulseButton")
+	sniper_button = actions.get_node("SniperButton")
 	cancel_button = actions.get_node("CancelButton")
 	start_button = actions.get_node("StartButton")
 	sell_button = actions.get_node("SellButton")
@@ -55,6 +57,7 @@ func _ready() -> void:
 	quit_button = preparation.get_node("Card/Padding/Content/Footer/QuitButton")
 	build_button.pressed.connect(begin_placement)
 	pulse_button.pressed.connect(func(): begin_placement("pulse"))
+	sniper_button.pressed.connect(func(): begin_placement("sniper"))
 	cancel_button.pressed.connect(cancel_placement)
 	start_button.pressed.connect(main.start_run)
 	sell_button.pressed.connect(sell_selected_turret)
@@ -96,7 +99,8 @@ func _process(delta: float) -> void:
 
 func turret_cost(kind: String = "damage") -> float:
 	var purchased := maxi(0, get_tree().get_nodes_in_group("turrets").size() - 1)
-	return BASE_TURRET_COST + purchased * EXTRA_TURRET_COST + (PULSE_COST_PREMIUM if kind == "pulse" else 0.0)
+	var premium := PULSE_COST_PREMIUM if kind == "pulse" else (SNIPER_COST_PREMIUM if kind == "sniper" else 0.0)
+	return BASE_TURRET_COST + purchased * EXTRA_TURRET_COST + premium
 
 
 func layout_refund() -> float:
@@ -181,6 +185,7 @@ func _update_interface() -> void:
 	start_button.text = "Start run (%s)" % ("Menu" if using_controller else "Enter")
 	build_button.disabled = placing or main.banked_energy < turret_cost()
 	pulse_button.disabled = placing or main.banked_energy < turret_cost("pulse")
+	sniper_button.disabled = placing or main.banked_energy < turret_cost("sniper")
 	var preparation := main.get_node_or_null("PreparationUI")
 	if preparation != null and preparation.is_node_ready():
 		preparation.refresh()
@@ -216,6 +221,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("build_pulse_turret"):
 		begin_placement("pulse")
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("build_sniper_turret"):
+		begin_placement("sniper")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("reset_layout"):
 		reset_layout()
@@ -278,7 +286,7 @@ func _select_or_place(point: Vector2) -> void:
 
 
 func begin_placement(kind: String = "damage") -> void:
-	if kind not in ["damage", "pulse"]:
+	if kind not in ["damage", "pulse", "sniper"]:
 		return
 	if main.phase == main.Phase.PREPARATION:
 		main.get_node("PreparationUI").open_view(1)
@@ -301,9 +309,10 @@ func begin_move(turret: Node2D) -> void:
 
 func _show_preview() -> void:
 	preview.free()
-	preview = (PULSE_TURRET_SCENE if placement_type == "pulse" else TURRET_SCENE).instantiate()
+	preview = main.turret_scene(placement_type).instantiate()
 	preview.process_mode = Node.PROCESS_MODE_DISABLED
 	preview.remove_from_group("turrets")
+	main.configure_turret(preview)
 	add_child(preview)
 	placing = true
 	preview.global_position = _cursor_position()
@@ -341,7 +350,7 @@ func try_place(point: Vector2) -> bool:
 		var cost := turret_cost(placement_type)
 		if main.banked_energy < cost:
 			return false
-		var turret := (PULSE_TURRET_SCENE if placement_type == "pulse" else TURRET_SCENE).instantiate() as Node2D
+		var turret := main.turret_scene(placement_type).instantiate() as Node2D
 		turret.purchase_cost = cost
 		main.configure_turret(turret)
 		turret.process_mode = Node.PROCESS_MODE_DISABLED

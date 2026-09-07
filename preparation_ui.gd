@@ -204,6 +204,8 @@ func refresh() -> void:
 	build.build_button.text = "Damage turret · %d%s" % [int(build.turret_cost()), "" if build.using_controller else " (B)"]
 	build.pulse_button.visible = placement
 	build.pulse_button.text = "Slow turret · %d%s" % [int(build.turret_cost("pulse")), "" if build.using_controller else " (V)"]
+	build.sniper_button.visible = placement
+	build.sniper_button.text = "Watchlight · %d%s" % [int(build.turret_cost("sniper")), "" if build.using_controller else " (N)"]
 	build.cancel_button.visible = placement and build.placing
 	build.cancel_button.text = "Cancel placement" if build.using_controller else "Cancel placement · Esc"
 	back_button.text = "Done" if build.using_controller else "Done · Esc"
@@ -235,7 +237,7 @@ func refresh() -> void:
 		for level in range(main.MAX_UPGRADE_LEVEL):
 			progress.get_child(level).color = Color("#ffd17b") if level < levels[kind] else Color("#354955")
 		progress.get_child(main.MAX_UPGRADE_LEVEL).text = " %d/%d" % [levels[kind], main.MAX_UPGRADE_LEVEL]
-	upgrade_summaries["Damage turrets"].text = "%.1f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second()]
+	upgrade_summaries["Damage turrets"].text = "Basic: %.1f damage · %.2f shots/s\nWatchlight: %.1f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second(), main.turret_damage() * 3.0, main.turret_shots_per_second() / 3.0]
 	upgrade_summaries["Slow turrets"].text = "%.0f%% slow · lasts %.2fs\nActivates every %.1fs" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
 	upgrade_summaries["Lantern"].text = "%.0f maximum HP\n+%d%% passive & boss energy" % [main.lantern_max_health(), main.energy_level * 25]
 	back_button.visible = not home and not (placement and build.placing)
@@ -259,14 +261,14 @@ func refresh() -> void:
 		title.text = "Arrange your defense · %d energy" % int(main.banked_energy)
 	description.text = "Place your defense. Choose your upgrades. See how long your light lasts." if home else ("Click a turret to move or sell it. B buys a new one." if placement else ("Permanent improvements for every future run." if upgrades else "Best: %s · %s" % [hud.format_time(main.best_time), main.game_version]))
 	if placement:
-		description.text = "Damage turrets shoot. Slow turrets: %.0f%% slow for %.2fs every %.1fs. Select a turret to move or sell." % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
+		description.text = "Basic: nearest enemy. Watchlight: furthest in range, heavy shots with a long reload. Slow turrets hinder enemies. Select to move or sell."
 	elif upgrades:
 		title.text = "Improve your defense"
 		description.text = "Permanent upgrades for every turret of its type and your lantern."
 	if placement and build.placing:
 		description.text = "Place through the card background. Tab hides all controls. Esc cancels."
 	if build.using_controller and placement:
-		description.text = "Slow turret: %.0f%% for %.2fs every %.1fs.\nLeft stick: cursor · D-pad: toolbar\nConfirm: select / place · Back: cancel / done" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
+		description.text = "Watchlight: furthest in range, heavy shots with a long reload.\nLeft stick: cursor · D-pad: toolbar\nConfirm: select / place · Back: cancel / done"
 	if not main.save_message.is_empty():
 		description.text = main.save_message
 	var size := get_viewport().get_visible_rect().size

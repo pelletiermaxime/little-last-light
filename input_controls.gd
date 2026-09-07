@@ -257,6 +257,8 @@ func refresh_prompts() -> void:
 	var build = main.get_node("BuildController")
 	for button in [prep.place_button, prep.upgrades_button, prep.records_button, prep.back_button, build.start_button, build.quit_button, build.reset_button, build.damage_button, build.rate_button, build.health_button]:
 		decorate(button, "confirm_placement")
+	decorate(build.sniper_button, "confirm_placement")
+	build.sniper_button.tooltip_text = "Watchlight sniper: %.1f damage, 360 range, one shot every %.2fs. Targets the furthest enemy from this turret. Damage upgrades and lantern proximity apply." % [main.turret_damage() * 3.0, 3.0 / main.turret_shots_per_second()]
 	for pair in [[build.build_button, "build_turret"], [build.pulse_button, "build_pulse_turret"], [build.cancel_button, "cancel_placement"], [prep.hide_button, "toggle_build_controls"], [prep.show_button, "toggle_build_controls"], [build.sell_button, "sell_turret"]]:
 		decorate(pair[0], pair[1])
 	for button in main.get_node("GameHUD").leaderboard.find_children("*", "Button", true, false):

@@ -19,6 +19,7 @@ const CHARGER_RAMP_END: float = 120.0
 const MAX_CHARGERS: int = 8
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
 const PULSE_TURRET_SCENE: PackedScene = preload("res://pulse_turret.tscn")
+const SNIPER_TURRET_SCENE: PackedScene = preload("res://sniper_turret.tscn")
 const SPAWN_INTERVALS: Array[float] = [2.0, 1.2, 0.65]
 const MIN_SPAWN_INTERVALS: Array[float] = [0.25, 0.15, 0.10]
 const PRESSURE_RAMP_SECONDS: float = 20.0
@@ -116,6 +117,16 @@ func configure_turret(turret: Node2D) -> void:
 		return
 	turret.damage = turret_damage()
 	turret.fire_interval = 1.0 / turret_shots_per_second()
+	if turret.turret_type == "sniper":
+		turret.damage *= turret.STAT_MULTIPLIER
+		turret.fire_interval *= turret.STAT_MULTIPLIER
+
+
+func turret_scene(kind: String) -> PackedScene:
+	match kind:
+		"pulse": return PULSE_TURRET_SCENE
+		"sniper": return SNIPER_TURRET_SCENE
+		_: return TURRET_SCENE
 
 
 func slow_interval() -> float:
@@ -599,7 +610,7 @@ func load_progress() -> void:
 	for index in range(data.turrets.size()):
 		var coordinates: Array = data.turrets[index]
 		var kind: String = data.turret_types[index] if data.has("turret_types") else "damage"
-		var turret := (PULSE_TURRET_SCENE if kind == "pulse" else TURRET_SCENE).instantiate() as Node2D
+		var turret := turret_scene(kind).instantiate() as Node2D
 		# Before selling existed, saved order was starter, then purchases at 20, 30…
 		var original_cost := 0.0 if index == 0 else 20.0 + 10.0 * (index - 1)
 		turret.purchase_cost = float(data.turret_costs[index]) if data.has("turret_costs") else original_cost
@@ -676,7 +687,7 @@ func _valid_save(data: Variant) -> bool:
 		if not types is Array or types.size() != positions.size() or types[0] != "damage":
 			return false
 		for kind in types:
-			if kind not in ["damage", "pulse"]:
+			if kind not in ["damage", "pulse", "sniper"]:
 				return false
 	if data.has("turret_costs"):
 		var costs = data.turret_costs
@@ -717,7 +728,7 @@ func _valid_run_layout(layout: Variant) -> bool:
 	for point in layout.turrets:
 		if not point is Dictionary:
 			return false
-		if point.has("type") and point.type not in ["damage", "pulse"]:
+		if point.has("type") and point.type not in ["damage", "pulse", "sniper"]:
 			return false
 		for key in ["x", "y"]:
 			var value = point.get(key)

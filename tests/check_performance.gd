@@ -2,9 +2,9 @@ extends SceneTree
 
 class CountingTurret extends "res://turret.gd":
 	var searches: int = 0
-	func _find_nearest_enemy() -> Node2D:
+	func _find_target() -> Node2D:
 		searches += 1
-		return super._find_nearest_enemy()
+		return super._find_target()
 
 var failures: int = 0
 var body_redraws: int = 0

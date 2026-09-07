@@ -2,6 +2,16 @@
 
 A small Godot learning project: defend a mobile lantern with fixed, automatically firing turrets.
 
+**Watchlight sniper:** use **N** or the placement toolbar to build one. It fires
+at the furthest living enemy within **360 pixels of the turret**, dealing **3
+damage every 4.5 seconds** before upgrades. Its shuttered housing faces each shot
+and follows the surviving target while recharging. A shot damages only one enemy.
+It costs 60 energy more than a basic turret at the same layout size (120 energy
+for the first purchase). Damage and fire-rate upgrades apply to both basic and
+sniper turrets: Watchlights retain 3× the damage and 3× the firing interval.
+Lantern proximity boosts both. Slow upgrades remain exclusive to slow turrets.
+Controller players can select Watchlight with the placement toolbar and confirm.
+
 ## Run the project
 
 Open `project.godot` in Godot and press F6 for the current scene or F5 for the project. Developed with Godot 4.7.2 using the Compatibility renderer.
