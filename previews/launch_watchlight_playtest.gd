@@ -10,6 +10,9 @@ func _initialize() -> void:
 
 
 func launch() -> void:
+	# Screenshot mode exits before sound effects finish; keep it silent.
+	if "--capture-watchlight" in OS.get_cmdline_user_args():
+		root.get_node("GameAudio").muted = true
 	ProjectSettings.set_setting("leaderboard/api_url", "")
 	var scene = load("res://main.tscn").instantiate()
 	scene.save_path = "/tmp/lll-watchlight-playtest-%d.json" % OS.get_process_id()
@@ -52,4 +55,8 @@ func launch() -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("/tmp/lll-watchlight-combat.png")
 		print("Captured Watchlight placement and combat")
+		# Leave the render callback before releasing the full game scene.
+		await process_frame
+		scene.queue_free()
+		await process_frame
 		quit()
