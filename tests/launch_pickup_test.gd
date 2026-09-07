@@ -19,10 +19,21 @@ func launch() -> void:
 	pickups.active = true
 	pickups.remaining = 18.0
 	pickups.kind = pickups.Kind.KINDLING
+	if OS.get_cmdline_user_args().has("--new-pickups"):
+		pickups.kind = pickups.Kind.SENTINEL
 	pickups.pickup_position = scene.lantern.position + Vector2(180, 40)
 	if not OS.get_cmdline_user_args().has("--capture"):
+		if OS.get_cmdline_user_args().has("--new-pickups"):
+			# Offer both new effects promptly, then resume ordinary random offers.
+			while is_instance_valid(scene) and pickups.active and scene.lantern.running:
+				await process_frame
+			await create_timer(2.0, false).timeout
+			if not is_instance_valid(scene) or not scene.lantern.running:
+				return
+			pickups._spawn()
+			pickups.kind = pickups.Kind.STILLNESS
 		# After the first marker, return to normal cadence; the second type is random.
-		pickups.next_spawn = 30.0
+		pickups.next_spawn = scene.lantern.elapsed + 30.0
 		return
 	scene.set_process(false)
 	scene.lantern.set_process(false)
@@ -36,6 +47,20 @@ func launch() -> void:
 	pickups.active = true
 	pickups.kind = pickups.Kind.KINDLING
 	await capture("active")
+	pickups.kindling_remaining = 0.0
+	pickups.active = true
+	pickups.kind = pickups.Kind.SENTINEL
+	pickups.pickup_position += Vector2(180, 0)
+	await capture("sentinel")
+	scene.lantern.position = pickups.pickup_position
+	await capture("sentinel-active")
+	pickups.active = true
+	pickups.kind = pickups.Kind.STILLNESS
+	pickups.pickup_position -= Vector2(180, 0)
+	await capture("stillness")
+	scene._spawn_enemy()
+	scene.lantern.position = pickups.pickup_position
+	await capture("stillness-active")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	quit()

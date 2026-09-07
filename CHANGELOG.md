@@ -12,6 +12,7 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 - Early-run Kindling and Flare pickups reward movement with eight seconds of doubled passive energy or a nearby burst of damage. Walk into their marked circles before the countdown expires.
 - Pickup markers are compact, with a detailed explanation only on the first offer of each type per run. Flare bursts reach 180 pixels and deal 8 damage.
+- Sentinel pickups create a powerful turret for 12 seconds at the collection spot. Stillness pickups freeze enemy movement and attacks for 3 seconds while you and your turrets stay active.
 
 ## [0.0.16] - 2026-09-07
 
