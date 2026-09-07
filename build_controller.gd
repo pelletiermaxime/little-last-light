@@ -167,15 +167,15 @@ func _update_interface() -> void:
 	if sell_button.visible:
 		sell_button.disabled = selected_turret.purchase_cost <= 0.0
 		sell_button.text = "Keep free starter turret" if sell_button.disabled else "Sell selected · +%d (%s)" % [int(selected_turret.purchase_cost), "R1 / RB" if using_controller else "X"]
-	damage_button.text = "Damage %.1f to %.1f (%s)\n%d energy" % [main.turret_damage(), main.turret_damage() + 1.5, "Confirm" if using_controller else "G", int(main.upgrade_cost("damage"))]
-	rate_button.text = "Fire rate %.2f to %.2f/s (%s)\n%d energy" % [main.turret_shots_per_second(), main.turret_shots_per_second() + 0.25 / 1.5, "Confirm" if using_controller else "F", int(main.upgrade_cost("fire_rate"))]
+	damage_button.text = "Damage %.1f to %.1f\n%d energy" % [main.turret_damage(), main.turret_damage() + 1.5, int(main.upgrade_cost("damage"))]
+	rate_button.text = "Fire rate %.2f to %.2f/s\n%d energy" % [main.turret_shots_per_second(), main.turret_shots_per_second() + 0.25 / 1.5, int(main.upgrade_cost("fire_rate"))]
 	damage_button.disabled = placing or main.banked_energy < main.upgrade_cost("damage") or main.damage_level >= main.MAX_UPGRADE_LEVEL
 	rate_button.disabled = placing or main.banked_energy < main.upgrade_cost("fire_rate") or main.fire_rate_level >= main.MAX_UPGRADE_LEVEL
 	if main.damage_level >= main.MAX_UPGRADE_LEVEL:
 		damage_button.text = "Damage %.1f · MAX" % main.turret_damage()
 	if main.fire_rate_level >= main.MAX_UPGRADE_LEVEL:
 		rate_button.text = "Fire rate %.2f/s · MAX" % main.turret_shots_per_second()
-	health_button.text = "Lantern HP %.0f to %.0f (%s)\n%d energy" % [main.lantern_max_health(), main.lantern_max_health() + 15, "Confirm" if using_controller else "H", int(main.upgrade_cost("health"))]
+	health_button.text = "Lantern HP %.0f to %.0f\n%d energy" % [main.lantern_max_health(), main.lantern_max_health() + 15, int(main.upgrade_cost("health"))]
 	health_button.disabled = placing or main.banked_energy < main.upgrade_cost("health") or main.health_level >= main.MAX_UPGRADE_LEVEL
 	if main.health_level >= main.MAX_UPGRADE_LEVEL:
 		health_button.text = "Lantern HP %.0f · MAX" % main.lantern_max_health()
@@ -230,21 +230,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("sell_turret"):
 		sell_selected_turret()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("upgrade_damage"):
-		if not placing:
-			main.get_node("PreparationUI").open_view(main.get_node("PreparationUI").View.UPGRADES)
-		main.buy_upgrade("damage")
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("upgrade_health"):
-		if not placing:
-			main.get_node("PreparationUI").open_view(main.get_node("PreparationUI").View.UPGRADES)
-		main.buy_upgrade("health")
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("upgrade_fire_rate"):
-		if not placing:
-			main.get_node("PreparationUI").open_view(main.get_node("PreparationUI").View.UPGRADES)
-		main.buy_upgrade("fire_rate")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("cancel_placement"):
 		if placing:

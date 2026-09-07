@@ -32,12 +32,12 @@ func check() -> void:
 	var build = scene.get_node("BuildController")
 	expect(not scene.buy_upgrade("damage") and scene.damage_level == 0, "Insufficient funds cannot buy an upgrade")
 	scene.banked_energy = 500.0
-	var repeated := InputEventKey.new()
-	repeated.physical_keycode = KEY_G
-	repeated.pressed = true
-	repeated.echo = true
-	build._unhandled_input(repeated)
-	expect(scene.damage_level == 0 and scene.banked_energy == 500.0, "Held upgrade shortcut cannot buy repeated levels")
+	for key in [KEY_G, KEY_F, KEY_H]:
+		var event := InputEventKey.new()
+		event.physical_keycode = key
+		event.pressed = true
+		build._unhandled_input(event)
+	expect(scene.damage_level == 0 and scene.fire_rate_level == 0 and scene.health_level == 0 and scene.banked_energy == 500.0, "Removed keyboard shortcuts cannot purchase upgrades")
 	buy(build, Vector2(60, 80))
 	buy(build, Vector2(140, 80))
 	var turrets := get_nodes_in_group("turrets")

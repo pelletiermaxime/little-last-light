@@ -46,7 +46,7 @@ Progress saves locally to `user://progress-v1.json` after purchases, upgrades, s
 
 **End Run** on the pause screen banks and saves all earned energy and opens the results screen. Continue returns to preparation. Desktop preparation also has **Quit Game**, which saves before closing. The desktop game starts maximized.
 
-**Global upgrades** in preparation affect every existing and future turret. Damage gains +1 per level (60, 120, 240, 480 energy); fire rate gains +25% of its original rate per level (50, 100, 200, 400 energy). Each has four levels. Use the buttons or **G / F**; with a controller, select an upgrade and confirm. Menu cards fit shorter windows without scrollbars; U opens the upgrades view.
+**Global upgrades** in preparation affect every existing and future turret. Damage gains +1 per level (60, 120, 240, 480 energy); fire rate gains +25% of its original rate per level (50, 100, 200, 400 energy). Each has four levels. Click an upgrade, or use arrow keys to select it and Enter to confirm; with a controller, select an upgrade and confirm. Menu cards fit shorter windows without scrollbars; U opens the upgrades view.
 
 **Sell selected turret** refunds its original purchase price: select a purchased turret as if moving it, then use the button, **X**, or controller **R1 / RB**. The free starter cannot be sold. New-turret prices still depend on how many you currently own.
 
