@@ -30,6 +30,7 @@ var body: Node2D
 func _ready() -> void:
 	health = max_health
 	add_to_group("enemies")
+	get_node("/root/DisplaySettings").changed.connect(queue_redraw)
 	_create_body()
 	queue_redraw()
 	

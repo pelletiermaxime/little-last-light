@@ -24,6 +24,7 @@ func _ready() -> void:
 	health = max_health
 	get_viewport().size_changed.connect(_keep_inside_viewport)
 	_center_in_viewport()
+	get_node("/root/DisplaySettings").changed.connect(queue_redraw)
 
 
 
@@ -62,9 +63,12 @@ func take_projectile_damage(amount: float) -> void:
 func take_damage(amount: float) -> void:
 	if not running or health <= 0.0 or amount <= 0.0:
 		return
+	amount *= get_parent().damage_taken_factor
+	if amount <= 0.0:
+		return
 	health = maxf(0.0, health - amount)
 	get_node("/root/GameAudio").play(&"damage")
-	hit_flash = 0.15
+	hit_flash = 0.0 if get_node("/root/DisplaySettings").reduce_effects else 0.15
 	# The HUD samples health at 10 Hz. A crowd must not rebuild the entire UI
 	# once per contact per frame; death still refreshes immediately via end_run.
 	queue_redraw()
@@ -117,11 +121,13 @@ func _update_status() -> void:
 func _draw() -> void:
 	if running:
 		draw_arc(Vector2.ZERO, 110.0, 0.0, TAU, 64, Color(1.0, 0.75, 0.3, 0.22), 1.0, true)
-	var pulse: float = 1.0 + sin(elapsed * 2.0) * 0.08
+	var reduced: bool = get_node("/root/DisplaySettings").reduce_effects
+	var pulse: float = 1.0 if reduced else 1.0 + sin(elapsed * 2.0) * 0.08
 	var glow_size: float = pulse * LIGHT_SCALES[brightness]
 
-	draw_circle(Vector2.ZERO, 70.0 * glow_size, Color(1.0, 0.65, 0.2, 0.04))
-	draw_circle(Vector2.ZERO, 48.0 * glow_size, Color(1.0, 0.65, 0.2, 0.08))
+	if not reduced:
+		draw_circle(Vector2.ZERO, 70.0 * glow_size, Color(1.0, 0.65, 0.2, 0.04))
+		draw_circle(Vector2.ZERO, 48.0 * glow_size, Color(1.0, 0.65, 0.2, 0.08))
 	draw_circle(Vector2.ZERO, 30.0 * glow_size, Color(1.0, 0.65, 0.2, 0.16))
 
 	draw_circle(Vector2.ZERO, 12.0 * pulse, Color("#ffbd59"))
@@ -130,6 +136,6 @@ func _draw() -> void:
 	for index in range(brightness + 1):
 		var angle := -PI / 2.0 + (index - brightness / 2.0) * 0.45
 		draw_line(Vector2.from_angle(angle) * 19.0, Vector2.from_angle(angle) * 25.0, Color("#ffe0a0"), 2.0, true)
-	if hit_flash > 0.0:
+	if hit_flash > 0.0 and not reduced:
 		draw_circle(Vector2.ZERO, 14.0, Color(1.0, 0.35, 0.3, 0.65))
 		draw_arc(Vector2.ZERO, 18.0, 0.0, TAU, 32, Color("#ff6b6b"), 3.0, true)

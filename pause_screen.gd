@@ -58,6 +58,7 @@ func pause() -> void:
 	main.get_node("GameHUD").refresh()
 	summary.text = "%s survived · %d energy earned" % [main.get_node("GameHUD").format_time(lantern.elapsed), int(lantern.energy)]
 	get_tree().paused = true
+	Engine.time_scale = 1.0
 	overlay.show()
 	_layout.call_deferred()
 	resume_button.grab_focus()
@@ -67,6 +68,7 @@ func resume() -> void:
 	if overlay.visible:
 		get_node("/root/GameAudio").play(&"back")
 	get_tree().paused = false
+	Engine.time_scale = main.game_speed if main.phase == main.Phase.RUNNING else 1.0
 	overlay.hide()
 	resume_button.release_focus()
 	end_run_button.release_focus()

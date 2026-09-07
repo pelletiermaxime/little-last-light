@@ -12,6 +12,7 @@ var puddles: Array[Dictionary] = []
 
 func _ready() -> void:
 	add_to_group("hazards")
+	get_node("/root/DisplaySettings").changed.connect(queue_redraw)
 	z_index = -1
 
 
@@ -45,5 +46,11 @@ func _draw() -> void:
 		var fade := minf(1.0, (LIFETIME - puddle.age) / 2.0)
 		draw_circle(point, RADIUS, Color(0.12, 0.5, 0.66, (0.12 if warning else 0.38) * fade))
 		draw_arc(point, RADIUS, 0, TAU, 24, Color(0.4, 0.85, 1.0, fade * 0.65), 1.5, true)
+		if get_node("/root/DisplaySettings").strong_danger_cues:
+			draw_arc(point, RADIUS, 0, TAU, 24, Color("#080d13"), 5.0, true)
+			draw_arc(point, RADIUS, 0, TAU, 24, Color(1, 1, 1, fade), 2.0, true)
+			if not warning:
+				draw_line(point - Vector2(6, 6), point + Vector2(6, 6), Color.WHITE, 2.0, true)
+				draw_line(point - Vector2(6, -6), point + Vector2(6, -6), Color.WHITE, 2.0, true)
 		if not warning:
 			draw_arc(point + Vector2(-4, -2), 10, PI, TAU, 12, Color(0.55, 0.9, 1.0, fade * 0.45), 1.5, true)

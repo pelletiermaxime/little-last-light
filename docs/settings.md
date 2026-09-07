@@ -25,7 +25,7 @@ and disabled because the browser owns the window and frame presentation.
 
 ## Assistance prototype
 
-Settings → Assistance offers three independent switches, editable in preparation:
+Settings → Assistance offers independent options, editable in preparation:
 
 - Half-price upgrades: all eight upgrade families cost 50% less. Turret purchase
   and sell prices are unchanged.
@@ -37,6 +37,12 @@ Settings → Assistance offers three independent switches, editable in preparati
 - Half-speed enemies and projectiles: pursuers, charger approaches and charges,
   both bosses' movement, and Snuffer droplets move at 50% speed. Pulse slow still
   stacks with movement assistance; warning and attack clocks remain readable.
+- Damage taken: 100%, 75%, 50%, or 0% (invincible). Applies once to contact,
+  projectile and water damage, through the lantern's shared damage handler.
+- Game speed: 100%, 75%, or 50%. Slows the entire simulation, including player
+  movement, enemies, warnings, firing, income and the run clock. The clock shows
+  game time: a 7:30 short night takes 15 real minutes at 50% speed before the final
+  fight. Pause, preparation and results use normal speed. Audio pitch is unchanged.
 
 These settings are saved with game progress, unlike audio/display preferences.
 Enabling any switch immediately marks that progress as assisted and removes a
@@ -53,3 +59,25 @@ start a short night, inspect the assisted HUD and pause-settings lock, then chec
 the 2:30/7:30 arrivals and result. Disable all switches and restart the game;
 publishing must remain disabled. Reset progress to confirm normal eligibility.
 Use `tests/check_assistance.gd` for deterministic boundaries and save regression.
+
+## Visual accessibility
+
+Settings → Visual accessibility remains editable while paused. These preferences
+live in `display-settings.cfg`, survive progress reset, and never mark play assisted.
+
+- Stronger danger cues adds contrasting outlines to projectile cores, a directional
+  arrow to charger warnings, bolder Snuffer pattern previews, and outlined water
+  hazards marked with an X once active. Collision sizes and attack timing stay the
+  same. Cues use light/dark contrast and shapes in addition to existing colors.
+- Reduce visual effects stops lantern pulsing and hit flashes, reduces its glow,
+  hides turret shot flashes, expanding pulse rings and decorative boost links,
+  removes projectile trails/halos, and skips the victory color wash. Turret bodies,
+  boost-colored cores, projectile cores and enemy warnings remain visible.
+- Show turret range circles controls the large range guides on placed turrets.
+  Placement/movement previews retain their circle so positioning remains clear.
+  This is independent of Reduce visual effects; neither changes turret mechanics.
+
+`tests/check_accessibility.gd` checks damage sources, invincibility, simulation
+speed and pause restoration, persistence/reset, leaderboard eligibility and menu
+bounds. Native visual comparison and a human playtest are still required to judge
+cue contrast and clutter in a crowded fight.

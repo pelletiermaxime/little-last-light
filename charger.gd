@@ -90,6 +90,11 @@ func _draw() -> void:
 		var progress := 1.0 - state_remaining / maxf(warning_duration, 0.001)
 		var end := forward * charge_speed * assist_movement_factor * charge_duration
 		var locked := state_remaining <= locked_warning_duration
+		if get_node("/root/DisplaySettings").strong_danger_cues:
+			draw_line(forward * 18, end, Color("#080d13"), 7.0, true)
+			draw_dashed_line(forward * 18, end, Color.WHITE, 3.0, 12.0, true)
+			draw_line(end - forward * 14 + side * 9, end, Color.WHITE, 3.0, true)
+			draw_line(end - forward * 14 - side * 9, end, Color.WHITE, 3.0, true)
 		draw_line(Vector2.ZERO, end, Color(1.0, 0.65, 0.3, 0.25 if locked else 0.12), CONTACT_DISTANCE * 2.0)
 		if locked:
 			draw_line(forward * 18.0, end, Color("#fff1cb"), 3.0, true)

@@ -72,9 +72,10 @@ func show_results() -> void:
 		best.text = "%sFastest clear: %s · %d energy available" % ["New clear record!\n" if main.last_run.new_best else "", hud.format_time(main.version_clears.get(main.game_version, 0.0)), int(main.banked_energy)]
 		if is_instance_valid(dawn_tween):
 			dawn_tween.kill()
-		overlay.color = Color(0.75, 0.53, 0.30, 0.22)
-		dawn_tween = create_tween()
-		dawn_tween.tween_property(overlay, "color", normal_overlay_color, 2.0)
+		if not get_node("/root/DisplaySettings").reduce_effects:
+			overlay.color = Color(0.75, 0.53, 0.30, 0.22)
+			dawn_tween = create_tween()
+			dawn_tween.tween_property(overlay, "color", normal_overlay_color, 2.0)
 	if main.last_run.get("assisted", false):
 		best.text = "Assisted run · no records or leaderboard submission\n%d energy available" % int(main.banked_energy)
 	hud.leaderboard.reparent(content)
