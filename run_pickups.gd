@@ -7,9 +7,10 @@ const LAST_SPAWN := 180.0
 const LIFETIME := 18.0
 const KINDLING_DURATION := 8.0
 const COLLECTION_RADIUS := 28.0
+const MARKER_RADIUS := 20.0
 const MIN_DISTANCE := 160.0
-const FLARE_RADIUS := 135.0
-const FLARE_DAMAGE := 6.0
+const FLARE_RADIUS := 180.0
+const FLARE_DAMAGE := 8.0
 
 var next_spawn := FIRST_SPAWN
 var active := false
@@ -21,6 +22,8 @@ var burst_remaining := 0.0
 var burst_position := Vector2.ZERO
 var notice_remaining := 0.0
 var notice := ""
+var explained_kinds: Dictionary = {}
+var explain_current := false
 var status: Label
 var rng := RandomNumberGenerator.new()
 @onready var main: Node2D = get_parent()
@@ -42,8 +45,8 @@ func _ready() -> void:
 
 func _layout() -> void:
 	var size := get_viewport_rect().size
-	status.position = Vector2(16, size.y - 120)
-	status.size = Vector2(size.x - 32, 28)
+	status.position = Vector2(16, size.y - 154)
+	status.size = Vector2(size.x - 32, 60)
 	# Resizing may move the marker, but never collects it from a menu callback.
 	pickup_position = pickup_position.clamp(_spawn_rect().position, _spawn_rect().end)
 	queue_redraw()
@@ -63,6 +66,8 @@ func reset() -> void:
 	burst_remaining = 0.0
 	notice_remaining = 0.0
 	next_spawn = FIRST_SPAWN
+	explained_kinds.clear()
+	explain_current = false
 	if is_instance_valid(status):
 		status.hide()
 	queue_redraw()
@@ -105,6 +110,7 @@ func _spawn() -> bool:
 		kind = Kind.KINDLING if rng.randi_range(0, 1) == 0 else Kind.FLARE
 		remaining = LIFETIME
 		active = true
+		explain_current = false
 		return true
 	return false
 
@@ -134,7 +140,14 @@ func _refresh_status() -> void:
 	elif notice_remaining > 0.0:
 		status.text = notice
 	elif active:
-		status.text = "Walk into the ember · " + ("energy ×2 for 8s" if kind == Kind.KINDLING else "nearby burst · 6 damage")
+		if not explained_kinds.has(kind):
+			explained_kinds[kind] = true
+			explain_current = true
+		if explain_current:
+			if kind == Kind.KINDLING:
+				status.text = "Kindling · Walk into the diamond before it fades.\nDoubles passive energy for 8 seconds, including Energy Gain upgrades.\nBoss rewards stay unchanged."
+			else:
+				status.text = "Flare · Walk into the spark before it fades.\nDeals %d damage to enemies within %d pixels of the pickup.\nA single burst; projectiles and water remain." % [int(FLARE_DAMAGE), int(FLARE_RADIUS)]
 	status.visible = not status.text.is_empty()
 
 
@@ -144,19 +157,19 @@ func _draw() -> void:
 		var point := pickup_position
 		var opacity := minf(1.0, remaining / 3.0)
 		color.a = opacity
-		draw_circle(point, 35, Color(1.0, 0.65, 0.2, 0.1 * opacity))
-		draw_arc(point, COLLECTION_RADIUS, -PI / 2, -PI / 2 + TAU * remaining / LIFETIME, 48, color, 2, true)
+		draw_circle(point, 26, Color(1.0, 0.65, 0.2, 0.1 * opacity))
+		draw_arc(point, MARKER_RADIUS, -PI / 2, -PI / 2 + TAU * remaining / LIFETIME, 48, color, 2, true)
 		if kind == Kind.KINDLING:
-			draw_colored_polygon(PackedVector2Array([point + Vector2(0, -12), point + Vector2(8, 0), point + Vector2(0, 12), point + Vector2(-8, 0)]), color)
+			draw_colored_polygon(PackedVector2Array([point + Vector2(0, -9), point + Vector2(6, 0), point + Vector2(0, 9), point + Vector2(-6, 0)]), color)
 		else:
 			for ray in range(8):
 				var direction := Vector2.from_angle(ray * TAU / 8.0)
-				draw_line(point + direction * 5, point + direction * 14, color, 3, true)
+				draw_line(point + direction * 4, point + direction * 10, color, 2, true)
 		var caption := "%s · %ds" % ["Kindling" if kind == Kind.KINDLING else "Flare", ceili(remaining)]
 		var font := ThemeDB.fallback_font
-		var width := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-		draw_string(font, point + Vector2(-width / 2, 49), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
+		var width := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		draw_string(font, point + Vector2(-width / 2, 37), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
 	if burst_remaining > 0.0:
 		var progress := 1.0 - burst_remaining / 0.45
 		draw_circle(burst_position, FLARE_RADIUS, Color(1.0, 0.7, 0.3, 0.12 * (1.0 - progress)))
-		draw_arc(burst_position, lerpf(28, FLARE_RADIUS, progress), 0, TAU, 64, Color(1.0, 0.8, 0.4, 1.0 - progress), 3, true)
+		draw_arc(burst_position, lerpf(MARKER_RADIUS, FLARE_RADIUS, progress), 0, TAU, 64, Color(1.0, 0.8, 0.4, 1.0 - progress), 3, true)

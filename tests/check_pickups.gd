@@ -33,6 +33,18 @@ func check() -> void:
 	expect(pickups.active and pickups.remaining == 18.0, "First marker gets its full lifetime")
 	expect(pickups.pickup_position.distance_to(scene.lantern.position) >= 160.0, "Marker requires movement")
 	expect(pickups.status.text.contains("Walk into"), "HUD explains collection")
+	pickups.reset()
+	for kind in [pickups.Kind.KINDLING, pickups.Kind.FLARE]:
+		pickups._spawn()
+		pickups.kind = kind
+		pickups._refresh_status()
+		expect(pickups.status.text.contains("Walk into"), "First offer of each type explains its effect")
+		pickups._refresh_status()
+		expect(pickups.status.visible, "Explanation stays visible on its first marker")
+		pickups._spawn()
+		pickups.kind = kind
+		pickups._refresh_status()
+		expect(not pickups.status.visible, "Repeated offers do not repeat the large explanation")
 	for attempt in range(100):
 		pickups._spawn()
 		expect(pickups._spawn_rect().has_point(pickups.pickup_position), "Spawn remains inside safe arena")
@@ -50,7 +62,7 @@ func check() -> void:
 	expect(pickups.kindling_remaining == 0.0 and is_equal_approx(scene.lantern.current_energy_rate(), 3.6), "Income returns to normal")
 	# Real enemies establish radius, damage amount and single application.
 	var enemies: Array[Node2D] = []
-	for distance in [0.0, 135.0, 136.0]:
+	for distance in [0.0, 180.0, 181.0]:
 		var enemy = scene.ENEMY_SCENE.instantiate()
 		enemy.max_health = 10.0
 		scene.add_child(enemy)
@@ -63,7 +75,7 @@ func check() -> void:
 	pickups.pickup_position = scene.lantern.position
 	pickups._process(0.1)
 	pickups._collect()
-	expect(enemies[0].health == 4 and enemies[1].health == 4 and enemies[2].health == 10, "Flare hits radius once for six, leaving outsiders intact")
+	expect(enemies[0].health == 2 and enemies[1].health == 2 and enemies[2].health == 10, "Flare hits its larger radius once for eight, leaving outsiders intact")
 	pickups._spawn()
 	pickups.kindling_remaining = 8.0
 	paused = true
@@ -92,6 +104,7 @@ func check() -> void:
 	scene.continue_to_preparation()
 	scene.start_run()
 	expect(pickups.next_spawn == 12.0 and not pickups.active, "Restart resets cadence")
+	expect(pickups.explained_kinds.is_empty(), "Restart enables first-offer explanations again")
 	pickups.active = true
 	pickups.kindling_remaining = 8.0
 	scene.lantern.take_damage(1000)
