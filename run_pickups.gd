@@ -55,9 +55,10 @@ func _layout() -> void:
 	status.position = Vector2(16, size.y - 154)
 	status.size = Vector2(size.x - 32, 60)
 	# Resizing may move the marker, but never collects it from a menu callback.
-	pickup_position = pickup_position.clamp(_spawn_rect().position, _spawn_rect().end)
+	var arena := _spawn_rect()
+	pickup_position = pickup_position.clamp(arena.position, arena.end)
 	if is_instance_valid(sentinel):
-		sentinel.position = sentinel.position.clamp(_spawn_rect().position, _spawn_rect().end)
+		sentinel.position = sentinel.position.clamp(arena.position, arena.end)
 	queue_redraw()
 
 
@@ -94,11 +95,12 @@ func consume_kindling(delta: float) -> float:
 func _process(delta: float) -> void:
 	if main.phase != main.Phase.RUNNING or get_tree().paused:
 		return
+	var had_visuals := active or burst_remaining > 0.0 or stillness_remaining > 0.0
 	burst_remaining = maxf(0.0, burst_remaining - delta)
 	stillness_remaining = maxf(0.0, stillness_remaining - delta)
 	if stillness_remaining > 0.0:
 		_freeze_enemies()
-	else:
+	elif not frozen_enemies.is_empty():
 		_thaw_enemies()
 	notice_remaining = maxf(0.0, notice_remaining - delta)
 	if active:
@@ -114,7 +116,9 @@ func _process(delta: float) -> void:
 		next_spawn = main.lantern.elapsed + rng.randf_range(24.0, 34.0)
 		_spawn()
 	_refresh_status()
-	queue_redraw()
+	# Clear expired visuals once, then leave the empty canvas cached between offers.
+	if had_visuals or active or burst_remaining > 0.0 or stillness_remaining > 0.0:
+		queue_redraw()
 
 
 func _spawn() -> bool:
@@ -184,7 +188,6 @@ func _thaw_enemies() -> void:
 
 
 func _refresh_status() -> void:
-	status.text = ""
 	var effects: Array[String] = []
 	if kindling_remaining > 0.0:
 		effects.append("Kindling · energy ×2 · %ds" % ceili(kindling_remaining))
@@ -192,23 +195,30 @@ func _refresh_status() -> void:
 		effects.append("Stillness · enemies frozen · %ds" % ceili(stillness_remaining))
 	if is_instance_valid(sentinel) and not sentinel.is_queued_for_deletion():
 		effects.append("Sentinel · %ds" % ceili(sentinel.remaining))
-	status.text = "  /  ".join(effects)
-	if status.text.is_empty() and notice_remaining > 0.0:
-		status.text = notice
+	var text := "  /  ".join(effects)
+	if text.is_empty() and notice_remaining > 0.0:
+		text = notice
 	if active:
 		if not explained_kinds.has(kind):
 			explained_kinds[kind] = true
 			explain_current = true
 		if explain_current:
-			if kind == Kind.KINDLING:
-				status.text = "Kindling · Walk into the diamond before it fades.\nDoubles passive energy for 8 seconds, including Energy Gain upgrades.\nBoss rewards stay unchanged."
-			elif kind == Kind.FLARE:
-				status.text = "Flare · Walk into the spark before it fades.\nDeals %d damage to enemies within %d pixels of the pickup.\nA single burst; projectiles and water remain." % [int(FLARE_DAMAGE), int(FLARE_RADIUS)]
-			elif kind == Kind.SENTINEL:
-				status.text = "Sentinel · Walk into the square before it fades.\nCreates a turret here for 12s: %d damage every 0.35s, 260-pixel range.\nDouble your turret damage (minimum 4); no proximity bonus." % int(maxf(4.0, main.turret_damage() * 2.0))
-			else:
-				status.text = "Stillness · Walk into the pause symbol before it fades.\nFreezes enemy movement and attacks across the arena for 3 seconds.\nYou and turrets keep moving and firing; existing water and shots remain dangerous."
-	status.visible = not status.text.is_empty()
+			text = _explanation()
+	if status.text != text:
+		status.text = text
+	status.visible = not text.is_empty()
+
+
+func _explanation() -> String:
+	match kind:
+		Kind.KINDLING:
+			return "Kindling · Walk into the diamond before it fades.\nDoubles passive energy for 8 seconds, including Energy Gain upgrades.\nBoss rewards stay unchanged."
+		Kind.FLARE:
+			return "Flare · Walk into the spark before it fades.\nDeals %d damage to enemies within %d pixels of the pickup.\nA single burst; projectiles and water remain." % [int(FLARE_DAMAGE), int(FLARE_RADIUS)]
+		Kind.SENTINEL:
+			return "Sentinel · Walk into the square before it fades.\nCreates a turret here for 12s: %d damage every 0.35s, 260-pixel range.\nDouble your turret damage (minimum 4); no proximity bonus." % int(maxf(4.0, main.turret_damage() * 2.0))
+		_:
+			return "Stillness · Walk into the pause symbol before it fades.\nFreezes enemy movement and attacks across the arena for 3 seconds.\nYou and turrets keep moving and firing; existing water and shots remain dangerous."
 
 
 func _draw() -> void:
