@@ -1,8 +1,9 @@
 # Milestone 15: holding a defended position
 
-M15 adds one stationary ward and a repeating encounter schedule. Implementation
-is isolated to the M15 worktree; no merge, push, deployment, source-checkout edit,
-turret changes, or save-format changes are included.
+M15 adds one stationary ward and a repeating encounter schedule. It was developed
+in a separate worktree, then combined with M14 for integration into main at the
+user's request. The combined build passes all 28 Godot regression scripts.
+M15 introduces no turret changes or save-format changes.
 
 ## Ward tuning and behavior
 
@@ -152,6 +153,9 @@ lets the boss implementation coordinate timing without owning ordinary waves.
 - `tests/check_charger.gd`, `tests/check_runs.gd`: updated schedule expectations.
 - `tests/playtest_ward.gd`: controlled movement/settling and native visual probe.
 - `docs/milestone-15.md`: tuning, learning notes, validation and merge contract.
+
+M14 integration completed without conflicts, with all 28 regression scripts
+passing. The expected shared-file merge areas above remain guidance for M16.
 
 Before calling the combined M14–M16 experience balanced, play a real defended
 pocket with pulse turrets and the final boss. The remaining design choice is
