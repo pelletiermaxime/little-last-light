@@ -34,7 +34,7 @@ function time(ms: number) {
       <div class="spark" aria-hidden="true">✦</div>
       <p class="eyebrow">LITTLE LAST LIGHT</p>
       <h1>Some lights<br>last a little longer.</h1>
-      <p class="intro">A refuge built. A darkness held back.<br>The longest survival runs, one version at a time.</p>
+      <p class="intro">A refuge built. A darkness held back.<br>Survive the night. Bring back the dawn.</p>
     </header>
     <section aria-labelledby="board-title">
       <div class="toolbar">
@@ -51,13 +51,13 @@ function time(ms: number) {
         <p v-else-if="error || versionsError" class="state">We couldn’t reach the leaderboard. Please try again in a moment.</p>
         <p v-else-if="!scores?.length" class="state">No lights recorded{{ version ? ` for v${version}` : '' }} yet. Beat your personal best in the game to publish the first.</p>
         <div v-else class="table-wrap"><table>
-          <caption class="sr-only">Top 100 survival records for version {{ version }}</caption>
+          <caption class="sr-only">Top 100 records for version {{ version }}: fastest clears, then longest survival</caption>
           <thead><tr><th scope="col">Rank</th><th scope="col">Keeper of the light</th><th scope="col" class="duration">Survived</th><th scope="col" class="energy">Energy<span class="column-note">Invested / Earned</span></th></tr></thead>
           <tbody v-for="score in scores" :key="`${version}:${score.rank}:${score.username}:${score.achievedAt}`" :class="{ first: score.rank === 1 }">
             <tr>
               <td class="rank">{{ String(score.rank).padStart(2, '0') }}</td>
               <td class="keeper">{{ score.username }}</td>
-              <td class="duration">{{ time(score.durationMs) }}</td>
+              <td class="duration"><template v-if="score.clearTimeMs !== undefined">Clear {{ time(score.clearTimeMs) }}<span class="column-note">Survived {{ time(score.durationMs) }}</span></template><template v-else>{{ time(score.durationMs) }}</template></td>
               <td class="energy">
                 <span :aria-label="`Defense investment: ${energy(score.energyInvested)}`">{{ energy(score.energyInvested) }}</span>
                 <span class="energy-total" :aria-label="`Energy earned: ${energy(score.energyEarned)}`">/ {{ energy(score.energyEarned) }}</span>
@@ -73,7 +73,7 @@ function time(ms: number) {
           </tbody>
         </table></div>
       </div>
-      <p class="footnote">Top 100 · Best published run per device and version · Longer is better</p>
+      <p class="footnote">Top 100 · Best published run per device and version · Clears first, fastest total clear time wins; otherwise longest survival wins.</p>
       <p class="data-note">Invested: energy spent on the turrets and persistent damage, fire rate, and health upgrades used for this run. The starting turret is free; unspent energy is excluded. Earned: energy generated during the run. Compare survival time alongside investment to see how much progression supported each defense. Older runs may not have this data.</p>
     </section>
     <footer>Beat your personal best, choose a username, and publish from the game.<br>No account needed. These are community-submitted, unverified runs.</footer>

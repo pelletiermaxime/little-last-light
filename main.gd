@@ -6,6 +6,8 @@ const ENEMY_SCENE: PackedScene = preload("res://enemy.tscn")
 const CHARGER_SCENE: PackedScene = preload("res://charger.tscn")
 const BOSS_SCRIPT = preload("res://water_boss.gd")
 const BOSS_TIME: float = 300.0
+const FINAL_BOSS_SCRIPT = preload("res://snuffer.gd")
+const FINAL_BOSS_TIME: float = 900.0
 const FIRST_CHARGER_TIME: float = 20.0
 const CHARGER_INTERVAL: float = 8.0
 const MIN_CHARGER_INTERVAL: float = 5.0
@@ -36,6 +38,10 @@ var health_level: int = 0
 var best_time: float = 0.0
 var spawn_progress: float = 0.0
 var boss_spawned: bool = false
+var final_boss_spawned: bool = false
+# Overridden only by the isolated interactive test launcher; normal runs use 15:00.
+var final_boss_time: float = FINAL_BOSS_TIME
+var version_clears: Dictionary = {}
 var next_charger_time: float = FIRST_CHARGER_TIME
 var autosave_elapsed: float = 0.0
 var summary: String = "Arrange your defense, then start your first run."
@@ -157,9 +163,11 @@ func start_run() -> void:
 	lantern.elapsed = 0.0
 	lantern.brightness = 0
 	lantern.hit_flash = 0.0
+	lantern.projectile_grace_remaining = 0.0
 	lantern._center_in_viewport()
 	spawn_progress = 0.0
 	boss_spawned = false
+	final_boss_spawned = false
 	next_charger_time = FIRST_CHARGER_TIME
 	autosave_elapsed = 0.0
 	phase = Phase.RUNNING
@@ -172,26 +180,35 @@ func _on_lantern_died() -> void:
 	end_run()
 
 
-func end_run(voluntary: bool = false) -> void:
+func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	if phase != Phase.RUNNING:
 		return
 	phase = Phase.RESULTS
 	get_tree().paused = false
 	lantern.running = false
 	# Capture the result before banking clears this run's energy.
-	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time, "voluntary": voluntary}
-	best_time = maxf(best_time, lantern.elapsed)
+	var survival := minf(lantern.elapsed, final_boss_time)
+	var previous_clear := float(version_clears.get(game_version, 0.0))
+	var new_clear: bool = victory and (previous_clear == 0.0 or lantern.elapsed < previous_clear)
+	last_run = {"duration": lantern.elapsed, "survival": survival, "victory": victory, "energy": lantern.energy, "new_best": new_clear if victory else survival > best_time, "voluntary": voluntary}
+	best_time = maxf(best_time, survival)
+	if new_clear:
+		version_clears[game_version] = lantern.elapsed
 	version_bests[game_version] = best_time
-	if last_run.new_best:
+	if new_clear or (last_run.new_best and previous_clear == 0.0):
 		leaderboard_profile.pending = {
 			"version": game_version,
-			"durationMs": maxi(1, int(lantern.elapsed * 1000.0)),
+			"durationMs": maxi(1, int(survival * 1000.0)),
 			"energyEarned": lantern.energy,
 			"energyInvested": run_energy_invested,
 			"turretLayout": _run_turret_layout(),
 		}
+		if victory:
+			leaderboard_profile.pending.clearTimeMs = int(lantern.elapsed * 1000.0)
 	var result := "Run ended" if voluntary else "The light went out"
 	summary = "%s · %ds survived · +%d energy\nImprove your layout and try again. Best: %ds" % [result, int(lantern.elapsed), int(lantern.energy), int(best_time)]
+	if victory:
+		summary = "Dawn has come · cleared in %ds · +%d energy" % [int(lantern.elapsed), int(lantern.energy)]
 	banked_energy += lantern.energy
 	lantern.energy = 0.0
 	_clear_enemies()
@@ -228,9 +245,11 @@ func _clear_enemies() -> void:
 	for hazard in get_tree().get_nodes_in_group("hazards"):
 		hazard.process_mode = Node.PROCESS_MODE_DISABLED
 		hazard.remove_from_group("hazards")
+		hazard.remove_from_group("enemy_projectiles")
 		hazard.queue_free()
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.remove_from_group("bosses")
+		enemy.remove_from_group("final_bosses")
 		enemy.remove_from_group("chargers")
 		enemy.process_mode = Node.PROCESS_MODE_DISABLED
 		enemy.remove_from_group("enemies")
@@ -262,6 +281,12 @@ func current_enemy_speed() -> float:
 func _process(delta: float) -> void:
 	if phase != Phase.RUNNING:
 		return
+	autosave_elapsed += delta
+	if autosave_elapsed >= 5.0:
+		autosave_elapsed = 0.0
+		save_progress()
+	# M15 integration point: final arrival runs alongside ordinary spawn pressure.
+	update_final_encounter()
 	if not boss_spawned and lantern.elapsed >= BOSS_TIME:
 		_spawn_boss()
 	spawn_progress += delta / current_spawn_interval()
@@ -272,14 +297,33 @@ func _process(delta: float) -> void:
 		# Brightness changes basic spawn pressure, not the charger's warning cadence.
 		next_charger_time = lantern.elapsed + current_charger_interval()
 		_spawn_charger()
-	autosave_elapsed += delta
-	if autosave_elapsed >= 5.0:
-		autosave_elapsed = 0.0
-		save_progress()
+
+
+func update_final_encounter() -> bool:
+	if phase != Phase.RUNNING:
+		return false
+	if not final_boss_spawned and lantern.elapsed >= final_boss_time:
+		final_boss_spawned = true
+		# Final arrival adds pressure: existing enemies and water stay until defeated
+		# or the run ends. Ordinary spawning continues throughout final combat.
+		var boss := FINAL_BOSS_SCRIPT.new()
+		boss.target = lantern
+		var size := get_arena_rect().size
+		boss.position = Vector2(48 if lantern.position.x > size.x / 2.0 else size.x - 48, 64 if lantern.position.y > size.y / 2.0 else size.y - 64)
+		boss.defeated.connect(_on_final_boss_defeated)
+		add_child(boss)
+		$GameHUD.refresh()
+	return final_boss_spawned
+
+
+func _on_final_boss_defeated() -> void:
+	# First terminal event wins. A dead lantern can never claim a clear.
+	if phase == Phase.RUNNING and lantern.health > 0.0 and final_boss_spawned:
+		end_run(false, true)
 
 
 func _spawn_boss() -> void:
-	if phase != Phase.RUNNING or boss_spawned:
+	if phase != Phase.RUNNING or boss_spawned or final_boss_spawned:
 		return
 	boss_spawned = true
 	var boss := BOSS_SCRIPT.new()
@@ -361,6 +405,7 @@ func save_progress() -> bool:
 	# Include current earnings without banking them twice in the live game.
 	var data := {"version": 1, "energy": banked_energy + lantern.energy, "best_time": best_time, "turrets": positions, "version_bests": version_bests, "legacy_best_time": legacy_best_time, "leaderboard": leaderboard_profile}
 	data.turret_costs = purchase_costs
+	data.version_clears = version_clears
 	data.upgrades = {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level}
 	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if file == null:
@@ -399,6 +444,7 @@ func load_progress() -> void:
 	# A legacy record's release cannot be inferred; preserve it separately.
 	legacy_best_time = float(data.get("legacy_best_time", data.best_time if not data.has("version_bests") else 0.0))
 	version_bests = data.get("version_bests", {})
+	version_clears = data.get("version_clears", {})
 	best_time = float(version_bests.get(game_version, 0.0))
 	leaderboard_profile = data.get("leaderboard", {"token": "", "username": "", "pending": {}})
 	for turret in get_tree().get_nodes_in_group("turrets"):
@@ -429,6 +475,12 @@ func _valid_save(data: Variant) -> bool:
 		if level < 0 or level > MAX_UPGRADE_LEVEL or level != floor(level):
 			return false
 	var records = data.get("version_bests", {})
+	var clears = data.get("version_clears", {})
+	if not clears is Dictionary:
+		return false
+	for clear_time in clears.values():
+		if not (clear_time is float or clear_time is int) or not is_finite(float(clear_time)) or clear_time < final_boss_time:
+			return false
 	if not records is Dictionary:
 		return false
 	for record in records.values():
@@ -452,6 +504,10 @@ func _valid_save(data: Variant) -> bool:
 			return false
 		if not is_finite(float(duration)) or duration < 1 or duration != floor(duration):
 			return false
+		if pending.has("clearTimeMs"):
+			var clear_time = pending.clearTimeMs
+			if not (clear_time is int or clear_time is float) or not is_finite(float(clear_time)) or clear_time < final_boss_time * 1000 or clear_time != floor(clear_time) or duration != final_boss_time * 1000:
+				return false
 		for key in ["energyEarned", "energyInvested", "totalEnergy"]:
 			if pending.has(key):
 				var value = pending[key]

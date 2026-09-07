@@ -16,6 +16,46 @@ const board = async (t: ReturnType<typeof convexTest>, version = '0.1.0') => (aw
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('HTTP leaderboard contract', () => {
+  it('ranks fastest clears before survival, preserves old rows and only replaces with better clears', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = convexTest(schema, modules)
+    await post(t, { ...payload, durationMs: 2_000_000 })
+    const clear = { ...detailedPayload, durationMs: 900_000, clearTimeMs: 960_000 }
+    vi.setSystemTime(Date.now() + 6000)
+    expect((await post(t, clear)).status).toBe(200)
+    await post(t, { ...clear, token: 'b'.repeat(64), clearTimeMs: 930_000 })
+    await post(t, { ...payload, token: 'c'.repeat(64), durationMs: 5_000_000 })
+    expect((await board(t)).map((r: { clearTimeMs?: number }) => r.clearTimeMs)).toEqual([930_000, 960_000, undefined])
+    vi.setSystemTime(Date.now() + 6000)
+    for (const score of [{ ...payload, durationMs: 8_000_000 }, { ...clear, clearTimeMs: 970_000 }, clear]) {
+      expect((await post(t, score)).status).toBe(200)
+    }
+    expect((await board(t))[1]).toMatchObject({ clearTimeMs: 960_000, energyEarned: 125.75, turretLayout })
+    expect((await post(t, { ...clear, clearTimeMs: 920_000 })).status).toBe(200)
+    const rows = await board(t)
+    expect(rows[0]).toMatchObject({ rank: 1, clearTimeMs: 920_000, durationMs: 900_000 })
+    expect(rows[0]).not.toHaveProperty('playerHash')
+    expect(rows[0]).not.toHaveProperty('token')
+    expect(await board(t, 'dev')).toEqual([])
+  })
+
+  it('rejects invalid clear claims and keeps the top 100 bounded across mixed outcomes', async () => {
+    const t = convexTest(schema, modules)
+    for (const clearTimeMs of [null, '900000', 899999, 900000.5, 86_400_001]) {
+      expect((await post(t, { ...payload, durationMs: 900_000, clearTimeMs })).status).toBe(400)
+    }
+    expect((await post(t, { ...payload, clearTimeMs: 900_000 })).status).toBe(400)
+    expect(() => validateScore({ ...payload, durationMs: 900_000, clearTimeMs: Infinity })).toThrow()
+    await t.run(async ctx => {
+      for (let i = 0; i < 105; i++) await ctx.db.insert('scores', { version: '0.1.0', playerHash: String(i), username: 'Keeper', durationMs: 900_000, clearTimeMs: 900_000 + i, achievedAt: i })
+      await ctx.db.insert('scores', { version: '0.1.0', playerHash: 'old', username: 'Legacy', durationMs: 8_000_000, achievedAt: 1 })
+    })
+    const rows = await board(t)
+    expect(rows).toHaveLength(100)
+    expect(rows[0].clearTimeMs).toBe(900_000)
+    expect(rows[99].clearTimeMs).toBe(900_099)
+  })
+
   it('publishes and reads dev scores separately from release scores', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     const t = convexTest(schema, modules)

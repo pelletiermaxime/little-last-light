@@ -100,6 +100,8 @@ func refresh() -> void:
 	skip.visible = offered
 	if offered:
 		prompt.text = "New personal best · %s\nPublish %.3f seconds with a public username?" % [_version_label(str(pending.version)), float(pending.durationMs) / 1000.0]
+		if pending.has("clearTimeMs"):
+			prompt.text = "New clear record · %s\nPublish clear time %s with a public username?" % [_version_label(str(pending.version)), _score_time(int(pending.clearTimeMs))]
 		if pending.has("energyInvested"):
 			prompt.text += "\nDefense investment: %d energy." % int(pending.energyInvested)
 		if pending.has("energyEarned"):
@@ -159,6 +161,8 @@ func _render_scores() -> void:
 	for score in score_data.slice(page_index * PAGE_SIZE, (page_index + 1) * PAGE_SIZE):
 		var row := preload("res://leaderboard_row.tscn").instantiate() as Label
 		row.text = "#%d  %s\n%s" % [int(score.rank), str(score.username), _score_time(int(score.durationMs))]
+		if score.has("clearTimeMs"):
+			row.text = "#%d  %s\nCLEAR · %s" % [int(score.rank), str(score.username), _score_time(int(score.clearTimeMs))]
 		if score.has("energyInvested"):
 			row.text += " · %d energy invested" % int(score.energyInvested)
 		if str(score.username) == main.leaderboard_profile.username:
@@ -169,7 +173,7 @@ func _render_scores() -> void:
 	previous_page.disabled = page_index == 0
 	next_page.disabled = (page_index + 1) * PAGE_SIZE >= score_data.size()
 	page_label.text = "%d / %d" % [page_index + 1, maxi(1, ceili(float(score_data.size()) / PAGE_SIZE))]
-	scores_notice.text = "No scores yet for this version. Set the first record!" if score_data.is_empty() else "Top %d · survival time" % score_data.size()
+	scores_notice.text = "No scores yet for this version. Set the first record!" if score_data.is_empty() else "Top %d · fastest clears, then longest survival" % score_data.size()
 
 
 func _score_time(duration_ms: int) -> String:

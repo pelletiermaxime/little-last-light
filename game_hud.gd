@@ -173,7 +173,9 @@ func refresh() -> void:
 	health_bar.visible = running
 	brightness_indicator.visible = running
 	var bosses := get_tree().get_nodes_in_group("bosses").filter(func(boss: Node): return not boss.is_queued_for_deletion())
-	if not running or not main.boss_spawned:
+	# The Drencher can still be alive when the Snuffer joins the fight.
+	bosses.sort_custom(func(a: Node, b: Node): return a.is_in_group("final_bosses") and not b.is_in_group("final_bosses"))
+	if not running:
 		boss_was_alive = false
 		boss_victory_remaining = 0.0
 	elif not bosses.is_empty():
@@ -188,9 +190,21 @@ func refresh() -> void:
 	boss_text.modulate.a = 1.0
 	if running and not bosses.is_empty():
 		var boss = bosses[0]
+		var final_boss: bool = boss.is_in_group("final_bosses")
+		var boss_name := "THE SNUFFER" if final_boss else "THE DRENCHER"
+		boss_warning.text = boss_name + ("\nIncoming! The fight continues." if final_boss else "\nIncoming!")
 		boss_card.visible = boss.arrival_remaining > 0
 		boss_status.visible = not boss_card.visible
-		boss_text.text = "THE DRENCHER · %d / %d" % [int(ceil(boss.health)), int(boss.max_health)]
+		boss_text.text = "%s · %d / %d" % [boss_name, int(ceil(boss.health)), int(boss.max_health)]
+		if final_boss:
+			boss_text.text += "\n" + boss.attack_caption()
+			boss_status.size.y = 52
+			boss_text.size.y = 44
+			boss_bar.position.y = 48
+		else:
+			boss_status.size.y = 28
+			boss_text.size.y = 22
+			boss_bar.position.y = 24
 		boss_bar.max_value = boss.max_health
 		boss_bar.value = boss.health
 	elif running and boss_victory_remaining > 0.0:

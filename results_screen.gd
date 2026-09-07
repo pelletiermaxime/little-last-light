@@ -13,6 +13,8 @@ var content: VBoxContainer
 var continue_button: Button
 var page_button: Button
 var showing_records := false
+var dawn_tween: Tween
+var normal_overlay_color: Color
 
 
 func _ready() -> void:
@@ -21,6 +23,7 @@ func _ready() -> void:
 	layer = 25
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	overlay = $Overlay
+	normal_overlay_color = overlay.color
 	card = $Overlay/Card
 	summary_page = $Overlay/Card/Content/SummaryPage
 	title = $Overlay/Card/Content/SummaryPage/Title
@@ -57,7 +60,19 @@ func show_results() -> void:
 	var hud = main.get_node("GameHUD")
 	title.text = "Run ended" if main.last_run.voluntary else "The light went out"
 	stats.text = "Survived %s\n+%d energy earned" % [hud.format_time(main.last_run.duration), int(main.last_run.energy)]
+	if main.last_run.duration > main.final_boss_time:
+		stats.text = "Run time %s · night survived %s\n+%d energy earned" % [hud.format_time(main.last_run.duration), hud.format_time(main.last_run.survival), int(main.last_run.energy)]
+	if main.last_run.get("victory", false):
+		title.text = "Dawn has come"
+		stats.text = "The Snuffer defeated\nClear time %s · night survived %s\n+%d energy earned" % [hud.format_time(main.last_run.duration), hud.format_time(main.last_run.survival), int(main.last_run.energy)]
 	best.text = "%sBest: %s · %d energy available" % ["New personal best!\n" if main.last_run.new_best else "", hud.format_time(main.best_time), int(main.banked_energy)]
+	if main.last_run.get("victory", false):
+		best.text = "%sFastest clear: %s · %d energy available" % ["New clear record!\n" if main.last_run.new_best else "", hud.format_time(main.version_clears[main.game_version]), int(main.banked_energy)]
+		if is_instance_valid(dawn_tween):
+			dawn_tween.kill()
+		overlay.color = Color(0.75, 0.53, 0.30, 0.22)
+		dawn_tween = create_tween()
+		dawn_tween.tween_property(overlay, "color", normal_overlay_color, 2.0)
 	hud.leaderboard.reparent(content)
 	hud.leaderboard.refresh()
 	hud.scroll.hide()
@@ -68,6 +83,9 @@ func show_results() -> void:
 
 
 func hide_results() -> void:
+	if is_instance_valid(dawn_tween):
+		dawn_tween.kill()
+	overlay.color = normal_overlay_color
 	var hud = main.get_node("GameHUD")
 	hud.leaderboard.reparent(main.get_node("PreparationUI").records_host)
 	hud.scroll.show()

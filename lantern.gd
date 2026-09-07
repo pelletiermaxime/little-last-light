@@ -12,6 +12,7 @@ const LIGHT_SCALES: Array[float] = [1.0, 1.4, 1.9]
 var health: float
 var running: bool = false
 var hit_flash: float = 0.0
+var projectile_grace_remaining: float = 0.0
 
 var elapsed: float = 0.0
 var brightness: int = 0
@@ -33,10 +34,19 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	if not running:
 		return
+	projectile_grace_remaining = maxf(0.0, projectile_grace_remaining - delta)
 	elapsed += delta
 	energy += ENERGY_RATES[brightness] * delta
 
 	queue_redraw()
+
+
+func take_projectile_damage(amount: float) -> void:
+	if not running or health <= 0.0 or amount <= 0.0 or projectile_grace_remaining > 0.0:
+		return
+	# Overlapping droplets cost one hit, with time to move out of the pattern.
+	projectile_grace_remaining = 0.35
+	take_damage(amount)
 
 
 func take_damage(amount: float) -> void:
