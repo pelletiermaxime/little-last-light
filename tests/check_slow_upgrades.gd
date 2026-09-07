@@ -47,7 +47,7 @@ func check() -> void:
 	assert(scene.buy_upgrade("slow_strength") and scene.buy_upgrade("slow_duration"))
 	assert(is_equal_approx(pulse.slow_factor, 0.5) and is_equal_approx(pulse.slow_duration, 1.45), "Existing turrets update immediately")
 	assert(get_nodes_in_group("turrets")[0].damage == 1 and get_nodes_in_group("turrets")[0].fire_interval == 1.5, "Slow upgrades do not change damage turrets")
-	assert(scene.defense_investment() == 500.0, "Investment includes 380 upgrades and 120 turret cost")
+	assert(scene.defense_investment() == 440.0, "Investment includes 380 upgrades and 60 turret cost")
 	for kind in scene.slow_levels:
 		assert(scene.upgrade_cost(kind) == scene.UPGRADE_BASE_COSTS[kind] * 2)
 		for i in range(4):
