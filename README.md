@@ -22,7 +22,9 @@ M6 basic enemies move at a fixed **85 pixels/second**, versus the lantern's **22
 
 **Water boss:** The Drencher arrives once at 5:00, with 700 HP and a three-second warning. It slowly pursues the lantern and leaves temporary water puddles. Fresh puddles warn for 0.6 seconds, then deal 8 damage/second while touching the lantern; overlapping puddles do not stack damage. Defeat it with your turrets to clear the water and continue the run.
 
-**Long-term run goal:** survive until a final boss arrives at **15:00**, then defeat it to win. Future difficulty should come from enemy patterns, combinations, and tougher bosses while preserving the lantern's movement advantage. The boss, victory flow, and encounter schedule are planned, not implemented in M6.
+**Ten-minute boss:** The Rainkeeper arrives once at 10:00 with 900 HP. It marks three consecutive rain strikes, each with a 0.85-second warning, leaving large pools for three seconds. Keep moving through the burst and plan your return to the turrets. Earlier enemies remain in play. See [Rainkeeper mechanics](docs/rainkeeper.md).
+
+**Run goal:** survive until the Snuffer arrives at **15:00**, then defeat it to win. Ordinary enemies and surviving earlier bosses remain in the fight.
 
 Progress saves locally to `user://progress-v1.json` after purchases, upgrades, sales, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening restores energy, turret positions, paid purchase prices, and global upgrade levels. Existing saves migrate automatically.
 
