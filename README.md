@@ -14,6 +14,10 @@ sniper turrets: Watchlights retain 3× the damage and 3× the firing interval.
 Lantern proximity boosts both. Slow upgrades remain exclusive to slow turrets.
 Controller players can also select Watchlight with the placement toolbar and confirm.
 
+The placement toolbar shows each turret's base damage, range, and seconds per
+shot or pulse below its purchase button. These values exclude upgrades and
+proximity boosts; targeting priority and the slow turret's effect are shown too.
+
 ## Run the project
 
 Open `project.godot` in Godot and press F6 for the current scene or F5 for the project. Developed with Godot 4.7.2 using the Compatibility renderer.
