@@ -109,7 +109,7 @@ func check() -> void:
 		root.size = size
 		for frame in range(6):
 			await process_frame
-		for button in [settings.volume_button, settings.mute_button, settings.display_mode_button, settings.fps_button, settings.vsync_button, settings.done_button]:
+		for button in [settings.volume_button, settings.mute_button, settings.display_mode_button, settings.fps_button, settings.vsync_button, settings.assistance_button, settings.visual_button]:
 			expect(Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(button.get_global_rect()), "Settings buttons fit small viewports")
 	settings.fps_button.grab_focus()
 	joy(JOY_BUTTON_A)

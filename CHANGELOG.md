@@ -14,6 +14,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 - Added damage-taken options (75%, 50%, or invincible) and slower game speeds (75% or 50%) for assisted play.
 - Added visual accessibility options for stronger danger cues, reduced decorative effects and flashes, and hiding turret range circles while retaining placement guides. Visual preferences keep leaderboard eligibility.
 
+### Changed
+
+- Removed the Done button from Settings; use Escape or controller Back to return.
+
 ## [0.0.22] - 2026-09-08
 
 ### Added

@@ -6,7 +6,6 @@ extends CanvasLayer
 @onready var display_mode_button: Button = menu.display_mode_button
 @onready var fps_button: Button = menu.fps_button
 @onready var vsync_button: Button = menu.vsync_button
-@onready var done_button: Button = menu.get_node("Center/Panel/Padding/Content/DoneButton")
 @onready var reset_button: Button = menu.get_node("Center/Panel/Padding/Content/ResetProgressButton")
 @onready var reset_confirmation: VBoxContainer = menu.get_node("Center/Panel/Padding/Content/ResetConfirmation")
 @onready var reset_cancel: Button = reset_confirmation.get_node("CancelButton")

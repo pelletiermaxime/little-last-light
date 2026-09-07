@@ -1,7 +1,7 @@
 # Settings
 
 Open Settings from the main menu or pause menu. Changes apply immediately and
-persist separately from run progress. Done, Escape, or controller Back returns
+persist separately from run progress. Escape or controller Back returns
 to the menu that opened it; leaving Settings never resumes a paused run.
 
 - Audio: volume in 25% steps and sound on/off. Existing audio preferences remain

@@ -91,11 +91,6 @@ theme_type_variation = &"SettingsNote"
 text = "VSync may cap FPS at your display's refresh rate."
 autowrap_mode = 3
 
-[node name="DoneButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=544479408]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-text = "Done"
-
 [node name="AssistanceButton" type="Button" parent="Center/Panel/Padding/Content"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
@@ -221,4 +216,3 @@ text = "Reset all progress"
 [connection signal="pressed" from="Center/Panel/Padding/Content/DisplayModeButton" to="." method="_on_display_mode_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/FPSButton" to="." method="_on_fps_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/VSyncButton" to="." method="_on_vsync_button_pressed"]
-[connection signal="pressed" from="Center/Panel/Padding/Content/DoneButton" to="." method="_on_done_button_pressed"]

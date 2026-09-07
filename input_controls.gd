@@ -27,7 +27,7 @@ func _ready() -> void:
 	var results = main.get_node("ResultsScreen")
 	var settings = main.get_node("SettingsScreen")
 	# These actions play their own cue after validating the game action.
-	get_node("/root/GameAudio").bind_buttons(main, [prep.place_button, prep.upgrades_button, prep.records_button, prep.back_button, prep.hide_button, prep.show_button, build.start_button, build.cancel_button, build.damage_button, build.rate_button, build.health_button, pause.resume_button, pause.end_run_button, pause.settings_button, prep.settings_button, settings.volume_button, settings.mute_button, settings.display_mode_button, settings.fps_button, settings.vsync_button, settings.done_button, results.page_button, results.continue_button])
+	get_node("/root/GameAudio").bind_buttons(main, [prep.place_button, prep.upgrades_button, prep.records_button, prep.back_button, prep.hide_button, prep.show_button, build.start_button, build.cancel_button, build.damage_button, build.rate_button, build.health_button, pause.resume_button, pause.end_run_button, pause.settings_button, prep.settings_button, settings.volume_button, settings.mute_button, settings.display_mode_button, settings.fps_button, settings.vsync_button, settings.assistance_button, settings.visual_button, results.page_button, results.continue_button])
 	# The autoload remembers the device across scene resets. A new BuildController
 	# must inherit it even when the next controller event does not change devices.
 	_input_type_changed(prompts.get_last_input_type(), prompts._last_controller)
