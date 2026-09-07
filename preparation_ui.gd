@@ -96,9 +96,9 @@ func _create_placement_stats() -> void:
 		# Read the scene defaults once, before upgrades or proximity are applied.
 		var turret: Node2D = main.turret_scene(kind).instantiate()
 		var cadence := "pulse" if kind == "pulse" else "shot"
-		var text := "%s dmg · %.0f range · %ss/%s" % [String.num(turret.damage, 1), turret.attack_range, String.num(turret.fire_interval, 1), cadence]
+		var text := "%s dmg · %.0f range · %ss/%s" % [String.num(turret.damage, 1).trim_suffix(".0"), turret.attack_range, String.num(turret.fire_interval, 1).trim_suffix(".0"), cadence]
 		if kind == "pulse":
-			text += "\n%.0f%% slow · lasts %ss" % [(1.0 - turret.slow_factor) * 100, String.num(turret.slow_duration, 1)]
+			text += "\n%.0f%% slow · lasts %ss" % [(1.0 - turret.slow_factor) * 100, String.num(turret.slow_duration, 1).trim_suffix(".0")]
 		else:
 			text += "\n" + ("Furthest target" if kind == "sniper" else "Nearest target")
 		var label := STYLE.label(text, 12, Color("#bfd0d8"))
