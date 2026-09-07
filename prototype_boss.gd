@@ -96,17 +96,23 @@ func _process(delta: float) -> void:
 			charge = clampf(charge + rate * step, 0.0, 1.0)
 		else:
 			step = minf(step, remaining)
-		var movement_time := _consume_slow(step)
+		var movement_time := step
+		if not (attack == Attack.ACTIVE and kind == Kind.WICKWATCHER):
+			movement_time = _consume_slow(step)
 		if kind == Kind.RAINKEEPER:
 			_tick_rain(step)
 		if attack == Attack.RECOVERY or attack == Attack.STALK:
 			_drift(movement_time)
 		elif attack == Attack.ACTIVE:
 			if kind == Kind.WICKWATCHER:
-				_rush(step)
+				var used := _rush(step)
+				_consume_slow(used)
 				if attack == Attack.RECOVERY:
-					time_left -= step
+					time_left -= used
 					continue
+			elif kind == Kind.TIDEKEEPER:
+				# Stay within reach of the defense while the front crosses the arena.
+				_drift(movement_time)
 		time_left -= step
 		if attack == Attack.STALK:
 			if charge >= 1.0:
@@ -220,9 +226,19 @@ func _lock_rush() -> void:
 	remaining = 1.2
 
 
-func _rush(step: float) -> void:
+func _rush_endpoint(distance: float) -> Vector2:
 	var arena: Rect2 = get_parent().get_arena_rect().grow(-30.0)
-	var destination := (global_position + heading * RUSH_SPEED * step).clamp(arena.position, arena.end)
+	# Clip the ray, not its axes independently: the warning and movement stay collinear.
+	var travel := distance
+	for axis in range(2):
+		if absf(heading[axis]) > 0.000001:
+			var edge: float = arena.end[axis] if heading[axis] > 0 else arena.position[axis]
+			travel = minf(travel, maxf(0.0, (edge - global_position[axis]) / heading[axis]))
+	return global_position + heading * travel
+
+
+func _rush(step: float) -> float:
+	var destination := _rush_endpoint(RUSH_SPEED * step)
 	var movement := destination - global_position
 	var overlaps := global_position.distance_to(target.global_position) <= contact_distance
 	var fraction := 0.0 if overlaps else _first_contact_fraction(movement)
@@ -230,6 +246,11 @@ func _rush(step: float) -> void:
 	if overlaps or fraction < 1.0 or global_position.distance_to(target.global_position) <= contact_distance:
 		target.take_damage(12.0)
 		_recover()
+		return movement.length() * fraction / RUSH_SPEED
+	if movement.length() < RUSH_SPEED * step - 0.001:
+		_recover()
+		return movement.length() / RUSH_SPEED
+	return step
 
 
 func _retire_projectiles() -> void:
@@ -266,26 +287,35 @@ func _draw() -> void:
 			draw_circle(point + Vector2(0, -70 * remaining / POOL_WARNING), 5.0, pale)
 	elif kind == Kind.TIDEKEEPER:
 		draw_arc(Vector2.ZERO, 30, 0.2, TAU - 0.2, 48, Color("#388fa3"), 17.0, true)
-		if attack == Attack.WARNING:
+		if attack == Attack.WARNING or attack == Attack.ACTIVE:
 			var begin := Vector2(0, front_origin) if vertical_front else Vector2(front_origin, 0)
 			var along := Vector2.RIGHT if vertical_front else Vector2.DOWN
-			var inset := Vector2(0, 8 if front_forward else -8) if vertical_front else Vector2(8 if front_forward else -8, 0)
-			begin += inset
+			var forward := (Vector2.DOWN if vertical_front else Vector2.RIGHT) * (1.0 if front_forward else -1.0)
+			if attack == Attack.WARNING:
+				begin += forward * 14.0
+			else:
+				begin += forward * maxf(0.0, front_travel + 64.0 - remaining * FRONT_SPEED)
 			var gap_start := begin + along * (front_gap - GAP_WIDTH / 2.0)
 			var gap_end := begin + along * (front_gap + GAP_WIDTH / 2.0)
-			draw_dashed_line(to_local(begin), to_local(gap_start), pale, 4.0, 12.0)
-			draw_dashed_line(to_local(gap_end), to_local(begin + along * front_extent), pale, 4.0, 12.0)
+			if attack == Attack.WARNING:
+				draw_dashed_line(to_local(begin), to_local(gap_start), pale, 4.0, 12.0)
+				draw_dashed_line(to_local(gap_end), to_local(begin + along * front_extent), pale, 4.0, 12.0)
+				var arrow := to_local(begin + along * front_gap + forward * 25.0)
+				draw_line(arrow - along * 10, arrow + forward * 10, pale, 2.0, true)
+				draw_line(arrow + along * 10, arrow + forward * 10, pale, 2.0, true)
 			for endpoint in [gap_start, gap_end]:
 				draw_arc(to_local(endpoint), 8, 0, TAU, 24, Color("#ffe0a3"), 3.0, true)
 	else:
 		draw_colored_polygon(PackedVector2Array([Vector2(0, -38), Vector2(30, 12), Vector2(18, 30), Vector2(-18, 30), Vector2(-30, 12)]), Color("#29495f"))
 		if attack == Attack.RECOVERY:
 			draw_circle(Vector2.ZERO, 18, pale)
+		if attack == Attack.STALK and charge > 0.0:
+			draw_arc(Vector2.ZERO, 42, -PI / 2, -PI / 2 + TAU * charge, 48, Color("#ffe0a3"), 2.0, true)
 		for index in range(3):
 			var filled := charge * 3.0 >= index + 1 or attack == Attack.WARNING or attack == Attack.ACTIVE
 			draw_line(Vector2(-16 + index * 16, -10), Vector2(-16 + index * 16, 7), Color("#ffe0a3") if filled else Color("#517786"), 5.0, true)
 		if attack == Attack.WARNING:
-			var end := (global_position + heading * RUSH_SPEED * RUSH_DURATION).clamp(Vector2(30, 30), get_parent().get_arena_rect().size - Vector2(30, 30))
+			var end := _rush_endpoint(RUSH_SPEED * RUSH_DURATION)
 			draw_line(Vector2.ZERO, to_local(end), Color(0.55, 0.9, 1.0, 0.12), contact_distance * 2)
 			draw_dashed_line(Vector2.ZERO, to_local(end), pale, 3.0, 12.0)
 		elif attack == Attack.ACTIVE:

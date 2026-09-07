@@ -15,6 +15,11 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 ### Changed
 
 - Rainkeeper now attacks in three-strike bursts with larger pools, shorter warnings, and lingering water that blocks an immediate return to your previous position.
+- Tidekeeper now approaches your defense during its wave, with direction arrows before launch and opening markers that follow the water. Wickwatcher's brightness charge now fills a visible arc.
+
+### Fixed
+
+- Wickwatcher's rush now follows its warning straight to the arena edge, with consistent recovery timing after a hit or wall stop.
 
 ## [0.0.16] - 2026-09-07
 
