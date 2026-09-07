@@ -89,7 +89,7 @@ func check() -> void:
 	var turret = scene.get_node("Turret")
 	turret.position = boss.position + Vector2(50, 0)
 	turret._process(0.01)
-	assert(boss.health == 399)
+	assert(is_equal_approx(boss.health, 398.5))
 	scene.lantern.elapsed = 942.125
 	scene.lantern.energy = 123
 	boss.take_damage(1000)

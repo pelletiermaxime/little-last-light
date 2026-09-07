@@ -2,11 +2,11 @@ extends Node2D
 
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
 const PULSE_TURRET_SCENE: PackedScene = preload("res://pulse_turret.tscn")
-const PULSE_COST_PREMIUM: float = 20.0
-const BASE_TURRET_COST: float = 20.0
-const EXTRA_TURRET_COST: float = 10.0
+const PULSE_COST_PREMIUM: float = 60.0
+const BASE_TURRET_COST: float = 60.0
+const EXTRA_TURRET_COST: float = 25.0
 const PLACEMENT_MARGIN: float = 20.0
-const TURRET_SPACING: float = 36.0
+const TURRET_SPACING: float = 72.0
 
 @onready var lantern: Node2D = get_parent().get_node("Lantern")
 @onready var main: Node2D = get_parent()
@@ -163,12 +163,12 @@ func _update_interface() -> void:
 	if sell_button.visible:
 		sell_button.disabled = selected_turret.purchase_cost <= 0.0
 		sell_button.text = "Keep free starter turret" if sell_button.disabled else "Sell selected · +%d (%s)" % [int(selected_turret.purchase_cost), "R1 / RB" if using_controller else "X"]
-	damage_button.text = "Damage %.0f to %.0f (%s)\n%d energy" % [main.turret_damage(), main.turret_damage() + 1, "Confirm" if using_controller else "G", int(main.upgrade_cost("damage"))]
+	damage_button.text = "Damage %.1f to %.1f (%s)\n%d energy" % [main.turret_damage(), main.turret_damage() + 1.5, "Confirm" if using_controller else "G", int(main.upgrade_cost("damage"))]
 	rate_button.text = "Fire rate %.2f to %.2f/s (%s)\n%d energy" % [main.turret_shots_per_second(), main.turret_shots_per_second() + 0.25 / 1.5, "Confirm" if using_controller else "F", int(main.upgrade_cost("fire_rate"))]
 	damage_button.disabled = placing or main.banked_energy < main.upgrade_cost("damage") or main.damage_level >= main.MAX_UPGRADE_LEVEL
 	rate_button.disabled = placing or main.banked_energy < main.upgrade_cost("fire_rate") or main.fire_rate_level >= main.MAX_UPGRADE_LEVEL
 	if main.damage_level >= main.MAX_UPGRADE_LEVEL:
-		damage_button.text = "Damage %.0f · MAX" % main.turret_damage()
+		damage_button.text = "Damage %.1f · MAX" % main.turret_damage()
 	if main.fire_rate_level >= main.MAX_UPGRADE_LEVEL:
 		rate_button.text = "Fire rate %.2f/s · MAX" % main.turret_shots_per_second()
 	health_button.text = "Lantern HP %.0f to %.0f (%s)\n%d energy" % [main.lantern_max_health(), main.lantern_max_health() + 15, "Confirm" if using_controller else "H", int(main.upgrade_cost("health"))]

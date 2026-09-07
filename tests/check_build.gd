@@ -21,19 +21,19 @@ func check() -> void:
 	assert(get_nodes_in_group("turrets").size() == 1, "Ghost is not a real turret")
 	press_key(KEY_B)
 	assert(not paused and not build.placing, "Cannot build without energy")
-	scene.banked_energy = 40.0
+	scene.banked_energy = 100.0
 	press_key(KEY_B)
 	assert(not paused and build.placing and build.preview.visible, "B enters preparation placement")
 	var elapsed: float = lantern.elapsed
 	await process_frame
 	await process_frame
-	assert(scene.banked_energy == 40.0 and lantern.energy == 0.0 and lantern.elapsed == elapsed, "Preparation has no income or timer")
+	assert(scene.banked_energy == 100.0 and lantern.energy == 0.0 and lantern.elapsed == elapsed, "Preparation has no income or timer")
 	assert(not build.try_place(Vector2(-10, 300)), "Outside arena rejected")
 	assert(not build.try_place(scene.get_node("Turret").global_position), "Overlap rejected")
 	assert(not build.try_place(Vector2(scene.get_arena_rect().end.x + 30, 30)), "Sidebar is outside arena")
-	assert(scene.banked_energy == 40.0, "Invalid clicks do not spend")
+	assert(scene.banked_energy == 100.0, "Invalid clicks do not spend")
 	press_key(KEY_ESCAPE)
-	assert(not paused and not build.placing and scene.banked_energy == 40.0, "Esc cancels without cost")
+	assert(not paused and not build.placing and scene.banked_energy == 100.0, "Esc cancels without cost")
 	press_key(KEY_B)
 	var arena: Vector2 = scene.get_arena_rect().size
 	var point := Vector2(arena.x * 0.85, arena.y * 0.35)
@@ -42,7 +42,7 @@ func check() -> void:
 	click.pressed = true
 	click.position = point
 	root.push_input(click, true)
-	assert(scene.phase == scene.Phase.PREPARATION and scene.banked_energy == 20.0, "Purchase costs 20 and stays in preparation")
+	assert(scene.phase == scene.Phase.PREPARATION and scene.banked_energy == 40.0, "Purchase costs 60 and stays in preparation")
 	assert(get_nodes_in_group("turrets").size() == 2, "Exactly one real turret added")
 	assert(not build.try_place(point + Vector2(50, 0)), "Second click cannot purchase again")
 	var turret = get_nodes_in_group("turrets")[1]

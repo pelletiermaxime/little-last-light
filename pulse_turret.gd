@@ -1,9 +1,9 @@
 extends "res://turret.gd"
 
 const PULSE_INTERVAL: float = 3.0
-const PULSE_RANGE: float = 150.0
+const PULSE_RANGE: float = 175.0
 const SLOW_FACTOR: float = 0.55
-const SLOW_DURATION: float = 1.5
+const SLOW_DURATION: float = 1.3
 const FLASH_DURATION: float = 0.45
 var slow_factor: float = SLOW_FACTOR
 var slow_duration: float = SLOW_DURATION

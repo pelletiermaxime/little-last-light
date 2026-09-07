@@ -104,7 +104,7 @@ func check() -> void:
 	turret.position = enemy.position + Vector2(40, 0)
 	turret.cooldown = 0.0
 	turret._process(0.1)
-	expect(enemy.health == 3.0, "Existing turret can target and damage a charger")
+	expect(is_equal_approx(enemy.health, 2.5), "Existing turret can target and damage a charger")
 	enemy.take_damage(3.0)
 	expect(enemy.is_queued_for_deletion(), "Chargers die through the shared damage method")
 	# The actual paused scene tree must freeze each state, then resume processing.
@@ -133,19 +133,19 @@ func check() -> void:
 	scene.lantern.elapsed = 20.0
 	scene._process(0.0)
 	expect(get_nodes_in_group("chargers").size() == 1, "First charger appears at 20 seconds")
-	expect(scene.current_charger_interval() == 8.0, "Charger cadence starts at eight seconds")
+	expect(scene.current_charger_interval() == 4.0, "Charger cadence starts at four seconds")
 	scene.lantern.brightness = 2
-	scene.lantern.elapsed = 27.9
+	scene.lantern.elapsed = 23.9
 	scene._process(0.0)
 	expect(get_nodes_in_group("chargers").size() == 1, "High brightness does not accelerate charger cadence")
-	for attempt in range(4):
+	for attempt in range(10):
 		scene._spawn_charger()
-	expect(get_nodes_in_group("chargers").size() == 4, "At most four chargers coexist")
+	expect(get_nodes_in_group("chargers").size() == 8, "At most eight chargers coexist")
 	scene.lantern.elapsed = 70.0
-	expect(is_equal_approx(scene.current_charger_interval(), 6.5), "Charger cadence ramps gradually")
-	for elapsed in [120.0, 600.0]:
+	expect(is_equal_approx(scene.current_charger_interval(), 6.5), "Gathering uses half the pressure spawn frequency")
+	for elapsed in [140.0, 620.0]:
 		scene.lantern.elapsed = elapsed
-		expect(scene.current_charger_interval() == 5.0, "Cadence reaches five seconds at two minutes and stops accelerating")
+		expect(is_equal_approx(scene.current_charger_interval(), 2.5 - 0.5 * clampf((elapsed - 120.0) / 480.0, 0.0, 1.0)), "Pressure accelerates toward a two-second late cadence")
 	scene.end_run(true)
 	expect(get_nodes_in_group("chargers").is_empty(), "End Run clears charger membership immediately")
 	scene._spawn_charger()

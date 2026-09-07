@@ -1,5 +1,7 @@
 extends "res://enemy.gd"
 
+signal defeated
+
 const TRAIL_SCRIPT = preload("res://water_trail.gd")
 const TRAIL_SPACING: float = 24.0
 const ARRIVAL_TIME: float = 3.0
@@ -48,7 +50,10 @@ func _process(delta: float) -> void:
 
 
 func take_damage(amount: float) -> void:
+	var was_alive := health > 0.0
 	super.take_damage(amount)
+	if was_alive and health <= 0.0:
+		defeated.emit()
 	if health <= 0.0 and is_instance_valid(trail):
 		trail.process_mode = Node.PROCESS_MODE_DISABLED
 		trail.queue_free()

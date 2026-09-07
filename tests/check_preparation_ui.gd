@@ -18,7 +18,7 @@ func check() -> void:
 	assert(not build.build_button.visible and not build.damage_button.visible and not hud.scroll.visible)
 	ui.place_button.pressed.emit()
 	assert(ui.view == ui.View.PLACEMENT and build.build_button.visible)
-	scene.banked_energy = 100
+	scene.banked_energy = 200
 	build.begin_placement()
 	await process_frame
 	await process_frame
@@ -60,7 +60,7 @@ func check() -> void:
 	ui.upgrades_button.pressed.emit()
 	assert(build.damage_button.visible and build.health_button.visible and not build.build_button.visible)
 	build.health_button.pressed.emit()
-	assert(scene.health_level == 1 and scene.banked_energy == 40)
+	assert(scene.health_level == 1 and scene.banked_energy == 60)
 	ui.back_button.pressed.emit()
 	assert(ui.view == ui.View.HOME)
 	ui.records_button.pressed.emit()

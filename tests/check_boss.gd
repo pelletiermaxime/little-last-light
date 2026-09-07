@@ -67,7 +67,7 @@ func check() -> void:
 	var turret = scene.get_node("Turret")
 	turret.position = boss.position + Vector2(60, 0)
 	turret._process(0.01)
-	assert(boss.health == 699)
+	assert(is_equal_approx(boss.health, 698.5))
 	scene.get_node("PauseScreen").pause()
 	var age: float = trail.puddles[0].age
 	boss.set_process(true)

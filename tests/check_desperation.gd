@@ -82,11 +82,9 @@ func check() -> void:
 	boss._process(1.0)
 	assert(is_equal_approx(boss.position.x, 172.25), "Pulse uses half boss susceptibility and splits slow expiry movement")
 	assert(boss.slow_remaining == 0.0 and is_equal_approx(boss.remaining, 0.8), "Slow changes movement but not attack clocks")
-	scene.lantern.reset_ward()
-	scene.lantern.update_ward(4.0, false)
 	var hp: float = scene.lantern.health
 	scene.lantern.take_projectile_damage(12)
-	assert(scene.lantern.health == hp - 4 and scene.lantern.ward_charge == 0, "Droplets go through the shared ward damage path")
+	assert(scene.lantern.health == hp - 12, "Droplets deal their full damage without ward absorption")
 	boss.take_damage(9999)
 	assert(scene.last_run.victory and not boss.desperate, "A killing blow does not trigger a new phase")
 	scene.free()

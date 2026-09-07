@@ -19,11 +19,11 @@ func check() -> void:
 	scene.lantern.set_process(false)
 	var build = scene.get_node("BuildController")
 	await process_frame
-	expect(build.turret_cost() == 20.0, "First extra turret costs 20")
+	expect(build.turret_cost() == 60.0, "First extra turret costs 60")
 	var another = load("res://turret.tscn").instantiate()
 	scene.add_child(another)
 	another.position = Vector2(scene.get_arena_rect().size.x * 0.85, 250)
-	expect(build.turret_cost() == 30.0, "Second extra turret costs 30")
+	expect(build.turret_cost() == 85.0, "Second extra turret costs 85")
 	expect(build.placement_error(Vector2(3, 300)) == "Too close to the arena edge", "Edge rejection explained")
 	expect(build.placement_error(another.position) == "Too close to another turret", "Spacing rejection explained")
 	expect(scene.get_arena_rect().size == scene.get_viewport_rect().size, "Arena fills the whole viewport")
@@ -32,7 +32,7 @@ func check() -> void:
 	var empty_bottom := Vector2(arena.size.x * 0.5, arena.size.y - 36)
 	expect(build.can_place_at(empty_bottom), "Empty bottom area is no longer blocked by the container")
 	build.begin_move(another)
-	expect(build.turret_cost() == 30.0, "Preview and moving a turret do not change price")
+	expect(build.turret_cost() == 85.0, "Preview and moving a turret do not change price")
 	expect(build.try_place(empty_bottom), "Free relocation can use empty bottom area")
 	expect(scene.banked_energy == 0.0, "Relocation still free")
 	scene.continue_to_preparation()
@@ -86,6 +86,26 @@ func check() -> void:
 	scene.start_run()
 	expect(scene.current_enemy_health() == 1.0, "Next run resets toughness")
 	expect(scene.current_enemy_speed() == 85.0, "Next run resets enemy speed")
+	# A fresh high-brightness run funds choices without immediately buying a swarm.
+	scene.lantern.brightness = 2
+	scene.lantern._process(180.0)
+	expect(is_equal_approx(scene.lantern.energy, 432.0), "Three minutes at high brightness earns 432 energy")
+	for time in [120.0, 300.0, 600.0, 900.0]:
+		scene.lantern.elapsed = time + 25.0
+		var last_interval := INF
+		for brightness in range(3):
+			scene.lantern.brightness = brightness
+			var interval: float = scene.current_spawn_interval()
+			expect(interval < last_interval and interval >= 0.1, "Every brightness retains distinct pressure within the spawn cap")
+			last_interval = interval
+	scene.lantern.brightness = 0
+	scene.lantern.elapsed = 145.0
+	var early_interval: float = scene.current_spawn_interval()
+	scene.lantern.elapsed = 325.0
+	expect(scene.current_spawn_interval() < early_interval, "Spawn pressure still grows beyond two minutes")
+	scene.lantern.elapsed = 640.0
+	expect(scene.ENCOUNTER_SCHEDULE.chargers_enabled(640.0) and scene.current_charger_interval() == 12.0, "Late recovery admits occasional chargers")
+	expect(scene.ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(640.0) == 0.5, "Late recovery retains half-pressure breathing room")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:

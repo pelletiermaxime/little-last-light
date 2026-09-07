@@ -33,7 +33,7 @@ func check() -> void:
 		hud.brightness_indicator.pressed.emit()
 		expect(lantern.brightness == level, "Brightness buttons select their own level")
 		expect(hud.displayed_brightness == level, "Selected brightness is immediately shown")
-		expect(hud.brightness_indicator.text.contains("+%d/s" % int(lantern.ENERGY_RATES[level])), "Income labels match gameplay rates")
+		expect(hud.brightness_indicator.text.contains("+%.1f/s" % lantern.ENERGY_RATES[level]), "Income labels match fractional gameplay rates")
 	lantern.elapsed = 65.0
 	lantern.energy = 28.4
 	lantern.health = 6.0
@@ -45,12 +45,12 @@ func check() -> void:
 		await process_frame
 	expect(hud.health_group.size.y <= 42 and hud.timer_group.size.y <= 64, "HP and time stay compact after container layout")
 	expect(not hud.health_group is PanelContainer and not hud.timer_group is PanelContainer, "HP and time have no card backgrounds")
-	scene.banked_energy = 5.0
+	scene.banked_energy = 45.0
 	lantern.take_damage(100.0)
 	hud.refresh()
 	build._update_interface()
 	expect(is_equal_approx(scene.last_run.energy, 28.4), "Recap captures earnings before banking clears them")
-	expect(is_equal_approx(scene.banked_energy, 33.4), "HUD does not change banking arithmetic")
+	expect(is_equal_approx(scene.banked_energy, 73.4), "HUD does not change banking arithmetic")
 	expect(scene.last_run.new_best and scene.last_run.duration == 65.0, "Recap records survival and personal best")
 	expect(hud.earnings.text == "+28 energy earned", "Recap retains earned amount after death")
 	lantern._process(0.2)
@@ -61,7 +61,7 @@ func check() -> void:
 	build.begin_placement()
 	expect(build.try_place(Vector2(100, 100)), "Purchase after recap succeeds")
 	build._update_interface()
-	expect(build.build_button.disabled and int(ceil(build.turret_cost() - scene.banked_energy)) == 17, "Purchase refreshes affordability at the next price")
+	expect(build.build_button.disabled and int(ceil(build.turret_cost() - scene.banked_energy)) == 72, "Purchase refreshes affordability at the next price")
 	scene.save_message = "Save test warning"
 	hud.refresh()
 	expect(hud.save_notice.visible and hud.save_notice.text == scene.save_message, "Save failures remain visible")

@@ -132,7 +132,7 @@ func check() -> void:
 	assert(prep.view == prep.View.UPGRADES)
 	build.damage_button.grab_focus()
 	press(JOY_BUTTON_A)
-	assert(scene.damage_level == 1 and scene.banked_energy == 440, "One press purchases exactly one upgrade")
+	assert(scene.damage_level == 1 and scene.banked_energy == 380, "One press purchases exactly one upgrade")
 	press(JOY_BUTTON_LEFT_SHOULDER)
 	press(JOY_BUTTON_RIGHT_SHOULDER)
 	assert(scene.damage_level == 1 and scene.fire_rate_level == 0, "Old shoulder shortcuts cannot purchase upgrades")

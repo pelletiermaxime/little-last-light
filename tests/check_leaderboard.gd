@@ -164,19 +164,19 @@ func check() -> void:
 	file.store_string('{"version":1,"energy":42,"best_time":99,"turrets":[[0.5,0.5]]}')
 	file.close()
 	scene = game("0.3.0")
-	expect(scene.best_time == 0 and scene.legacy_best_time == 99 and scene.banked_energy == 42, "Legacy save migrates without attributing unknown version")
+	expect(scene.best_time == 0 and scene.legacy_best_time == 0 and scene.banked_energy == 0, "Unversioned save resets records and energy")
 	scene.save_progress()
 	scene.free()
 	await process_frame
 	scene = game("0.3.0")
-	expect(scene.legacy_best_time == 99, "Legacy record preserved after migration")
+	expect(scene.legacy_best_time == 0, "Fresh records persist after saving the current version")
 	scene.leaderboard_profile.pending = {"version": "0.3.0", "durationMs": 1000}
 	scene.save_progress()
 	scene.free()
 	await process_frame
 	scene = game("0.3.0")
 	expect(scene.save_is_readable and scene.leaderboard_profile.pending.version == "0.3.0" and scene.leaderboard_profile.pending.durationMs == 1000 and scene.leaderboard_profile.pending.size() == 2, "Old pending offers remain publishable without invented run details")
-	# Buy two turrets for 20 + 30 energy. Savings and later earnings must not
+	# Buy two turrets for 60 + 85 energy. Savings and later earnings must not
 	# change the investment, and resetting the layout must preserve this record.
 	scene.banked_energy = 1000.0
 	var builder = scene.get_node("BuildController")
@@ -188,17 +188,17 @@ func check() -> void:
 	scene.lantern.elapsed = 10.0
 	scene.lantern.energy = 60.0
 	scene.lantern.take_damage(1000)
-	expect(scene.leaderboard_profile.pending.energyInvested == 50.0 and scene.leaderboard_profile.pending.energyEarned == 60.0, "Death records 20 + 30 investment independently of savings and earnings")
+	expect(scene.leaderboard_profile.pending.energyInvested == 145.0 and scene.leaderboard_profile.pending.energyEarned == 60.0, "Death records 60 + 85 investment independently of savings and earnings")
 	expect(not scene.leaderboard_profile.pending.has("totalEnergy"), "New offers no longer submit available energy")
-	expect(scene.banked_energy == 1010.0, "Recording investment does not change the economy")
+	expect(scene.banked_energy == 915.0, "Recording investment does not change the economy")
 	scene.continue_to_preparation()
 	builder.reset_layout()
-	expect(scene.leaderboard_profile.pending.energyInvested == 50.0, "Refunding a defense preserves the previous run investment")
+	expect(scene.leaderboard_profile.pending.energyInvested == 145.0, "Refunding a defense preserves the previous run investment")
 	scene.save_progress()
 	scene.free()
 	await process_frame
 	scene = game("0.3.0")
-	expect(scene.leaderboard_profile.pending.energyInvested == 50.0, "Run investment survives reopening with a different current layout")
+	expect(scene.leaderboard_profile.pending.energyInvested == 145.0, "Run investment survives reopening with a different current layout")
 	scene.start_run()
 	scene.lantern.elapsed = 11.0
 	scene.end_run(true)
@@ -208,11 +208,11 @@ func check() -> void:
 	scene.start_run()
 	scene.lantern.elapsed = 12.0
 	scene.end_run(true)
-	expect(scene.leaderboard_profile.pending.energyInvested == 270.0, "Investment includes damage 60 + 120, fire rate 50 and health 40 exactly once")
+	expect(scene.leaderboard_profile.pending.energyInvested == 540.0, "Investment includes damage 120 + 240, fire rate 100 and health 80 exactly once")
 	expect(scene.leaderboard_profile.pending.turretLayout.upgrades == {"damage": 2, "fireRate": 1, "health": 1}, "Published configuration includes the actual upgrade levels")
 	scene.continue_to_preparation()
 	expect(scene.buy_upgrade("health"), "Purchase another upgrade after the recorded run")
-	expect(scene.leaderboard_profile.pending.energyInvested == 270.0 and scene.leaderboard_profile.pending.turretLayout.upgrades.health == 1, "Later upgrades do not rewrite recorded investment or configuration")
+	expect(scene.leaderboard_profile.pending.energyInvested == 540.0 and scene.leaderboard_profile.pending.turretLayout.upgrades.health == 1, "Later upgrades do not rewrite recorded investment or configuration")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:

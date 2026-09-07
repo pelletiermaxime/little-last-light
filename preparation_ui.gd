@@ -29,6 +29,8 @@ var upgrade_progress: Dictionary = {}
 var upgrade_summaries: Dictionary = {}
 var upgrade_panel: MarginContainer
 var upgrade_groups: GridContainer
+var energy_button: Button
+var proximity_button: Button
 
 
 func _ready() -> void:
@@ -61,6 +63,14 @@ func _ready() -> void:
 	}
 	for kind in slow_buttons:
 		slow_buttons[kind].pressed.connect(main.buy_upgrade.bind(kind))
+	energy_button = Button.new()
+	energy_button.name = "EnergyGainButton"
+	actions.add_child(energy_button)
+	energy_button.pressed.connect(main.buy_upgrade.bind("energy"))
+	proximity_button = Button.new()
+	proximity_button.name = "ProximityPowerButton"
+	actions.add_child(proximity_button)
+	proximity_button.pressed.connect(main.buy_upgrade.bind("proximity"))
 	hide_button.pressed.connect(_toggle_controls)
 	show_button.pressed.connect(_toggle_controls)
 	records_button.pressed.connect(func(): open_view(View.RECORDS))
@@ -109,7 +119,7 @@ func _create_upgrade_groups() -> void:
 	var groups := {
 		"Damage turrets": {"damage": build.damage_button, "fire_rate": build.rate_button},
 		"Slow turrets": slow_buttons,
-		"Lantern": {"health": build.health_button},
+		"Lantern": {"health": build.health_button, "energy": energy_button, "proximity": proximity_button},
 	}
 	for group_name in groups:
 		var group := VBoxContainer.new()
@@ -154,7 +164,7 @@ func _create_upgrade_groups() -> void:
 			upgrade_progress[kind] = progress
 	# Explicit neighbors keep compact, differently wrapped labels from making
 	# native arrow navigation jump diagonally into the next column.
-	var columns := [[build.damage_button, build.rate_button], [slow_buttons.slow_rate, slow_buttons.slow_strength, slow_buttons.slow_duration], [build.health_button]]
+	var columns := [[build.damage_button, build.rate_button], [slow_buttons.slow_rate, slow_buttons.slow_strength, slow_buttons.slow_duration], [build.health_button, energy_button, proximity_button]]
 	for column in range(columns.size()):
 		for row in range(columns[column].size()):
 			var button: Button = columns[column][row]
@@ -212,6 +222,12 @@ func refresh() -> void:
 	build.damage_button.visible = upgrades
 	build.rate_button.visible = upgrades
 	build.health_button.visible = upgrades
+	energy_button.visible = upgrades
+	energy_button.disabled = build.placing or main.energy_level >= main.MAX_UPGRADE_LEVEL or main.banked_energy < main.upgrade_cost("energy")
+	energy_button.text = "Energy gain · +125% · MAX" if main.energy_level >= main.MAX_UPGRADE_LEVEL else "Energy gain · +%d%% → +%d%%\n%d energy" % [main.energy_level * 25, (main.energy_level + 1) * 25, int(main.upgrade_cost("energy"))]
+	proximity_button.visible = upgrades
+	proximity_button.disabled = build.placing or main.proximity_level >= main.MAX_UPGRADE_LEVEL or main.banked_energy < main.upgrade_cost("proximity")
+	proximity_button.text = "Proximity · ×2.0 damage & rate · MAX" if main.proximity_level >= main.MAX_UPGRADE_LEVEL else "Proximity · ×%.1f → ×%.1f damage & rate\n%d energy" % [main.proximity_multiplier(), main.proximity_multiplier() + 0.1, int(main.upgrade_cost("proximity"))]
 	_refresh_slow_upgrades()
 	var levels: Dictionary = main.upgrade_levels()
 	for kind in upgrade_progress:
@@ -219,9 +235,9 @@ func refresh() -> void:
 		for level in range(main.MAX_UPGRADE_LEVEL):
 			progress.get_child(level).color = Color("#ffd17b") if level < levels[kind] else Color("#354955")
 		progress.get_child(main.MAX_UPGRADE_LEVEL).text = " %d/%d" % [levels[kind], main.MAX_UPGRADE_LEVEL]
-	upgrade_summaries["Damage turrets"].text = "%.0f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second()]
-	upgrade_summaries["Slow turrets"].text = "%.0f%% slow · lasts %.1fs\nActivates every %.1fs" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
-	upgrade_summaries["Lantern"].text = "%.0f maximum HP" % main.lantern_max_health()
+	upgrade_summaries["Damage turrets"].text = "%.1f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second()]
+	upgrade_summaries["Slow turrets"].text = "%.0f%% slow · lasts %.2fs\nActivates every %.1fs" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
+	upgrade_summaries["Lantern"].text = "%.0f maximum HP\n+%d%% passive energy" % [main.lantern_max_health(), main.energy_level * 25]
 	back_button.visible = not home and not (placement and build.placing)
 	hide_button.visible = placement
 	records_button.visible = home
@@ -243,14 +259,14 @@ func refresh() -> void:
 		title.text = "Arrange your defense · %d energy" % int(main.banked_energy)
 	description.text = "Place your defense. Choose your upgrades. See how long your light lasts." if home else ("Click a turret to move or sell it. B buys a new one." if placement else ("Permanent improvements for every future run." if upgrades else "Best: %s · %s" % [hud.format_time(main.best_time), main.game_version]))
 	if placement:
-		description.text = "Damage turrets shoot. Slow turrets: %.0f%% slow for %.1fs every %.1fs. Select a turret to move or sell." % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
+		description.text = "Damage turrets shoot. Slow turrets: %.0f%% slow for %.2fs every %.1fs. Select a turret to move or sell." % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
 	elif upgrades:
 		title.text = "Improve your defense"
 		description.text = "Permanent upgrades for every turret of its type and your lantern."
 	if placement and build.placing:
 		description.text = "Place through the card background. Tab hides all controls. Esc cancels."
 	if build.using_controller and placement:
-		description.text = "Slow turret: %.0f%% for %.1fs every %.1fs.\nLeft stick: cursor · D-pad: toolbar\nConfirm: select / place · Back: cancel / done" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
+		description.text = "Slow turret: %.0f%% for %.2fs every %.1fs.\nLeft stick: cursor · D-pad: toolbar\nConfirm: select / place · Back: cancel / done" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
 	if not main.save_message.is_empty():
 		description.text = main.save_message
 	var size := get_viewport().get_visible_rect().size
@@ -287,14 +303,14 @@ func refresh() -> void:
 
 func _refresh_slow_upgrades() -> void:
 	var labels := {
-		"slow_rate": "Activation · every %.1fs → %.1fs" % [main.slow_interval(), main.slow_interval() - 0.3],
+		"slow_rate": "Activation · every %.2fs → %.2fs" % [main.slow_interval(), main.slow_interval() - 0.15],
 		"slow_strength": "Strength · %.0f%% → %.0f%% slower" % [main.slow_strength() * 100, main.slow_strength() * 100 + 5],
-		"slow_duration": "Duration · %.1fs → %.1fs" % [main.slow_duration(), main.slow_duration() + 0.2],
+		"slow_duration": "Duration · %.2fs → %.2fs" % [main.slow_duration(), main.slow_duration() + 0.15],
 	}
 	var capped := {
 		"slow_rate": "Activation · every %.1fs · MAX" % main.slow_interval(),
 		"slow_strength": "Strength · %.0f%% slower · MAX" % (main.slow_strength() * 100),
-		"slow_duration": "Duration · %.1fs · MAX" % main.slow_duration(),
+		"slow_duration": "Duration · %.2fs · MAX" % main.slow_duration(),
 	}
 	for kind in slow_buttons:
 		var button: Button = slow_buttons[kind]

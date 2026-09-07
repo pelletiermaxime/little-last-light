@@ -6,22 +6,24 @@ const ENEMY_SCENE: PackedScene = preload("res://enemy.tscn")
 const CHARGER_SCENE: PackedScene = preload("res://charger.tscn")
 const BOSS_SCRIPT = preload("res://water_boss.gd")
 const BOSS_TIME: float = 300.0
+const BOSS_ENERGY_REWARD: float = 300.0
 const FINAL_BOSS_SCRIPT = preload("res://snuffer.gd")
 const FINAL_BOSS_TIME: float = 900.0
 const ENCOUNTER_SCHEDULE = preload("res://encounter_schedule.gd")
 const FIRST_CHARGER_TIME: float = 20.0
-const CHARGER_INTERVAL: float = 8.0
-const MIN_CHARGER_INTERVAL: float = 5.0
+const CHARGER_INTERVAL: float = 4.0
+const MIN_CHARGER_INTERVAL: float = 2.5
 const CHARGER_RAMP_END: float = 120.0
-const MAX_CHARGERS: int = 4
+const MAX_CHARGERS: int = 8
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
 const PULSE_TURRET_SCENE: PackedScene = preload("res://pulse_turret.tscn")
 const SPAWN_INTERVALS: Array[float] = [2.0, 1.2, 0.65]
+const MIN_SPAWN_INTERVALS: Array[float] = [0.25, 0.15, 0.10]
 const PRESSURE_RAMP_SECONDS: float = 20.0
 const TOUGHNESS_STEP_SECONDS: float = 30.0
 const BASE_ENEMY_SPEED: float = 85.0
-const MAX_UPGRADE_LEVEL: int = 4
-const UPGRADE_BASE_COSTS: Dictionary = {"damage": 60.0, "fire_rate": 50.0, "health": 40.0, "slow_rate": 60.0, "slow_strength": 80.0, "slow_duration": 50.0}
+const MAX_UPGRADE_LEVEL: int = 5
+const UPGRADE_BASE_COSTS: Dictionary = {"damage": 120.0, "fire_rate": 100.0, "health": 80.0, "slow_rate": 120.0, "slow_strength": 160.0, "slow_duration": 100.0, "energy": 100.0, "proximity": 150.0}
 
 # The future settings menu can assign fps_limit; 0 means unlimited.
 @export_range(0, 360, 1, "or_greater") var fps_limit: int = 100:
@@ -37,6 +39,10 @@ var banked_energy: float = 0.0
 var damage_level: int = 0
 var fire_rate_level: int = 0
 var health_level: int = 0
+var energy_level: int = 0
+var proximity_level: int = 0
+var boss_reward_earned: bool = false
+var boss_reward_notice_until: float = 0.0
 var slow_levels: Dictionary = {"slow_rate": 0, "slow_strength": 0, "slow_duration": 0}
 var best_time: float = 0.0
 var spawn_progress: float = 0.0
@@ -78,7 +84,7 @@ func _ready() -> void:
 
 
 func turret_damage() -> float:
-	return 1.0 + damage_level
+	return 1.0 + 1.5 * damage_level
 
 
 func turret_shots_per_second() -> float:
@@ -106,7 +112,7 @@ func configure_turret(turret: Node2D) -> void:
 
 
 func slow_interval() -> float:
-	return 3.0 - 0.3 * slow_levels.slow_rate
+	return 3.0 - 0.15 * slow_levels.slow_rate
 
 
 func slow_strength() -> float:
@@ -114,13 +120,21 @@ func slow_strength() -> float:
 
 
 func slow_duration() -> float:
-	return 1.5 + 0.2 * slow_levels.slow_duration
+	return 1.3 + 0.15 * slow_levels.slow_duration
 
 
 func upgrade_levels() -> Dictionary:
-	var levels := {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level}
+	var levels := {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level, "energy": energy_level, "proximity": proximity_level}
 	levels.merge(slow_levels)
 	return levels
+
+
+func energy_multiplier() -> float:
+	return 1.0 + 0.25 * energy_level
+
+
+func proximity_multiplier() -> float:
+	return 1.5 + 0.1 * proximity_level
 
 
 func upgrade_cost(kind: String) -> float:
@@ -154,6 +168,10 @@ func buy_upgrade(kind: String) -> bool:
 	elif kind == "health":
 		health_level += 1
 		configure_lantern()
+	elif kind == "energy":
+		energy_level += 1
+	elif kind == "proximity":
+		proximity_level += 1
 	else:
 		slow_levels[kind] += 1
 	for turret in get_tree().get_nodes_in_group("turrets"):
@@ -190,10 +208,11 @@ func start_run() -> void:
 	lantern.brightness = 0
 	lantern.hit_flash = 0.0
 	lantern.projectile_grace_remaining = 0.0
-	lantern.reset_ward()
 	lantern._center_in_viewport()
 	spawn_progress = 0.0
 	boss_spawned = false
+	boss_reward_earned = false
+	boss_reward_notice_until = 0.0
 	final_boss_spawned = false
 	next_charger_time = FIRST_CHARGER_TIME
 	autosave_elapsed = 0.0
@@ -213,12 +232,12 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	phase = Phase.RESULTS
 	get_tree().paused = false
 	lantern.running = false
-	lantern.reset_ward()
 	# Capture the result before banking clears this run's energy.
 	var survival := minf(lantern.elapsed, final_boss_time)
 	var previous_clear := float(version_clears.get(game_version, 0.0))
 	var new_clear: bool = victory and (previous_clear == 0.0 or lantern.elapsed < previous_clear)
 	last_run = {"duration": lantern.elapsed, "survival": survival, "victory": victory, "energy": lantern.energy, "new_best": new_clear if victory else survival > best_time, "voluntary": voluntary}
+	last_run.boss_bonus = BOSS_ENERGY_REWARD if boss_reward_earned else 0.0
 	best_time = maxf(best_time, survival)
 	if new_clear:
 		version_clears[game_version] = lantern.elapsed
@@ -286,6 +305,7 @@ func _clear_enemies() -> void:
 
 func _set_turrets_active(active: bool) -> void:
 	for turret in get_tree().get_nodes_in_group("turrets"):
+		turret.boosted = false
 		turret.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 		turret.cooldown = 0.0
 		turret.shot_time = 0.0
@@ -296,14 +316,15 @@ func current_spawn_interval() -> float:
 	var rate := ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(lantern.elapsed)
 	if rate <= 0.0:
 		return INF
-	# Cap the time ramp before all brightness levels collapse to the same rate.
+	# Continue slower growth after the opening, with distinct brightness caps.
 	var ramp := 1.0 + minf(lantern.elapsed, 100.0) / PRESSURE_RAMP_SECONDS
-	return maxf(0.12, SPAWN_INTERVALS[lantern.brightness] / ramp) / rate
+	ramp += clampf((lantern.elapsed - 100.0) / 100.0, 0.0, 4.0)
+	return maxf(MIN_SPAWN_INTERVALS[lantern.brightness], SPAWN_INTERVALS[lantern.brightness] / ramp) / rate
 
 
 func current_enemy_health() -> float:
-	# New enemies need another hit every 30 seconds, even after spawn rate caps.
-	return 1.0 + floorf(lantern.elapsed / TOUGHNESS_STEP_SECONDS)
+	# Toughness keeps growing after the performance-safe spawn caps.
+	return 1.0 + floorf(lantern.elapsed / TOUGHNESS_STEP_SECONDS) + floorf(maxf(0.0, lantern.elapsed - 300.0) / 45.0)
 
 
 func current_enemy_speed() -> float:
@@ -364,6 +385,7 @@ func _spawn_boss() -> void:
 	boss_spawned = true
 	var boss := BOSS_SCRIPT.new()
 	boss.target = lantern
+	boss.defeated.connect(_on_drencher_defeated)
 	# Arrive at the farthest inset corner, giving space and a visible warning.
 	var size := get_arena_rect().size
 	var corners: Array[Vector2] = [Vector2(44, 44), Vector2(size.x - 44, 44), size - Vector2(44, 44), Vector2(44, size.y - 44)]
@@ -373,6 +395,17 @@ func _spawn_boss() -> void:
 			boss.position = point
 	add_child(boss)
 	$GameHUD.refresh()
+
+
+func _on_drencher_defeated() -> void:
+	if phase != Phase.RUNNING or lantern.health <= 0.0 or boss_reward_earned:
+		return
+	boss_reward_earned = true
+	boss_reward_notice_until = lantern.elapsed + 5.0
+	lantern.energy += BOSS_ENERGY_REWARD
+	save_progress()
+	$GameHUD.refresh()
+	get_node("/root/GameAudio").play(&"upgrade")
 
 
 func _spawn_enemy() -> void:
@@ -388,7 +421,12 @@ func _spawn_enemy() -> void:
 
 func current_charger_interval() -> float:
 	var progress := clampf((lantern.elapsed - FIRST_CHARGER_TIME) / (CHARGER_RAMP_END - FIRST_CHARGER_TIME), 0.0, 1.0)
-	return lerpf(CHARGER_INTERVAL, MIN_CHARGER_INTERVAL, progress)
+	var interval := lerpf(CHARGER_INTERVAL, MIN_CHARGER_INTERVAL, progress)
+	interval -= 0.5 * clampf((lantern.elapsed - 120.0) / 480.0, 0.0, 1.0)
+	if ENCOUNTER_SCHEDULE.period(lantern.elapsed) == "Gathering":
+		return interval * 2.0
+	# Recovery retains breathing room even after chargers join it at five minutes.
+	return maxf(12.0, interval * 3.0) if ENCOUNTER_SCHEDULE.period(lantern.elapsed) == "Recovery" else interval
 
 
 func _spawn_charger() -> void:
@@ -446,6 +484,7 @@ func save_progress() -> bool:
 	data.version_clears = version_clears
 	data.turret_types = turret_types
 	data.upgrades = upgrade_levels()
+	data.game_version = str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
 	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if file == null:
 		save_message = "Could not save progress. Keep this window open and retry."
@@ -504,6 +543,10 @@ func load_progress() -> void:
 		return
 	var parser := JSON.new()
 	var error := parser.parse(contents)
+	# Progress is scoped to a build version during development. Unstamped saves
+	# also start fresh; leaderboard version selection remains independent.
+	if error == OK and parser.data is Dictionary and parser.data.get("game_version", "") != str(ProjectSettings.get_setting("application/config/version", "0.0.1")):
+		return
 	if error != OK or not _valid_save(parser.data):
 		save_is_readable = false
 		save_message = "Save could not be read; original file preserved. This session will not save."
@@ -514,6 +557,8 @@ func load_progress() -> void:
 	damage_level = int(upgrades.get("damage", 0))
 	fire_rate_level = int(upgrades.get("fire_rate", 0))
 	health_level = int(upgrades.get("health", 0))
+	energy_level = int(upgrades.get("energy", 0))
+	proximity_level = int(upgrades.get("proximity", 0))
 	for kind in slow_levels:
 		slow_levels[kind] = int(upgrades.get(kind, 0))
 	# A legacy record's release cannot be inferred; preserve it separately.
@@ -615,7 +660,8 @@ func _valid_save(data: Variant) -> bool:
 			var cost = costs[index]
 			if not (cost is int or cost is float) or not is_finite(float(cost)):
 				return false
-			if (index == 0 and cost != 0) or (index > 0 and (cost < 20 or fmod(float(cost), 10.0) != 0.0)):
+			# Preserve historical paid prices as well as the new 25-energy ladder.
+			if (index == 0 and cost != 0) or (index > 0 and (cost < 20 or cost != floorf(cost))):
 				return false
 	for point in positions:
 		if not point is Array or point.size() != 2:

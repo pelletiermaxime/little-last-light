@@ -22,9 +22,9 @@ static func pursuer_rate_multiplier(seconds: float) -> float:
 	match period(seconds):
 		"Gathering": return 0.65
 		"Pressure": return 1.0
-		"Recovery": return 0.25
+		"Recovery": return lerpf(0.25, 0.5, clampf((seconds - 120.0) / 480.0, 0.0, 1.0))
 	return 0.0
 
 
 static func chargers_enabled(seconds: float) -> bool:
-	return period(seconds) == "Pressure"
+	return period(seconds) == "Pressure" or (seconds >= 60.0 and period(seconds) == "Gathering") or (seconds >= 300.0 and period(seconds) == "Recovery")

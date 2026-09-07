@@ -41,22 +41,22 @@ func check() -> void:
 	buy(build, Vector2(60, 80))
 	buy(build, Vector2(140, 80))
 	var turrets := get_nodes_in_group("turrets")
-	expect(turrets[1].purchase_cost == 20.0 and turrets[2].purchase_cost == 30.0, "Every purchase records its actual cost")
+	expect(turrets[1].purchase_cost == 60.0 and turrets[2].purchase_cost == 85.0, "Every purchase records its actual cost")
 	build.damage_button.pressed.emit()
 	build.rate_button.pressed.emit()
-	expect(scene.damage_level == 1 and scene.fire_rate_level == 1 and scene.banked_energy == 340.0, "Upgrade buttons charge displayed initial prices")
-	expect(scene.upgrade_cost("damage") == 120.0 and scene.upgrade_cost("fire_rate") == 100.0, "Upgrade prices increase by level")
+	expect(scene.damage_level == 1 and scene.fire_rate_level == 1 and scene.banked_energy == 135.0, "Upgrade buttons charge displayed initial prices")
+	expect(scene.upgrade_cost("damage") == 240.0 and scene.upgrade_cost("fire_rate") == 200.0, "Upgrade prices increase by level")
 	for turret in turrets:
-		expect(turret.damage == 2.0 and is_equal_approx(turret.fire_interval, 1.2), "Global upgrades affect every existing turret")
+		expect(turret.damage == 2.5 and is_equal_approx(turret.fire_interval, 1.2), "Global upgrades affect every existing turret")
 	build.begin_move(turrets[1])
 	expect(not scene.buy_upgrade("damage"), "Finish a placement before upgrading")
 	build.sell_button.pressed.emit()
-	expect(scene.banked_energy == 360.0 and not build.placing, "Selling refunds original cost and clears preview")
-	expect(not build.sell_selected_turret() and scene.banked_energy == 360.0, "Repeated sell cannot refund twice")
+	expect(scene.banked_energy == 195.0 and not build.placing, "Selling refunds original cost and clears preview")
+	expect(not build.sell_selected_turret() and scene.banked_energy == 195.0, "Repeated sell cannot refund twice")
 	buy(build, Vector2(60, 80))
 	var replacement = get_nodes_in_group("turrets").back()
-	expect(replacement.purchase_cost == 30.0 and replacement.damage == 2.0 and is_equal_approx(replacement.fire_interval, 1.2), "New turrets receive upgrades and their new purchase price")
-	expect(build.layout_refund() == 60.0, "Layout refund sums actual investment after a sale and rebuy")
+	expect(replacement.purchase_cost == 85.0 and replacement.damage == 2.5 and is_equal_approx(replacement.fire_interval, 1.2), "New turrets receive upgrades and their new purchase price")
+	expect(build.layout_refund() == 170.0, "Layout refund sums actual investment after a sale and rebuy")
 	build.begin_move(get_nodes_in_group("turrets")[0])
 	expect(not build.sell_selected_turret() and build.sell_button.disabled, "Free starter remains available")
 	build.cancel_placement()
@@ -65,12 +65,12 @@ func check() -> void:
 	await process_frame
 	scene = game()
 	build = scene.get_node("BuildController")
-	expect(scene.damage_level == 1 and scene.fire_rate_level == 1 and scene.banked_energy == 330.0, "Upgrade purchase persists")
-	expect(build.layout_refund() == 60.0, "Stored purchase prices survive reopening")
+	expect(scene.damage_level == 1 and scene.fire_rate_level == 1 and scene.banked_energy == 110.0, "Upgrade purchase persists")
+	expect(build.layout_refund() == 170.0, "Stored purchase prices survive reopening")
 	for turret in get_nodes_in_group("turrets"):
-		expect(turret.damage == 2.0 and is_equal_approx(turret.fire_interval, 1.2), "Loaded turrets receive global stats")
+		expect(turret.damage == 2.5 and is_equal_approx(turret.fire_interval, 1.2), "Loaded turrets receive global stats")
 	build.reset_layout()
-	expect(scene.banked_energy == 390.0 and scene.damage_level == 1 and scene.fire_rate_level == 1, "Reset refunds turrets but preserves purchased upgrades")
+	expect(scene.banked_energy == 280.0 and scene.damage_level == 1 and scene.fire_rate_level == 1, "Reset refunds turrets but preserves purchased upgrades")
 	expect(build.layout_refund() == 0.0, "Reset cannot refund upgrade spending as turrets")
 	# Check real shooting: both hit strength and time to next shot changed.
 	scene.continue_to_preparation()
@@ -82,11 +82,21 @@ func check() -> void:
 	enemy.health = 9.0
 	enemy.max_health = 9.0
 	turret._process(0.01)
-	expect(enemy.health == 7.0, "Upgraded turret deals two real damage")
-	turret._process(0.8)
-	expect(enemy.health == 7.0, "Turret still respects cooldown")
+	expect(is_equal_approx(enemy.health, 5.25), "Upgraded turret deals 3.75 damage with proximity boost")
+	turret._process(0.7)
+	expect(is_equal_approx(enemy.health, 5.25), "Turret still respects cooldown")
 	turret._process(0.41)
-	expect(enemy.health == 5.0, "Faster turret fires again before the base 1.5 seconds")
+	expect(is_equal_approx(enemy.health, 1.5), "Faster turret fires again before the base 1.5 seconds")
+	enemy.take_damage(1000.0)
+	scene.lantern.elapsed = 60.0
+	scene.lantern.position = turret.position + Vector2(-80, 0)
+	scene._spawn_enemy()
+	var minute_enemy = get_nodes_in_group("enemies").back()
+	minute_enemy.position = turret.position + Vector2(40, 0)
+	expect(minute_enemy.health == 3.0, "One-minute basic pursuer has three health")
+	turret.cooldown = 0.0
+	turret._process(0.0)
+	expect(minute_enemy.is_queued_for_deletion() and turret.boosted, "First damage upgrade one-shots a one-minute pursuer with proximity boost")
 	expect(not scene.buy_upgrade("damage"), "Combat cannot buy upgrades")
 	scene.get_node("PauseScreen").pause()
 	expect(not scene.buy_upgrade("fire_rate") and not build.sell_selected_turret(), "Pause does not unlock upgrades or selling")
@@ -95,24 +105,25 @@ func check() -> void:
 	# Upper bounds are enforced in code as well as the buttons.
 	scene.banked_energy = 10000.0
 	for kind in ["damage", "fire_rate"]:
-		for level in range(3):
+		for level in range(4):
 			expect(scene.buy_upgrade(kind), "Remaining upgrade levels can be purchased")
 		var before: float = scene.banked_energy
 		expect(not scene.buy_upgrade(kind) and scene.banked_energy == before, "Max level cannot spend again")
 	expect(build.damage_button.disabled and build.rate_button.disabled, "Maxed upgrades show disabled buttons")
+	expect(scene.turret_damage() == 8.5, "Five damage upgrades reach 8.5 damage")
 	scene.free()
 	await process_frame
-	# Pre-M9 saves have a known purchase order: infer costs once on load.
+	# Unversioned progression starts fresh rather than migrating old purchases.
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	file.store_string('{"version":1,"energy":42,"best_time":99,"turrets":[[0.5,0.5],[0.1,0.1],[0.2,0.1]]}')
 	file.close()
 	scene = game()
 	build = scene.get_node("BuildController")
-	expect(scene.damage_level == 0 and scene.fire_rate_level == 0 and scene.banked_energy == 42.0, "Legacy saves start with base upgrades and retain their balance")
-	expect(build.layout_refund() == 50.0, "Legacy turrets migrate to original prices")
+	expect(scene.damage_level == 0 and scene.fire_rate_level == 0 and scene.banked_energy == 0.0, "Unversioned saves reset progression")
+	expect(build.layout_refund() == 0.0, "Old towers are replaced by the free starter")
 	scene.save_progress()
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
-	expect(data.turret_costs == [0.0, 20.0, 30.0], "Migrated costs are saved explicitly")
+	expect(data.turret_costs == [0.0], "Fresh starter is saved explicitly")
 	for invalid in [-1, 1.5, 9, "2"]:
 		var bad := data.duplicate(true)
 		bad.upgrades.damage = invalid

@@ -10,7 +10,7 @@ var panel: VBoxContainer
 var heading: Label
 var subheading: Label
 var health_text: Label
-var ward_text: Label
+var boost_text: Label
 var health_bar: ProgressBar
 var boss_text: Label
 var boss_bar: ProgressBar
@@ -47,9 +47,9 @@ func _ready() -> void:
 	scroll.add_child(health_group)
 	health_text = STYLE.label("", 15)
 	health_group.add_child(health_text)
-	ward_text = STYLE.label("", 13, Color("#a8e5df"))
-	ward_text.autowrap_mode = TextServer.AUTOWRAP_OFF
-	health_group.add_child(ward_text)
+	boost_text = STYLE.label("", 13, Color("#ffd58a"))
+	boost_text.autowrap_mode = TextServer.AUTOWRAP_OFF
+	health_group.add_child(boost_text)
 	health_bar = _bar(health_group, Color("#ffcf7a"))
 	timer_group = Control.new()
 	timer_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -136,8 +136,8 @@ func _layout() -> void:
 	health_text.size = Vector2(health_group.size.x, 22)
 	health_bar.position = Vector2(0, 28)
 	health_bar.size = Vector2(health_group.size.x, 5)
-	ward_text.position = Vector2(0, 38)
-	ward_text.size = Vector2(230, 20)
+	boost_text.position = Vector2(0, 38)
+	boost_text.size = Vector2(310, 20)
 	timer_group.size = Vector2(160, 64)
 	timer_group.position = Vector2((size.x - 160) / 2, 16 if size.x >= 700 else 72)
 	subheading.position = Vector2.ZERO
@@ -227,16 +227,18 @@ func refresh() -> void:
 	save_notice.visible = not main.save_message.is_empty()
 	health_bar.max_value = lantern.max_health
 	health_bar.value = lantern.health
-	ward_text.text = lantern.ward_status()
+	boost_text.text = "Nearby turrets: ×%.1f damage & fire rate" % main.proximity_multiplier()
 	var danger: bool = lantern.health <= lantern.max_health * 0.25
 	health_text.text = "%d / %d HP%s" % [int(ceil(lantern.health)), int(lantern.max_health), " · DANGER" if danger else ""]
 	health_bar.modulate = Color("#ff806e") if danger else Color.WHITE
 	subheading.text = format_time(lantern.elapsed)
 	earnings.text = "+%d energy" % int(lantern.energy)
 	schedule_text.text = main.ENCOUNTER_SCHEDULE.period(lantern.elapsed)
+	if main.boss_reward_earned and lantern.elapsed < main.boss_reward_notice_until:
+		schedule_text.text = "Drencher defeated · +%d energy" % int(main.BOSS_ENERGY_REWARD)
 	threat.text = "New enemies: %d hits" % int(main.current_enemy_health()) if running else ""
 	brightness_indicator.level = lantern.brightness
-	brightness_indicator.text = "%s · +%d/s" % [lantern.BRIGHTNESS_NAMES[lantern.brightness], int(lantern.ENERGY_RATES[lantern.brightness])]
+	brightness_indicator.text = "%s · +%.1f/s" % [lantern.BRIGHTNESS_NAMES[lantern.brightness], lantern.current_energy_rate()]
 	if not running:
 		heading.text = ("RUN ENDED" if main.last_run.get("voluntary", false) else "THE LIGHT WENT OUT") if not main.last_run.is_empty() else "LITTLE LAST LIGHT"
 		heading.text += " · " + main.game_version

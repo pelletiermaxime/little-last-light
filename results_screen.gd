@@ -65,6 +65,8 @@ func show_results() -> void:
 	if main.last_run.get("victory", false):
 		title.text = "Dawn has come"
 		stats.text = "The Snuffer defeated\nClear time %s · night survived %s\n+%d energy earned" % [hud.format_time(main.last_run.duration), hud.format_time(main.last_run.survival), int(main.last_run.energy)]
+	if main.last_run.get("boss_bonus", 0.0) > 0.0:
+		stats.text += "\nIncludes %d energy from the Drencher" % int(main.last_run.boss_bonus)
 	best.text = "%sBest: %s · %d energy available" % ["New personal best!\n" if main.last_run.new_best else "", hud.format_time(main.best_time), int(main.banked_energy)]
 	if main.last_run.get("victory", false):
 		best.text = "%sFastest clear: %s · %d energy available" % ["New clear record!\n" if main.last_run.new_best else "", hud.format_time(main.version_clears[main.game_version]), int(main.banked_energy)]

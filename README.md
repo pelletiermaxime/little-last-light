@@ -77,7 +77,10 @@ The Snuffer arrives at **15:00** while ordinary enemies keep spawning. Dodge its
 five-wide aimed volleys and full-circle droplet rings. Below half health, it fires
 three overlapping rings; at one-third health, Desperation accelerates its
 repositioning 2.5x and shortens recovery. Pulse turrets slow its movement with
-reduced boss susceptibility, and the ward absorbs incoming droplet damage.
+reduced boss susceptibility. Stay within 110 pixels of damage turrets to boost
+their damage and fire rate by ×1.5 each, upgradeable to ×2.0; their warm glow and link show the active boost. Moving
+within range keeps it active. Slow turrets are unaffected. The former stationary
+ward has been removed, so standing still no longer absorbs damage.
 
 Defeat the Snuffer to reach dawn, bank earnings once, and record your total clear
 time. Clears rank ahead of survival-only scores, fastest clear first. Existing
