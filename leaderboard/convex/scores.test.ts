@@ -16,6 +16,17 @@ const board = async (t: ReturnType<typeof convexTest>, version = '0.1.0') => (aw
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('HTTP leaderboard contract', () => {
+  it('preserves mixed turret types through HTTP storage and realtime queries without guessing legacy types', async () => {
+    const t = convexTest(schema, modules)
+    const mixedLayout = { ...turretLayout, turrets: [{ x: 0.2, y: 0.3, type: 'damage' }, { x: 0.7, y: 0.6, type: 'pulse' }, { x: 0.5, y: 0.5 }] }
+    expect((await post(t, { ...detailedPayload, turretLayout: mixedLayout })).status).toBe(200)
+    expect((await board(t))[0].turretLayout).toEqual(mixedLayout)
+    expect((await t.query(api.scores.list, { version: '0.1.0' }))[0]?.turretLayout).toEqual(mixedLayout)
+    for (const type of ['slow', '', null, 1]) {
+      expect((await post(t, { ...payload, turretLayout: { ...turretLayout, turrets: [{ x: 0, y: 0, type }] } })).status).toBe(400)
+    }
+  })
+
   it('ranks fastest clears before survival, preserves old rows and only replaces with better clears', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     const t = convexTest(schema, modules)

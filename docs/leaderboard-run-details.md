@@ -27,3 +27,7 @@ The publication prompt now tells the player that energy and turret positions wil
 ## Deployment
 
 Deploy the updated Convex backend and website before releasing the updated game. Existing records do not require a database backfill, and their original energy/layout cannot be reconstructed retrospectively. Browser tests regenerate desktop and mobile preview screenshots under `leaderboard/test-results` using test records.
+
+## Turret types
+
+New game builds include `type: "damage" | "pulse"` with each submitted turret position. The backend preserves this optional field in both HTTP and realtime results. The website shows damage turrets as blue circles and slow (`pulse`) turrets as purple diamonds, with counts in the legend. Older positions without a type appear gray and are labeled **Type not recorded**; their type cannot be inferred from position. Previously published game builds continue to submit untyped positions until updated, and existing pending offers retain their original snapshot.

@@ -49,7 +49,18 @@ func check() -> void:
 	expect(first_offer.turretLayout.turrets.size() == 1, "Captures actual turret, not placement preview")
 	var arena: Vector2 = scene.get_arena_rect().size
 	var turret_point: Vector2 = scene.get_node("Turret").position / arena
-	expect(first_offer.turretLayout == {"width": arena.x, "height": arena.y, "turrets": [{"x": turret_point.x, "y": turret_point.y}], "upgrades": {"damage": 0, "fireRate": 0, "health": 0}}, "Layout captures normalized positions, arena aspect ratio and upgrades")
+	expect(first_offer.turretLayout == {"width": arena.x, "height": arena.y, "turrets": [{"x": turret_point.x, "y": turret_point.y, "type": "damage"}], "upgrades": {"damage": 0, "fireRate": 0, "health": 0}}, "Layout captures normalized positions, turret types, arena aspect ratio and upgrades")
+	var pulse = load("res://pulse_turret.tscn").instantiate()
+	pulse.position = Vector2(200, 100)
+	scene.add_child(pulse)
+	var mixed: Dictionary = scene._run_turret_layout()
+	expect(mixed.turrets.size() == 2 and mixed.turrets[1].type == "pulse", "Snapshot distinguishes slow turrets")
+	expect(scene._valid_run_layout(mixed), "Mixed turret types pass save validation")
+	mixed.turrets[1].type = "unknown"
+	expect(not scene._valid_run_layout(mixed), "Unknown turret types fail save validation")
+	mixed.turrets[1].erase("type")
+	expect(scene._valid_run_layout(mixed), "Legacy untyped snapshots remain valid")
+	pulse.free()
 	scene.get_node("Turret").position = Vector2(30, 40)
 	expect(scene.leaderboard_profile.pending == first_offer, "Moving a turret cannot change the completed run snapshot")
 	var token: String = scene.leaderboard_profile.token
@@ -63,6 +74,7 @@ func check() -> void:
 	expect(scene.best_time == 65.125 and scene.leaderboard_profile.token == token, "Best and identity survive restart")
 	expect(panel.username.text == "Keeper" and panel.publish.visible, "Name and pending offer survive restart")
 	var restored: Dictionary = scene.leaderboard_profile.pending
+	expect(restored.turretLayout.turrets[0].type == "damage", "Turret type survives pending score save and reload")
 	expect(restored.energyEarned == first_offer.energyEarned and restored.energyInvested == first_offer.energyInvested, "Energy survives saving and reopening")
 	expect(restored.turretLayout.width == arena.x and restored.turretLayout.height == arena.y and restored.turretLayout.turrets.size() == 1, "Arena and turret count survive reopening")
 	expect(is_equal_approx(restored.turretLayout.turrets[0].x, turret_point.x) and is_equal_approx(restored.turretLayout.turrets[0].y, turret_point.y), "Original run positions survive reopening after layout changes")

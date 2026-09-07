@@ -262,7 +262,7 @@ func _run_turret_layout() -> Dictionary:
 	var turrets: Array = []
 	for turret in get_tree().get_nodes_in_group("turrets"):
 		var point: Vector2 = turret.position / size
-		turrets.append({"x": point.x, "y": point.y})
+		turrets.append({"x": point.x, "y": point.y, "type": turret.turret_type})
 	return {
 		"width": size.x, "height": size.y, "turrets": turrets,
 		"upgrades": {"damage": damage_level, "fireRate": fire_rate_level, "health": health_level},
@@ -644,6 +644,8 @@ func _valid_run_layout(layout: Variant) -> bool:
 			return false
 	for point in layout.turrets:
 		if not point is Dictionary:
+			return false
+		if point.has("type") and point.type not in ["damage", "pulse"]:
 			return false
 		for key in ["x", "y"]:
 			var value = point.get(key)

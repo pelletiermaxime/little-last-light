@@ -6,14 +6,14 @@ export const MAX_SCORE_BODY_LENGTH = 128 * 1024
 export const turretLayoutValidator = v.object({
   width: v.number(),
   height: v.number(),
-  turrets: v.array(v.object({ x: v.number(), y: v.number() })),
+  turrets: v.array(v.object({ x: v.number(), y: v.number(), type: v.optional(v.union(v.literal('damage'), v.literal('pulse'))) })),
   upgrades: v.optional(v.object({ damage: v.number(), fireRate: v.number(), health: v.number() })),
 })
 
 export interface TurretLayout {
   width: number
   height: number
-  turrets: Array<{ x: number; y: number }>
+  turrets: Array<{ x: number; y: number; type?: 'damage' | 'pulse' }>
   upgrades?: { damage: number; fireRate: number; health: number }
 }
 
@@ -26,13 +26,14 @@ export function validateTurretLayout(value: unknown): TurretLayout {
     }
   }
   if (!Array.isArray(turrets) || turrets.length > MAX_TURRETS) throw new Error('Invalid turret count.')
-  const positions = turrets.map(point => {
+  const positions = turrets.map((point): TurretLayout['turrets'][number] => {
     if (!point || typeof point !== 'object') throw new Error('Invalid turret position.')
-    const { x, y } = point as Record<string, unknown>
+    const { x, y, type } = point as Record<string, unknown>
     if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) {
       throw new Error('Turret positions must be inside the arena.')
     }
-    return { x, y }
+    if (type !== undefined && type !== 'damage' && type !== 'pulse') throw new Error('Invalid turret type.')
+    return { x, y, ...(type === undefined ? {} : { type }) }
   })
   let levels: TurretLayout['upgrades']
   if (upgrades !== undefined) {
