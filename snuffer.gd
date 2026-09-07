@@ -117,7 +117,7 @@ func _emit_droplet(direction: Vector2, projectile_speed: float, color: Color) ->
 		return
 	var droplet := DROPLET.new()
 	droplet.target = target
-	droplet.velocity = direction * projectile_speed
+	droplet.velocity = direction * projectile_speed * assist_movement_factor
 	droplet.tint = color
 	droplet.position = global_position + direction * 42.0
 	get_parent().add_child(droplet)

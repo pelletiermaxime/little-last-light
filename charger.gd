@@ -55,7 +55,7 @@ func _process(delta: float) -> void:
 				var max_turn := warning_turn_speed * tracking_step
 				heading = heading.rotated(clampf(heading.angle_to(desired), -max_turn, max_turn)).normalized()
 		if state == State.CHARGING:
-			var movement := heading * charge_speed * step
+			var movement := heading * charge_speed * assist_movement_factor * step
 			var overlapping := global_position.distance_to(target.global_position) <= CONTACT_DISTANCE
 			var fraction := 0.0 if overlapping else _first_contact_fraction(movement)
 			global_position += movement * fraction
@@ -88,7 +88,7 @@ func _draw() -> void:
 	var color := Color("#ffad62")
 	if state == State.WARNING:
 		var progress := 1.0 - state_remaining / maxf(warning_duration, 0.001)
-		var end := forward * charge_speed * charge_duration
+		var end := forward * charge_speed * assist_movement_factor * charge_duration
 		var locked := state_remaining <= locked_warning_duration
 		draw_line(Vector2.ZERO, end, Color(1.0, 0.65, 0.3, 0.25 if locked else 0.12), CONTACT_DISTANCE * 2.0)
 		if locked:

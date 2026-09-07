@@ -233,8 +233,8 @@ func refresh() -> void:
 		boss_status.show()
 		boss_text.text = last_boss_name + " DEFEATED"
 		boss_text.modulate.a = minf(1.0, boss_victory_remaining / BOSS_VICTORY_FADE)
-	save_notice.text = main.save_message
-	save_notice.visible = not main.save_message.is_empty()
+	save_notice.text = ("ASSISTED · Leaderboards disabled\n" if main.run_assisted else "") + main.save_message
+	save_notice.visible = not save_notice.text.is_empty()
 	health_bar.max_value = lantern.max_health
 	health_bar.value = lantern.health
 	boost_text.text = "Nearby turrets: ×%.1f damage & fire rate" % main.proximity_multiplier()
@@ -243,7 +243,7 @@ func refresh() -> void:
 	health_bar.modulate = Color("#ff806e") if danger else Color.WHITE
 	subheading.text = format_time(lantern.elapsed)
 	earnings.text = "+%d energy" % int(lantern.energy)
-	schedule_text.text = main.ENCOUNTER_SCHEDULE.period(lantern.elapsed)
+	schedule_text.text = main.ENCOUNTER_SCHEDULE.period(main.encounter_time())
 	if main.boss_reward_earned and lantern.elapsed < main.boss_reward_notice_until:
 		schedule_text.text = "Drencher defeated · +%d energy" % int(main.boss_reward_amount)
 	threat.text = "New enemies: %d hits" % int(main.current_enemy_health()) if running else ""

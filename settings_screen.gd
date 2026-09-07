@@ -15,6 +15,9 @@ extends CanvasLayer
 @onready var reset_warning_text: String = reset_warning.text
 var return_focus: Control
 var reset_pending := false
+var assistance_open := false
+@onready var assistance_button: Button = menu.get_node("Center/Panel/Padding/Content/AssistanceButton")
+@onready var assistance_page: VBoxContainer = menu.get_node("Center/Panel/Padding/Content/AssistancePage")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -23,6 +26,39 @@ func _ready() -> void:
 	reset_button.pressed.connect(_ask_reset)
 	reset_cancel.pressed.connect(_cancel_reset)
 	reset_confirm.pressed.connect(_confirm_reset)
+	assistance_button.pressed.connect(func(): _show_assistance(true))
+	assistance_page.get_node("BackButton").pressed.connect(func(): _show_assistance(false))
+	for pair in [["CheapUpgrades", "cheap_upgrades"], ["ShortNight", "short_night"], ["SlowEnemies", "slow_enemies"]]:
+		assistance_page.get_node(pair[0]).toggled.connect(func(enabled: bool):
+			get_parent().set_assist(pair[1], enabled)
+			_refresh_assistance()
+		)
+
+
+func _show_assistance(opened: bool) -> void:
+	assistance_open = opened
+	_refresh_reset_view()
+	_refresh_assistance()
+	if opened:
+		if get_parent().phase == get_parent().Phase.PREPARATION:
+			assistance_page.get_node("CheapUpgrades").grab_focus()
+		else:
+			assistance_page.get_node("BackButton").grab_focus()
+	else:
+		assistance_button.grab_focus()
+
+
+func _refresh_assistance() -> void:
+	var main = get_parent()
+	for pair in [["CheapUpgrades", "cheap_upgrades"], ["ShortNight", "short_night"], ["SlowEnemies", "slow_enemies"]]:
+		var button: CheckButton = assistance_page.get_node(pair[0])
+		button.set_pressed_no_signal(main.assists[pair[1]])
+		button.disabled = main.phase != main.Phase.PREPARATION
+	assistance_page.get_node("Status").text = "Eligible progress · assists off" if main.leaderboard_eligible() else "Assisted progress · leaderboards disabled"
+	if main.phase != main.Phase.PREPARATION:
+		assistance_page.get_node("Status").text += "\nSettings are locked until preparation."
+	if not main.save_message.is_empty():
+		assistance_page.get_node("Status").text += "\n" + main.save_message
 
 func is_open() -> bool:
 	return menu.visible
@@ -36,6 +72,9 @@ func open(from: Control) -> void:
 	GameAudio.play(&"confirm")
 
 func close() -> void:
+	if assistance_open:
+		_show_assistance(false)
+		return
 	if reset_pending:
 		_cancel_reset()
 		return
@@ -47,9 +86,11 @@ func close() -> void:
 
 func _refresh_reset_view() -> void:
 	for child in menu.get_node("Center/Panel/Padding/Content").get_children():
-		child.visible = not reset_pending
+		child.visible = not reset_pending and not assistance_open
 	reset_confirmation.visible = reset_pending
-	reset_button.visible = not reset_pending and get_parent().phase == get_parent().Phase.PREPARATION
+	assistance_page.visible = assistance_open
+	assistance_button.text = "Assistance · assisted progress" if not get_parent().leaderboard_eligible() else "Assistance…"
+	reset_button.visible = not reset_pending and not assistance_open and get_parent().phase == get_parent().Phase.PREPARATION
 	menu._fit_content.call_deferred()
 
 
