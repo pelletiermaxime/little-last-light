@@ -10,6 +10,14 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ### Added
 
+- Early-run Kindling and Flare pickups reward movement with eight seconds of doubled passive energy or a nearby burst of damage. Walk into their marked circles before the countdown expires.
+- Pickup markers are compact, with a detailed explanation only on the first offer of each type per run. Flare bursts reach 180 pixels and deal 8 damage.
+- Sentinel pickups create a powerful turret for 12 seconds at the collection spot. Stillness pickups freeze enemy movement and attacks for 3 seconds while you and your turrets stay active.
+
+## [0.0.17] - 2026-09-07
+
+### Added
+
 - The Rainkeeper arrives at ten minutes, marking three consecutive rain strikes that leave lingering pools and force you to plan your return to the defense.
 
 ## [0.0.16] - 2026-09-07

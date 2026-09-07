@@ -35,14 +35,20 @@ func _process(delta: float) -> void:
 	if not running:
 		return
 	projectile_grace_remaining = maxf(0.0, projectile_grace_remaining - delta)
+	# Split the expiry frame: Kindling doubles only its remaining active seconds.
+	energy += base_energy_rate() * (delta + get_parent().pickups.consume_kindling(delta))
 	elapsed += delta
-	energy += current_energy_rate() * delta
 
 	queue_redraw()
 
 
-func current_energy_rate() -> float:
+func base_energy_rate() -> float:
 	return ENERGY_RATES[brightness] * get_parent().energy_multiplier()
+
+
+func current_energy_rate() -> float:
+	var bonus := 2.0 if is_instance_valid(get_parent().pickups) and get_parent().pickups.kindling_remaining > 0.0 else 1.0
+	return base_energy_rate() * bonus
 
 
 func take_projectile_damage(amount: float) -> void:
