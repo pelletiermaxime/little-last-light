@@ -18,6 +18,7 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ### Changed
 
+- Basic, Slow, and Watchlight turrets now share the same purchase price: 60 energy initially, increasing by 25 for each purchased turret in the layout.
 - Upgrade purchases use mouse clicks or menu navigation and confirmation. Removed the G, F, and H shortcuts and their button hints.
 - Watchlights now acquire their next target immediately after shooting and turn toward it during reload, updating their aim as enemies move or die.
 - Turret purchases use the mouse toolbar or controller shortcuts. Removed the B, V, and N keyboard purchase shortcuts; right-stick click now selects the Watchlight on controllers.

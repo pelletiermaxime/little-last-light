@@ -7,7 +7,7 @@ Target: roughly 9–12 attempts for a first clear, to be assessed through fresh-
 - Energy per second: low 0.6, medium 1.2, high 2.4 (increased 20% after run-four feedback). A three-minute high-brightness run earns 432 before upgrades.
 - Energy Gain is a permanent Lantern upgrade: +25% passive income per level, capped at +125%. Levels cost 100, 200, 400, 800, and 1600 energy. It works at every brightness.
 - Defeating the five-minute Drencher awards a fixed 300 energy once per run. This is included in run earnings, saved immediately, and identified in the results. Passive-income upgrades do not multiply this reward; merely ending a run or reaching five minutes does not grant it.
-- Extra damage turrets cost 60, 85, 110, and so on. Slow turrets add a 60-energy premium. The starter stays free; refunds return actual paid prices. New placements and moves require 72 pixels between turret centers, up from 36.
+- All turret types cost 60, 85, 110, and so on, sharing the same price at a given layout size. The starter stays free; refunds return actual paid prices. New placements and moves require 72 pixels between turret centers, up from 36.
 - All eight upgrades now have five levels. Prices double each level.
 - Damage progresses 1 → 2.5 → 4 → 5.5 → 7 → 8.5, adding 1.5 per upgrade. The first upgrade one-shots a one-minute basic pursuer with proximity boosting.
 - At level five: fire rate reaches 1.5 shots/second, health reaches 100 HP, slow activation reaches 2.25 seconds, duration reaches 2.05 seconds, and slow strength reaches 70%. Slow range is 175 pixels. Duration starts at 1.3 seconds and gains 0.15 per upgrade. A single fully upgraded slow turret still leaves a 0.2-second gap; this buffs coverage and duration without changing prices or pulse cadence.

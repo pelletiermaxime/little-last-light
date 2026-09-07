@@ -1,8 +1,6 @@
 extends Node2D
 
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
-const PULSE_COST_PREMIUM: float = 60.0
-const SNIPER_COST_PREMIUM: float = 60.0
 const BASE_TURRET_COST: float = 60.0
 const EXTRA_TURRET_COST: float = 25.0
 const PLACEMENT_MARGIN: float = 20.0
@@ -97,10 +95,9 @@ func _process(delta: float) -> void:
 		placement_hint.position = (mouse + Vector2(20, 24)).clamp(Vector2(8, 8), limit)
 
 
-func turret_cost(kind: String = "damage") -> float:
+func turret_cost(_kind: String = "damage") -> float:
 	var purchased := maxi(0, get_tree().get_nodes_in_group("turrets").size() - 1)
-	var premium := PULSE_COST_PREMIUM if kind == "pulse" else (SNIPER_COST_PREMIUM if kind == "sniper" else 0.0)
-	return BASE_TURRET_COST + purchased * EXTRA_TURRET_COST + premium
+	return BASE_TURRET_COST + purchased * EXTRA_TURRET_COST
 
 
 func layout_refund() -> float:

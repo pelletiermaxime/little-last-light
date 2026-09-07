@@ -28,7 +28,7 @@ func launch() -> void:
 	build.begin_placement("pulse")
 	build.try_place(center + Vector2(-10, 125))
 	scene.get_node("PreparationUI").open_view(0)
-	print("READY: two Watchlights, a basic turret and a slow turret; 765 energy; temporary save; leaderboards disabled")
+	print("READY: two Watchlights, a basic turret and a slow turret; %d energy; temporary save; leaderboards disabled" % scene.banked_energy)
 	if "--capture-watchlight" in OS.get_cmdline_user_args():
 		await process_frame
 		await process_frame
