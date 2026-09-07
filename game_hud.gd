@@ -177,6 +177,12 @@ func format_time(seconds: float) -> String:
 	return "%02d:%02d" % [total / 60, total % 60]
 
 
+func _boss_priority(boss: Node) -> int:
+	if boss.is_in_group("final_bosses"): return 2
+	if boss.is_in_group("rainkeepers"): return 1
+	return 0
+
+
 func refresh() -> void:
 	if is_instance_valid(leaderboard):
 		leaderboard.refresh()
@@ -186,8 +192,8 @@ func refresh() -> void:
 	health_bar.visible = running
 	brightness_indicator.visible = running
 	var bosses := get_tree().get_nodes_in_group("bosses").filter(func(boss: Node): return not boss.is_queued_for_deletion())
-	# The Drencher can still be alive when the Snuffer joins the fight.
-	bosses.sort_custom(func(a: Node, b: Node): return a.is_in_group("final_bosses") and not b.is_in_group("final_bosses"))
+	# Show the latest encounter even when an earlier boss survives.
+	bosses.sort_custom(func(a: Node, b: Node): return _boss_priority(a) > _boss_priority(b))
 	if not running:
 		boss_was_alive = false
 		boss_victory_remaining = 0.0

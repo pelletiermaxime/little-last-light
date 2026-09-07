@@ -9,7 +9,8 @@ const BOSS_TIME: float = 300.0
 const BOSS_ENERGY_REWARD: float = 300.0
 const FINAL_BOSS_SCRIPT = preload("res://snuffer.gd")
 const FINAL_BOSS_TIME: float = 900.0
-const PROTOTYPE_BOSS_SCRIPT = preload("res://prototype_boss.gd")
+const RAINKEEPER_SCRIPT = preload("res://rainkeeper.gd")
+const RAINKEEPER_TIME := 600.0
 const ENCOUNTER_SCHEDULE = preload("res://encounter_schedule.gd")
 const FIRST_CHARGER_TIME: float = 20.0
 const CHARGER_INTERVAL: float = 4.0
@@ -52,10 +53,7 @@ var boss_spawned: bool = false
 var final_boss_spawned: bool = false
 # Overridden only by the isolated interactive test launcher; normal runs use 15:00.
 var final_boss_time: float = FINAL_BOSS_TIME
-# Opt-in experimental slot. The isolated launcher selects one candidate.
-var prototype_boss_kind: int = -1
-var prototype_boss_time: float = 600.0
-var prototype_boss_spawned := false
+var rainkeeper_spawned := false
 var version_clears: Dictionary = {}
 var next_charger_time: float = FIRST_CHARGER_TIME
 var autosave_elapsed: float = 0.0
@@ -221,7 +219,7 @@ func start_run() -> void:
 	boss_reward_amount = 0.0
 	boss_reward_notice_until = 0.0
 	final_boss_spawned = false
-	prototype_boss_spawned = false
+	rainkeeper_spawned = false
 	next_charger_time = FIRST_CHARGER_TIME
 	autosave_elapsed = 0.0
 	phase = Phase.RUNNING
@@ -305,7 +303,7 @@ func _clear_enemies() -> void:
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.remove_from_group("bosses")
 		enemy.remove_from_group("final_bosses")
-		enemy.remove_from_group("prototype_bosses")
+		enemy.remove_from_group("rainkeepers")
 		enemy.remove_from_group("chargers")
 		enemy.process_mode = Node.PROCESS_MODE_DISABLED
 		enemy.remove_from_group("enemies")
@@ -350,7 +348,7 @@ func _process(delta: float) -> void:
 		save_progress()
 	# M15 integration point: final arrival runs alongside ordinary spawn pressure.
 	update_final_encounter()
-	update_prototype_encounter()
+	update_rainkeeper_encounter()
 	if not boss_spawned and lantern.elapsed >= BOSS_TIME:
 		_spawn_boss()
 	spawn_progress += delta / current_spawn_interval()
@@ -383,12 +381,11 @@ func update_final_encounter() -> bool:
 	return final_boss_spawned
 
 
-func update_prototype_encounter() -> void:
-	if phase != Phase.RUNNING or prototype_boss_kind < 0 or prototype_boss_spawned or final_boss_spawned or lantern.elapsed < prototype_boss_time:
+func update_rainkeeper_encounter() -> void:
+	if phase != Phase.RUNNING or rainkeeper_spawned or final_boss_spawned or lantern.elapsed < RAINKEEPER_TIME:
 		return
-	prototype_boss_spawned = true
-	var boss := PROTOTYPE_BOSS_SCRIPT.new()
-	boss.kind = prototype_boss_kind
+	rainkeeper_spawned = true
+	var boss := RAINKEEPER_SCRIPT.new()
 	boss.target = lantern
 	var size := get_arena_rect().size
 	boss.position = Vector2(48 if lantern.position.x > size.x / 2.0 else size.x - 48, 64 if lantern.position.y > size.y / 2.0 else size.y - 64)
