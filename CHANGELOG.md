@@ -13,7 +13,11 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 ### Added
 
 - Added a standalone sniper visual preview to compare three designs with synchronized firing and recharge animations.
-- Added the Watchlight sniper: long-range shots at the furthest enemy, a directional shuttered housing, and heavy damage with a slow recharge. Build it with N or the placement toolbar; damage upgrades and lantern proximity boosts apply.
+- Added the Watchlight sniper: long-range shots at the furthest enemy, a directional shuttered housing, and heavy damage with a slow recharge. Build it with right-stick click on a controller or the placement toolbar; damage upgrades and lantern proximity boosts apply.
+
+### Changed
+
+- Turret purchases use the mouse toolbar or controller shortcuts. Removed the B, V, and N keyboard purchase shortcuts; right-stick click now selects the Watchlight on controllers.
 
 ## [0.0.19] - 2026-09-07
 

@@ -39,7 +39,9 @@ func check() -> void:
 	root.push_input(key)
 	key.pressed = false
 	root.push_input(key)
-	expect(build.placing and build.placement_type == "pulse", "V begins pulse placement through real input routing")
+	expect(not build.placing, "V no longer buys a slow turret")
+	build.pulse_button.pressed.emit()
+	expect(build.placing and build.placement_type == "pulse", "Slow turret button begins placement")
 	build._process(0.01)
 	expect(build.placement_hint.size.x > 150.0 and build.placement_hint.get_line_count() == 1, "Placement hint stays horizontal")
 	build.cancel_placement()

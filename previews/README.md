@@ -9,7 +9,8 @@ godot --path . --script res://previews/launch_watchlight_playtest.gd
 
 This uses a temporary save and disables leaderboard requests. Add
 `-- --capture-watchlight` to capture placement/combat screenshots and exit.
-In the normal game, buy a Watchlight from the placement toolbar or press **N**.
+In the normal game, click Watchlight in the placement toolbar or press
+**R3 / right-stick click** on a controller. Turret purchases have no keyboard shortcut.
 
 Run from the project directory:
 

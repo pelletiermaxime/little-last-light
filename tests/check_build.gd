@@ -22,8 +22,14 @@ func check() -> void:
 	press_key(KEY_B)
 	assert(not paused and not build.placing, "Cannot build without energy")
 	scene.banked_energy = 100.0
-	press_key(KEY_B)
-	assert(not paused and build.placing and build.preview.visible, "B enters preparation placement")
+	for code in [KEY_B, KEY_V, KEY_N]:
+		press_key(code)
+		assert(not build.placing, "Keyboard purchase shortcuts are removed")
+	for action in ["build_turret", "build_pulse_turret", "build_sniper_turret"]:
+		for event in InputMap.action_get_events(action):
+			assert(event is InputEventJoypadButton, "Purchase shortcuts are controller-only")
+	build.build_button.pressed.emit()
+	assert(not paused and build.placing and build.preview.visible, "Build button enters preparation placement")
 	var elapsed: float = lantern.elapsed
 	await process_frame
 	await process_frame
@@ -34,7 +40,7 @@ func check() -> void:
 	assert(scene.banked_energy == 100.0, "Invalid clicks do not spend")
 	press_key(KEY_ESCAPE)
 	assert(not paused and not build.placing and scene.banked_energy == 100.0, "Esc cancels without cost")
-	press_key(KEY_B)
+	build.build_button.pressed.emit()
 	var arena: Vector2 = scene.get_arena_rect().size
 	var point := Vector2(arena.x * 0.85, arena.y * 0.35)
 	var click := InputEventMouseButton.new()

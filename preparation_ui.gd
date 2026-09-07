@@ -201,11 +201,11 @@ func refresh() -> void:
 	build.start_button.visible = home
 	build.start_button.text = "Start run"
 	build.build_button.visible = placement
-	build.build_button.text = "Damage turret · %d%s" % [int(build.turret_cost()), "" if build.using_controller else " (B)"]
+	build.build_button.text = "Damage turret · %d" % int(build.turret_cost())
 	build.pulse_button.visible = placement
-	build.pulse_button.text = "Slow turret · %d%s" % [int(build.turret_cost("pulse")), "" if build.using_controller else " (V)"]
+	build.pulse_button.text = "Slow turret · %d" % int(build.turret_cost("pulse"))
 	build.sniper_button.visible = placement
-	build.sniper_button.text = "Watchlight · %d%s" % [int(build.turret_cost("sniper")), "" if build.using_controller else " (N)"]
+	build.sniper_button.text = "Watchlight · %d" % int(build.turret_cost("sniper"))
 	build.cancel_button.visible = placement and build.placing
 	build.cancel_button.text = "Cancel placement" if build.using_controller else "Cancel placement · Esc"
 	back_button.text = "Done" if build.using_controller else "Done · Esc"
@@ -259,7 +259,7 @@ func refresh() -> void:
 	balance.visible = not placement
 	if placement:
 		title.text = "Arrange your defense · %d energy" % int(main.banked_energy)
-	description.text = "Place your defense. Choose your upgrades. See how long your light lasts." if home else ("Click a turret to move or sell it. B buys a new one." if placement else ("Permanent improvements for every future run." if upgrades else "Best: %s · %s" % [hud.format_time(main.best_time), main.game_version]))
+	description.text = "Place your defense. Choose your upgrades. See how long your light lasts." if home else ("Click a turret to move or sell it. Use the buttons to buy." if placement else ("Permanent improvements for every future run." if upgrades else "Best: %s · %s" % [hud.format_time(main.best_time), main.game_version]))
 	if placement:
 		description.text = "Basic: nearest enemy. Watchlight: furthest in range, heavy shots with a long reload. Slow turrets hinder enemies. Select to move or sell."
 	elif upgrades:

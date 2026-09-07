@@ -180,7 +180,7 @@ func _update_interface() -> void:
 	if main.health_level >= main.MAX_UPGRADE_LEVEL:
 		health_button.text = "Lantern HP %.0f · MAX" % main.lantern_max_health()
 	start_button.disabled = placing
-	build_button.text = "Build turret — %d energy (%s)" % [int(turret_cost()), "Confirm" if using_controller else "B"]
+	build_button.text = "Build turret — %d energy" % int(turret_cost())
 	cancel_button.text = "Cancel (%s)" % ("Back" if using_controller else "Esc")
 	start_button.text = "Start run (%s)" % ("Menu" if using_controller else "Enter")
 	build_button.disabled = placing or main.banked_energy < turret_cost()

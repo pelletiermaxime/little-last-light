@@ -50,7 +50,9 @@ func check() -> void:
 	root.push_input(key)
 	key.pressed = false
 	root.push_input(key)
-	expect(build.placing and build.placement_type == "sniper", "N uses the real keyboard routing")
+	expect(not build.placing, "N no longer buys a Watchlight")
+	build.sniper_button.pressed.emit()
+	expect(build.placing and build.placement_type == "sniper", "Watchlight button begins placement")
 	expect(build.preview.attack_range == 360 and get_nodes_in_group("turrets").size() == 1, "Preview displays sniper range without joining combat")
 	expect(not build.try_place(Vector2.ZERO) and scene.banked_energy == 10000, "Invalid placement never spends")
 	expect(build.try_place(Vector2(350, 260)), "Watchlight can be placed")
@@ -172,5 +174,5 @@ func check() -> void:
 	await process_frame
 	DirAccess.remove_absolute(path)
 	if failures == 0:
-		print("PASS: Watchlight input/controller, placement, prices/refunds, saves/records, upgrades, furthest targeting, boundaries, ties/dead targets, aim, cadence, boosts, pause and reset")
+		print("PASS: Watchlight mouse/controller, placement, prices/refunds, saves/records, upgrades, furthest targeting, boundaries, ties/dead targets, aim, cadence, boosts, pause and reset")
 	quit(1 if failures else 0)

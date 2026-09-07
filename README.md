@@ -2,7 +2,7 @@
 
 A small Godot learning project: defend a mobile lantern with fixed, automatically firing turrets.
 
-**Watchlight sniper:** use **N** or the placement toolbar to build one. It fires
+**Watchlight sniper:** click its placement button or press **R3 / right-stick click** on a controller to build one. It fires
 at the furthest living enemy within **360 pixels of the turret**, dealing **3
 damage every 4.5 seconds** before upgrades. Its shuttered housing faces each shot
 and follows the surviving target while recharging. A shot damages only one enemy.
@@ -10,7 +10,7 @@ It costs 60 energy more than a basic turret at the same layout size (120 energy
 for the first purchase). Damage and fire-rate upgrades apply to both basic and
 sniper turrets: Watchlights retain 3× the damage and 3× the firing interval.
 Lantern proximity boosts both. Slow upgrades remain exclusive to slow turrets.
-Controller players can select Watchlight with the placement toolbar and confirm.
+Controller players can also select Watchlight with the placement toolbar and confirm.
 
 ## Run the project
 
@@ -22,9 +22,9 @@ Open `project.godot` in Godot and press F6 for the current scene or F5 for the p
 - The turret stays in place and shoots nearby enemies.
 - During a run, **Escape / P / controller Options** pauses or resumes. The pause screen's **Resume** button also works with mouse or controller focus. Movement, combat, the timer, and earnings freeze; Escape still cancels turret placement during preparation.
 
-**Controller:** prompts automatically switch to PlayStation, Xbox, or generic position icons when you use a controller, and back to keyboard prompts when you use the keyboard/mouse. Menus use the left stick or D-pad to select, Cross/A to confirm, and Circle/B to go back. In placement, the left stick moves the cursor and the D-pad selects toolbar buttons; move the stick to return to the arena. Square/X buys a turret, Cross/A selects or places it, Circle/B cancels, Triangle/Y hides or shows the controls, and R1/RB sells the selected purchased turret. Options/Menu starts or pauses a run. During combat, Cross/A cycles brightness. Upgrades and layout refunds are selected from their buttons, avoiding accidental purchases through shoulder shortcuts. Unknown pads use button-position icons. Username entry still uses the keyboard.
+**Controller:** prompts automatically switch to PlayStation, Xbox, or generic position icons when you use a controller, and back to mouse/keyboard prompts when you use the keyboard/mouse. Menus use the left stick or D-pad to select, Cross/A to confirm, and Circle/B to go back. In placement, the left stick moves the cursor and the D-pad selects toolbar buttons; move the stick to return to the arena. Square/X buys a basic turret, L1/LB buys a slow turret, and R3/right-stick click buys a Watchlight. Cross/A selects or places it, Circle/B cancels, Triangle/Y hides or shows the controls, and R1/RB sells the selected purchased turret. Options/Menu starts or pauses a run. During combat, Cross/A cycles brightness. Upgrades and layout refunds are selected from their buttons, avoiding accidental purchases through shoulder shortcuts. Unknown pads use button-position icons. Username entry still uses the keyboard.
 
-Start in **Preparation** with a compact card over the full arena. Choose **Place turrets**, **Buy upgrades**, or **Start run**. In placement mode, click an existing turret to move it for free, or build with **B**. Extra turrets cost **20, 30, 40, 50… energy**. Left-click to confirm a valid position; **Escape** cancels. The arena fills the window. The transparent placement card sits vertically on the left. Click through its background to place turrets, or press Tab to hide the controls and reach spots underneath buttons. Click **Start run** or press **Enter** when ready; the arena keeps the same bounds during combat.
+Start in **Preparation** with a compact card over the full arena. Choose **Place turrets**, **Buy upgrades**, or **Start run**. In placement mode, click an existing turret to move it for free, or click a turret purchase button. Turret purchases have no keyboard shortcut. Extra basic turrets cost **60, 85, 110, 135… energy**; slow turrets and Watchlights add a 60-energy premium. Left-click to confirm a valid position; **Escape** cancels. The arena fills the window. The transparent placement card sits vertically on the left. Click through its background to place turrets, or press Tab to hide the controls and reach spots underneath buttons. Click **Start run** or press **Enter** when ready; the arena keeps the same bounds during combat.
 
 During a run, construction is locked and enemies spawn faster over time. Newly spawned enemies need one additional turret hit every 30 seconds; their health bars show remaining health. Enemies touching the lantern drain health. At zero health, enemies clear and your earnings are banked. A dedicated results screen shows survival time, earned energy, and your best. Its Leaderboard button opens rankings and record publishing on separate tabs; Continue stays visible on every page. Rankings use Previous/Next buttons with three entries per page, so no menu needs scrolling. Continue returns to preparation. Turrets and unspent energy carry into the next run.
 
