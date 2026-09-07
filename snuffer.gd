@@ -29,6 +29,7 @@ var drift_destination := Vector2.ZERO
 
 func _ready() -> void:
 	max_health = 1200.0
+	slow_susceptibility = 0.5
 	super._ready()
 	add_to_group("bosses")
 	add_to_group("final_bosses")
@@ -40,10 +41,11 @@ func _process(delta: float) -> void:
 	desperation_announcement = maxf(0.0, desperation_announcement - delta)
 	while delta > 0.0 and health > 0.0 and target.running:
 		var step := minf(delta, remaining)
+		var movement_time := _consume_slow(step)
 		if attack == Attack.RECOVERY:
 			# Drift between patterns, never charge or deal body-contact damage.
 			var drift_speed := DRIFT_SPEED * (DESPERATION_SPEED_MULTIPLIER if desperate else 1.0)
-			global_position = global_position.move_toward(drift_destination, drift_speed * step)
+			global_position = global_position.move_toward(drift_destination, drift_speed * movement_time)
 		if attack == Attack.VOLLEY_WARNING:
 			heading = global_position.direction_to(target.global_position)
 		remaining -= step

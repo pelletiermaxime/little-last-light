@@ -7,6 +7,7 @@ const IDLE_SEARCH_INTERVAL: float = 0.1
 @export var fire_interval: float = 1.5
 @export var damage: float = 1.0
 var purchase_cost: float = 0.0
+var turret_type: String = "damage"
 
 var cooldown: float = 0.0
 var shot_time: float = 0.0

@@ -37,6 +37,7 @@ func check() -> void:
 	var boss = get_nodes_in_group("final_bosses")[0]
 	boss.set_process(false)
 	assert(get_nodes_in_group("enemies").size() == existing_enemies.size() + 1)
+	scene.spawn_progress = 1.0
 	scene._process(0.5)
 	assert(get_nodes_in_group("enemies").size() > existing_enemies.size() + 1, "Normal scheduling keeps spawning during final combat")
 	var before_extra_spawns := get_nodes_in_group("enemies").size()

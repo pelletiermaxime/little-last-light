@@ -75,6 +75,18 @@ func check() -> void:
 	boss = get_nodes_in_group("final_bosses")[0]
 	assert(not boss.desperate and boss.desperation_announcement == 0.0)
 	boss._process(3.0)
+	boss._begin_recovery()
+	boss.position = Vector2(100, 200)
+	boss.drift_destination = Vector2(800, 200)
+	boss.apply_slow(0.4, 0.5)
+	boss._process(1.0)
+	assert(is_equal_approx(boss.position.x, 172.25), "Pulse uses half boss susceptibility and splits slow expiry movement")
+	assert(boss.slow_remaining == 0.0 and is_equal_approx(boss.remaining, 0.8), "Slow changes movement but not attack clocks")
+	scene.lantern.reset_ward()
+	scene.lantern.update_ward(4.0, false)
+	var hp: float = scene.lantern.health
+	scene.lantern.take_projectile_damage(12)
+	assert(scene.lantern.health == hp - 4 and scene.lantern.ward_charge == 0, "Droplets go through the shared ward damage path")
 	boss.take_damage(9999)
 	assert(scene.last_run.victory and not boss.desperate, "A killing blow does not trigger a new phase")
 	scene.free()

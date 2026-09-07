@@ -15,6 +15,7 @@ func _ready() -> void:
 	turn_speed = PI / 6.0
 	contact_distance = 44.0
 	contact_damage_per_second = 20.0
+	slow_susceptibility = 0.5
 	super._ready()
 	add_to_group("bosses")
 	trail = TRAIL_SCRIPT.new()
@@ -28,6 +29,7 @@ func _process(delta: float) -> void:
 		return
 	if arrival_remaining > 0.0:
 		var warning_step := minf(delta, arrival_remaining)
+		_consume_slow(warning_step)
 		arrival_remaining -= warning_step
 		delta -= warning_step
 		queue_redraw()

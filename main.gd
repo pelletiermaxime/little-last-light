@@ -8,18 +8,20 @@ const BOSS_SCRIPT = preload("res://water_boss.gd")
 const BOSS_TIME: float = 300.0
 const FINAL_BOSS_SCRIPT = preload("res://snuffer.gd")
 const FINAL_BOSS_TIME: float = 900.0
+const ENCOUNTER_SCHEDULE = preload("res://encounter_schedule.gd")
 const FIRST_CHARGER_TIME: float = 20.0
 const CHARGER_INTERVAL: float = 8.0
 const MIN_CHARGER_INTERVAL: float = 5.0
 const CHARGER_RAMP_END: float = 120.0
 const MAX_CHARGERS: int = 4
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
+const PULSE_TURRET_SCENE: PackedScene = preload("res://pulse_turret.tscn")
 const SPAWN_INTERVALS: Array[float] = [2.0, 1.2, 0.65]
 const PRESSURE_RAMP_SECONDS: float = 20.0
 const TOUGHNESS_STEP_SECONDS: float = 30.0
 const BASE_ENEMY_SPEED: float = 85.0
 const MAX_UPGRADE_LEVEL: int = 4
-const UPGRADE_BASE_COSTS: Dictionary = {"damage": 60.0, "fire_rate": 50.0, "health": 40.0}
+const UPGRADE_BASE_COSTS: Dictionary = {"damage": 60.0, "fire_rate": 50.0, "health": 40.0, "slow_rate": 60.0, "slow_strength": 80.0, "slow_duration": 50.0}
 
 # The future settings menu can assign fps_limit; 0 means unlimited.
 @export_range(0, 360, 1, "or_greater") var fps_limit: int = 100:
@@ -35,6 +37,7 @@ var banked_energy: float = 0.0
 var damage_level: int = 0
 var fire_rate_level: int = 0
 var health_level: int = 0
+var slow_levels: Dictionary = {"slow_rate": 0, "slow_strength": 0, "slow_duration": 0}
 var best_time: float = 0.0
 var spawn_progress: float = 0.0
 var boss_spawned: bool = false
@@ -93,16 +96,37 @@ func configure_lantern() -> void:
 
 
 func configure_turret(turret: Node2D) -> void:
+	if turret.turret_type == "pulse":
+		turret.fire_interval = slow_interval()
+		turret.slow_factor = 1.0 - slow_strength()
+		turret.slow_duration = slow_duration()
+		return
 	turret.damage = turret_damage()
 	turret.fire_interval = 1.0 / turret_shots_per_second()
 
 
+func slow_interval() -> float:
+	return 3.0 - 0.3 * slow_levels.slow_rate
+
+
+func slow_strength() -> float:
+	return 0.45 + 0.05 * slow_levels.slow_strength
+
+
+func slow_duration() -> float:
+	return 1.5 + 0.2 * slow_levels.slow_duration
+
+
+func upgrade_levels() -> Dictionary:
+	var levels := {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level}
+	levels.merge(slow_levels)
+	return levels
+
+
 func upgrade_cost(kind: String) -> float:
-	match kind:
-		"damage": return UPGRADE_BASE_COSTS.damage * pow(2.0, damage_level)
-		"fire_rate": return UPGRADE_BASE_COSTS.fire_rate * pow(2.0, fire_rate_level)
-		"health": return UPGRADE_BASE_COSTS.health * pow(2.0, health_level)
-	return INF
+	if not UPGRADE_BASE_COSTS.has(kind):
+		return INF
+	return UPGRADE_BASE_COSTS[kind] * pow(2.0, upgrade_levels()[kind])
 
 
 func defense_investment() -> float:
@@ -116,9 +140,9 @@ func defense_investment() -> float:
 func buy_upgrade(kind: String) -> bool:
 	if phase != Phase.PREPARATION or $BuildController.placing:
 		return false
-	if kind not in ["damage", "fire_rate", "health"]:
+	if not UPGRADE_BASE_COSTS.has(kind):
 		return false
-	var level: int = {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level}[kind]
+	var level: int = upgrade_levels()[kind]
 	var cost := upgrade_cost(kind)
 	if level >= MAX_UPGRADE_LEVEL or banked_energy < cost:
 		return false
@@ -127,9 +151,11 @@ func buy_upgrade(kind: String) -> bool:
 		damage_level += 1
 	elif kind == "fire_rate":
 		fire_rate_level += 1
-	else:
+	elif kind == "health":
 		health_level += 1
 		configure_lantern()
+	else:
+		slow_levels[kind] += 1
 	for turret in get_tree().get_nodes_in_group("turrets"):
 		configure_turret(turret)
 	save_progress()
@@ -164,6 +190,7 @@ func start_run() -> void:
 	lantern.brightness = 0
 	lantern.hit_flash = 0.0
 	lantern.projectile_grace_remaining = 0.0
+	lantern.reset_ward()
 	lantern._center_in_viewport()
 	spawn_progress = 0.0
 	boss_spawned = false
@@ -186,6 +213,7 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	phase = Phase.RESULTS
 	get_tree().paused = false
 	lantern.running = false
+	lantern.reset_ward()
 	# Capture the result before banking clears this run's energy.
 	var survival := minf(lantern.elapsed, final_boss_time)
 	var previous_clear := float(version_clears.get(game_version, 0.0))
@@ -265,7 +293,12 @@ func _set_turrets_active(active: bool) -> void:
 
 
 func current_spawn_interval() -> float:
-	return maxf(0.12, SPAWN_INTERVALS[lantern.brightness] / (1.0 + lantern.elapsed / PRESSURE_RAMP_SECONDS))
+	var rate := ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(lantern.elapsed)
+	if rate <= 0.0:
+		return INF
+	# Cap the time ramp before all brightness levels collapse to the same rate.
+	var ramp := 1.0 + minf(lantern.elapsed, 100.0) / PRESSURE_RAMP_SECONDS
+	return maxf(0.12, SPAWN_INTERVALS[lantern.brightness] / ramp) / rate
 
 
 func current_enemy_health() -> float:
@@ -293,7 +326,10 @@ func _process(delta: float) -> void:
 	if spawn_progress >= 1.0:
 		spawn_progress -= 1.0
 		_spawn_enemy()
-	if lantern.elapsed >= next_charger_time:
+	if not ENCOUNTER_SCHEDULE.chargers_enabled(lantern.elapsed):
+		# No accumulated charger debt or burst when a recovery ends.
+		next_charger_time = lantern.elapsed
+	elif lantern.elapsed >= next_charger_time:
 		# Brightness changes basic spawn pressure, not the charger's warning cadence.
 		next_charger_time = lantern.elapsed + current_charger_interval()
 		_spawn_charger()
@@ -340,7 +376,7 @@ func _spawn_boss() -> void:
 
 
 func _spawn_enemy() -> void:
-	if phase != Phase.RUNNING:
+	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed):
 		return
 	var enemy := ENEMY_SCENE.instantiate() as Node2D
 	enemy.target = lantern
@@ -356,7 +392,7 @@ func current_charger_interval() -> float:
 
 
 func _spawn_charger() -> void:
-	if phase != Phase.RUNNING or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
+	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed) or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
 		return
 	var charger := CHARGER_SCENE.instantiate() as Node2D
 	charger.target = lantern
@@ -397,16 +433,19 @@ func save_progress() -> bool:
 			return false
 	var positions: Array = []
 	var purchase_costs: Array = []
+	var turret_types: Array = []
 	var size := get_arena_rect().size
 	for turret in get_tree().get_nodes_in_group("turrets"):
 		var point: Vector2 = turret.position / size
 		positions.append([point.x, point.y])
 		purchase_costs.append(turret.purchase_cost)
+		turret_types.append(turret.turret_type)
 	# Include current earnings without banking them twice in the live game.
 	var data := {"version": 1, "energy": banked_energy + lantern.energy, "best_time": best_time, "turrets": positions, "version_bests": version_bests, "legacy_best_time": legacy_best_time, "leaderboard": leaderboard_profile}
 	data.turret_costs = purchase_costs
 	data.version_clears = version_clears
-	data.upgrades = {"damage": damage_level, "fire_rate": fire_rate_level, "health": health_level}
+	data.turret_types = turret_types
+	data.upgrades = upgrade_levels()
 	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if file == null:
 		save_message = "Could not save progress. Keep this window open and retry."
@@ -420,6 +459,40 @@ func save_progress() -> bool:
 		return false
 	save_message = ""
 	return true
+
+
+func reset_progress() -> bool:
+	if phase != Phase.PREPARATION:
+		return false
+	# Replace the save atomically before changing live state. This explicit reset
+	# also permits recovery from a previously unreadable save.
+	var size := get_arena_rect().size
+	var starter := (size * 0.5 + Vector2(80, 0)) / size
+	var fresh := {"version": 1, "energy": 0, "best_time": 0, "turrets": [[starter.x, starter.y]]}
+	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(fresh))
+	file.flush()
+	var error := file.get_error()
+	file.close()
+	if error != OK or DirAccess.rename_absolute(save_path + ".tmp", save_path) != OK:
+		return false
+	call_deferred("_restart_after_reset")
+	return true
+
+
+func _restart_after_reset() -> void:
+	# Recreate all run state, including future milestone additions, while keeping
+	# the selected save path and audio/display autoload preferences.
+	var fresh := (load(scene_file_path) as PackedScene).instantiate()
+	fresh.save_path = save_path
+	var tree := get_tree()
+	var parent := get_parent()
+	parent.remove_child(self)
+	parent.add_child(fresh)
+	tree.current_scene = fresh
+	queue_free()
 
 
 func load_progress() -> void:
@@ -441,6 +514,8 @@ func load_progress() -> void:
 	damage_level = int(upgrades.get("damage", 0))
 	fire_rate_level = int(upgrades.get("fire_rate", 0))
 	health_level = int(upgrades.get("health", 0))
+	for kind in slow_levels:
+		slow_levels[kind] = int(upgrades.get(kind, 0))
 	# A legacy record's release cannot be inferred; preserve it separately.
 	legacy_best_time = float(data.get("legacy_best_time", data.best_time if not data.has("version_bests") else 0.0))
 	version_bests = data.get("version_bests", {})
@@ -452,7 +527,8 @@ func load_progress() -> void:
 		turret.queue_free()
 	for index in range(data.turrets.size()):
 		var coordinates: Array = data.turrets[index]
-		var turret := TURRET_SCENE.instantiate() as Node2D
+		var kind: String = data.turret_types[index] if data.has("turret_types") else "damage"
+		var turret := (PULSE_TURRET_SCENE if kind == "pulse" else TURRET_SCENE).instantiate() as Node2D
 		# Before selling existed, saved order was starter, then purchases at 20, 30…
 		var original_cost := 0.0 if index == 0 else 20.0 + 10.0 * (index - 1)
 		turret.purchase_cost = float(data.turret_costs[index]) if data.has("turret_costs") else original_cost
@@ -468,7 +544,7 @@ func _valid_save(data: Variant) -> bool:
 	var upgrades = data.get("upgrades", {})
 	if not upgrades is Dictionary:
 		return false
-	for kind in ["damage", "fire_rate", "health"]:
+	for kind in UPGRADE_BASE_COSTS:
 		var level = upgrades.get(kind, 0)
 		if not (level is int or level is float) or not is_finite(float(level)):
 			return false
@@ -524,6 +600,13 @@ func _valid_save(data: Variant) -> bool:
 	var positions = data.get("turrets")
 	if not positions is Array or positions.is_empty():
 		return false
+	if data.has("turret_types"):
+		var types = data.turret_types
+		if not types is Array or types.size() != positions.size() or types[0] != "damage":
+			return false
+		for kind in types:
+			if kind not in ["damage", "pulse"]:
+				return false
 	if data.has("turret_costs"):
 		var costs = data.turret_costs
 		if not costs is Array or costs.size() != positions.size():

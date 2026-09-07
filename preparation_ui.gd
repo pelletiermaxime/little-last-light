@@ -24,6 +24,11 @@ var show_button: Button
 var card_style: StyleBoxFlat
 var records_host: VBoxContainer
 var controls_hidden := false
+var slow_buttons: Dictionary = {}
+var upgrade_progress: Dictionary = {}
+var upgrade_summaries: Dictionary = {}
+var upgrade_panel: MarginContainer
+var upgrade_groups: GridContainer
 
 
 func _ready() -> void:
@@ -48,7 +53,14 @@ func _ready() -> void:
 	show_button = $ShowButton
 	place_button.pressed.connect(func(): open_view(View.PLACEMENT))
 	upgrades_button.pressed.connect(func(): open_view(View.UPGRADES))
-	back_button.pressed.connect(func(): open_view(View.HOME))
+	back_button.pressed.connect(go_back)
+	slow_buttons = {
+		"slow_rate": actions.get_node("SlowRateButton"),
+		"slow_strength": actions.get_node("SlowStrengthButton"),
+		"slow_duration": actions.get_node("SlowDurationButton"),
+	}
+	for kind in slow_buttons:
+		slow_buttons[kind].pressed.connect(main.buy_upgrade.bind(kind))
 	hide_button.pressed.connect(_toggle_controls)
 	show_button.pressed.connect(_toggle_controls)
 	records_button.pressed.connect(func(): open_view(View.RECORDS))
@@ -60,6 +72,7 @@ func _ready() -> void:
 		for button in parent.get_children():
 			for state in ["normal", "hover", "pressed", "disabled"]:
 				button.add_theme_stylebox_override(state, button.get_theme_stylebox(state).duplicate())
+	_create_upgrade_groups()
 	get_viewport().size_changed.connect(refresh)
 	refresh()
 	build.start_button.call_deferred("grab_focus")
@@ -76,7 +89,7 @@ func open_view(next: View) -> void:
 	refresh()
 	if view == View.HOME:
 		build.start_button.grab_focus()
-	elif view == View.UPGRADES or view == View.RECORDS:
+	elif view != View.PLACEMENT:
 		var controls := main.get_node_or_null("Controls")
 		if controls != null and controls.is_node_ready():
 			controls.move_focus(1)
@@ -84,6 +97,73 @@ func open_view(next: View) -> void:
 		var focused := get_viewport().gui_get_focus_owner()
 		if focused != null:
 			focused.release_focus()
+
+
+func go_back() -> void:
+	open_view(View.HOME)
+
+
+func _create_upgrade_groups() -> void:
+	upgrade_panel = $Card/Padding/Content/UpgradePanel
+	upgrade_groups = upgrade_panel.get_node("Groups")
+	var groups := {
+		"Damage turrets": {"damage": build.damage_button, "fire_rate": build.rate_button},
+		"Slow turrets": slow_buttons,
+		"Lantern": {"health": build.health_button},
+	}
+	for group_name in groups:
+		var group := VBoxContainer.new()
+		group.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		group.add_theme_constant_override("separation", 8)
+		upgrade_groups.add_child(group)
+		group.add_child(STYLE.label(group_name, 18, Color("#ffd17b")))
+		var summary := STYLE.label("", 12)
+		summary.custom_minimum_size.y = 34
+		group.add_child(summary)
+		upgrade_summaries[group_name] = summary
+		for kind in groups[group_name]:
+			var item := VBoxContainer.new()
+			item.add_theme_constant_override("separation", 5)
+			group.add_child(item)
+			var button: Button = groups[group_name][kind]
+			button.set_meta("upgrade_kind", kind)
+			button.reparent(item)
+			button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			button.custom_minimum_size.y = 52
+			button.add_theme_font_size_override("font_size", 15)
+			for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+				var style: StyleBox = button.get_theme_stylebox(state).duplicate()
+				style.content_margin_top = 6
+				style.content_margin_bottom = 6
+				style.content_margin_left = 10
+				style.content_margin_right = 10
+				button.add_theme_stylebox_override(state, style)
+			var progress := HBoxContainer.new()
+			progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			progress.add_theme_constant_override("separation", 6)
+			item.add_child(progress)
+			for level in range(main.MAX_UPGRADE_LEVEL):
+				var segment := ColorRect.new()
+				segment.custom_minimum_size = Vector2(18, 4)
+				segment.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				progress.add_child(segment)
+			var label := STYLE.label("", 12)
+			label.autowrap_mode = TextServer.AUTOWRAP_OFF
+			progress.add_child(label)
+			upgrade_progress[kind] = progress
+	# Explicit neighbors keep compact, differently wrapped labels from making
+	# native arrow navigation jump diagonally into the next column.
+	var columns := [[build.damage_button, build.rate_button], [slow_buttons.slow_rate, slow_buttons.slow_strength, slow_buttons.slow_duration], [build.health_button]]
+	for column in range(columns.size()):
+		for row in range(columns[column].size()):
+			var button: Button = columns[column][row]
+			button.focus_neighbor_top = button.get_path_to(columns[column][maxi(0, row - 1)])
+			button.focus_neighbor_bottom = button.get_path_to(columns[column][row + 1] if row + 1 < columns[column].size() else back_button)
+			var left: Array = columns[maxi(0, column - 1)]
+			var right: Array = columns[mini(columns.size() - 1, column + 1)]
+			button.focus_neighbor_left = button.get_path_to(left[mini(row, left.size() - 1)])
+			button.focus_neighbor_right = button.get_path_to(right[mini(row, right.size() - 1)])
 
 
 func _toggle_controls() -> void:
@@ -111,10 +191,14 @@ func refresh() -> void:
 	build.start_button.visible = home
 	build.start_button.text = "Start run"
 	build.build_button.visible = placement
-	build.build_button.text = "New turret · %d%s" % [int(build.turret_cost()), "" if build.using_controller else " (B)"]
+	build.build_button.text = "Damage turret · %d%s" % [int(build.turret_cost()), "" if build.using_controller else " (B)"]
+	build.pulse_button.visible = placement
+	build.pulse_button.text = "Slow turret · %d%s" % [int(build.turret_cost("pulse")), "" if build.using_controller else " (V)"]
 	build.cancel_button.visible = placement and build.placing
 	build.cancel_button.text = "Cancel placement" if build.using_controller else "Cancel placement · Esc"
 	back_button.text = "Done" if build.using_controller else "Done · Esc"
+	if upgrades:
+		back_button.text = "Back" if build.using_controller else "Back · Esc"
 	hide_button.text = "Hide controls" if build.using_controller else "Hide controls · Tab"
 	show_button.text = "Show controls" if build.using_controller else "Show controls · Tab"
 	if build.using_controller:
@@ -124,8 +208,20 @@ func refresh() -> void:
 	build.sell_button.visible = placement and is_instance_valid(build.selected_turret)
 	build.reset_button.visible = placement and not build.placing
 	build.reset_button.text = "Refund layout · +%d" % int(build.layout_refund())
-	for button in [build.damage_button, build.rate_button, build.health_button]:
-		button.visible = upgrades
+	upgrade_panel.visible = upgrades
+	build.damage_button.visible = upgrades
+	build.rate_button.visible = upgrades
+	build.health_button.visible = upgrades
+	_refresh_slow_upgrades()
+	var levels: Dictionary = main.upgrade_levels()
+	for kind in upgrade_progress:
+		var progress: HBoxContainer = upgrade_progress[kind]
+		for level in range(main.MAX_UPGRADE_LEVEL):
+			progress.get_child(level).color = Color("#ffd17b") if level < levels[kind] else Color("#354955")
+		progress.get_child(main.MAX_UPGRADE_LEVEL).text = " %d/%d" % [levels[kind], main.MAX_UPGRADE_LEVEL]
+	upgrade_summaries["Damage turrets"].text = "%.0f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second()]
+	upgrade_summaries["Slow turrets"].text = "%.0f%% slow · lasts %.1fs\nActivates every %.1fs" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
+	upgrade_summaries["Lantern"].text = "%.0f maximum HP" % main.lantern_max_health()
 	back_button.visible = not home and not (placement and build.placing)
 	hide_button.visible = placement
 	records_button.visible = home
@@ -138,16 +234,23 @@ func refresh() -> void:
 	var count := get_tree().get_nodes_in_group("turrets").size()
 	balance.text = "%d energy  ·  %d turret%s  ·  %d HP" % [int(main.banked_energy), count, "" if count == 1 else "s", int(main.lantern_max_health())]
 	title.text = "Build your refuge" if home else ("Arrange your defense" if placement else ("Make the light stronger" if upgrades else "Your records"))
-	title.add_theme_font_size_override("font_size", 18 if placement else 26)
+	title.add_theme_font_size_override("font_size", 18 if placement else (22 if upgrades else 26))
+	balance.add_theme_font_size_override("font_size", 14 if upgrades else 16)
+	description.add_theme_font_size_override("font_size", 14 if upgrades else 16)
+	content.add_theme_constant_override("separation", 8 if upgrades else 12)
 	balance.visible = not placement
 	if placement:
 		title.text = "Arrange your defense · %d energy" % int(main.banked_energy)
 	description.text = "Place your defense. Choose your upgrades. See how long your light lasts." if home else ("Click a turret to move or sell it. B buys a new one." if placement else ("Permanent improvements for every future run." if upgrades else "Best: %s · %s" % [hud.format_time(main.best_time), main.game_version]))
+	if placement:
+		description.text = "Damage turrets shoot. Slow turrets: %.0f%% slow for %.1fs every %.1fs. Select a turret to move or sell." % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
+	elif upgrades:
+		title.text = "Improve your defense"
+		description.text = "Permanent upgrades for every turret of its type and your lantern."
 	if placement and build.placing:
 		description.text = "Place through the card background. Tab hides all controls. Esc cancels."
 	if build.using_controller and placement:
-		description.text = "Left stick: cursor · D-pad: toolbar
-Confirm: select / place · Back: cancel / done"
+		description.text = "Slow turret: %.0f%% for %.1fs every %.1fs.\nLeft stick: cursor · D-pad: toolbar\nConfirm: select / place · Back: cancel / done" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
 	if not main.save_message.is_empty():
 		description.text = main.save_message
 	var size := get_viewport().get_visible_rect().size
@@ -157,6 +260,10 @@ Confirm: select / place · Back: cancel / done"
 	var height := minf(280 if home else (440 if placement else 460), size.y - 32)
 	if size.x < 700:
 		height = minf(410 if home else 460, size.y - 32)
+	if upgrades:
+		# Keep every group visible together. Small windows scale the complete card.
+		width = maxf(900, minf(1060, size.x - 32))
+		height = minf(580, size.y - 32)
 	card.size = Vector2(width, height)
 	card.position = Vector2(16 if placement else (size.x - width) / 2, (size.y - height) / 2)
 	card_style.bg_color.a = 0.62 if home else (0.28 if placement else 0.94)
@@ -178,8 +285,28 @@ Confirm: select / place · Back: cancel / done"
 		controls.refresh_prompts()
 
 
+func _refresh_slow_upgrades() -> void:
+	var labels := {
+		"slow_rate": "Activation · every %.1fs → %.1fs" % [main.slow_interval(), main.slow_interval() - 0.3],
+		"slow_strength": "Strength · %.0f%% → %.0f%% slower" % [main.slow_strength() * 100, main.slow_strength() * 100 + 5],
+		"slow_duration": "Duration · %.1fs → %.1fs" % [main.slow_duration(), main.slow_duration() + 0.2],
+	}
+	var capped := {
+		"slow_rate": "Activation · every %.1fs · MAX" % main.slow_interval(),
+		"slow_strength": "Strength · %.0f%% slower · MAX" % (main.slow_strength() * 100),
+		"slow_duration": "Duration · %.1fs · MAX" % main.slow_duration(),
+	}
+	for kind in slow_buttons:
+		var button: Button = slow_buttons[kind]
+		var at_cap: bool = main.slow_levels[kind] >= main.MAX_UPGRADE_LEVEL
+		button.visible = view == View.UPGRADES
+		button.disabled = build.placing or at_cap or main.banked_energy < main.upgrade_cost(kind)
+		button.text = capped[kind] if at_cap else "%s\n%d energy" % [labels[kind], int(main.upgrade_cost(kind))]
+
+
 func _fit_layout() -> void:
-	STYLE.fit_card(card, get_viewport().get_visible_rect().size, view == View.PLACEMENT)
+	var viewport_size := get_viewport().get_visible_rect().size
+	STYLE.fit_card(card, viewport_size, view == View.PLACEMENT)
 	_position_lantern()
 
 

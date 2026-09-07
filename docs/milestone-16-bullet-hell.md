@@ -104,6 +104,13 @@ readability, recovery and damage tuning.
 
 ## Integration
 
+Integrated with M14/M15 for release: all 31 Godot regression scripts and seven
+Python release/configuration tests pass. Shared slow is wired at half boss
+susceptibility and expires without slowing attack clocks. Projectile hits flow
+through the ward. Save serialization retains turret types, all upgrades and clear
+records. The schedule continues its Gathering/Pressure/Recovery cycle beyond
+15:00 instead of shutting ordinary spawning down.
+
 M15 must call `update_final_encounter()` alongside ordinary encounter scheduling.
 Do not return early or disable regular spawns when it reports an active final
 boss. Existing pursuer scaling, charger cadence and charger population limits

@@ -59,6 +59,9 @@ The results screen offers to publish a new survival record with a username; pend
 - [The Drencher water boss (M11)](docs/milestone-11.md)
 - [Full arena and preparation cards (M12)](docs/milestone-12.md)
 - [Sound effects and settings (M13)](docs/milestone-13.md)
+- [Slow support turret (M14)](docs/milestone-14.md)
+- [Stationary ward and encounter pacing (M15)](docs/milestone-15.md)
+- [M14–M16 shared roadmap](docs/roadmap-m14-m16.md)
 - [Audio and display settings](docs/settings.md)
 - [Editing menu scenes and the shared Theme](docs/menu-scenes.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.
@@ -67,6 +70,19 @@ The results screen offers to publish a new survival record with a username; pend
 ## Export
 
 Linux, Windows, and Web presets are included in `export_presets.cfg`. Install matching Godot 4.7.2 export templates and create the `export` folder before exporting through Project → Export. Generated builds and Godot caches are excluded from Git.
+
+### M16: survive until dawn
+
+The Snuffer arrives at **15:00** while ordinary enemies keep spawning. Dodge its
+five-wide aimed volleys and full-circle droplet rings. Below half health, it fires
+three overlapping rings; at one-third health, Desperation accelerates its
+repositioning 2.5x and shortens recovery. Pulse turrets slow its movement with
+reduced boss susceptibility, and the ward absorbs incoming droplet damage.
+
+Defeat the Snuffer to reach dawn, bank earnings once, and record your total clear
+time. Clears rank ahead of survival-only scores, fastest clear first. Existing
+records and saves remain readable. The isolated one-minute boss launcher is for
+local testing only and disables online publishing.
 
 ### Automated builds and publishing
 

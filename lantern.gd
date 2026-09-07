@@ -5,6 +5,11 @@ signal died
 const BRIGHTNESS_NAMES: Array[String] = ["Low", "Medium", "High"]
 const ENERGY_RATES: Array[float] = [1.0, 3.0, 6.0]
 const LIGHT_SCALES: Array[float] = [1.0, 1.4, 1.9]
+const WARD_FORM_SECONDS := 1.25
+const WARD_CAPACITY := 8.0
+const WARD_RECHARGE_DELAY := 3.0
+const WARD_RECHARGE_RATE := 4.0
+const MOVE_DEADZONE := 0.25
 
 @export var move_speed: float = 220.0
 @export var max_health: float = 25.0
@@ -17,6 +22,55 @@ var projectile_grace_remaining: float = 0.0
 var elapsed: float = 0.0
 var brightness: int = 0
 var energy: float = 0.0
+var ward_charge := 0.0
+var ward_settle_time := 0.0
+var ward_damage_delay := 0.0
+var ward_broken := false
+var ward_flash := 0.0
+
+
+func reset_ward() -> void:
+	ward_charge = 0.0
+	ward_settle_time = 0.0
+	ward_damage_delay = 0.0
+	ward_broken = false
+	ward_flash = 0.0
+	queue_redraw()
+
+
+func ward_active() -> bool:
+	return running and ward_settle_time >= WARD_FORM_SECONDS and ward_charge > 0.0
+
+
+func ward_status() -> String:
+	if ward_settle_time == 0.0:
+		return "Stand still to form ward"
+	if ward_settle_time < WARD_FORM_SECONDS:
+		return "Ward forming"
+	if ward_broken:
+		return "Ward broken · avoid damage"
+	return "Ward %d / %d" % [int(ceil(ward_charge)), int(WARD_CAPACITY)]
+
+
+func update_ward(delta: float, moving: bool) -> void:
+	if not running or get_tree().paused:
+		return
+	ward_flash = maxf(0.0, ward_flash - delta)
+	var previous_delay := ward_damage_delay
+	ward_damage_delay = maxf(0.0, ward_damage_delay - delta)
+	if moving:
+		# Removing protection also discards its reserve. Repeated stops never refill it.
+		ward_charge = 0.0
+		ward_settle_time = 0.0
+		ward_broken = false
+	else:
+		var formation_remaining := maxf(0.0, WARD_FORM_SECONDS - ward_settle_time)
+		ward_settle_time = minf(WARD_FORM_SECONDS, ward_settle_time + delta)
+		var recharge_time := maxf(0.0, delta - maxf(formation_remaining, previous_delay))
+		ward_charge = minf(WARD_CAPACITY, ward_charge + recharge_time * WARD_RECHARGE_RATE)
+		if ward_charge > 0.0:
+			ward_broken = false
+	queue_redraw()
 
 
 
@@ -52,6 +106,16 @@ func take_projectile_damage(amount: float) -> void:
 func take_damage(amount: float) -> void:
 	if not running or health <= 0.0 or amount <= 0.0:
 		return
+	ward_damage_delay = WARD_RECHARGE_DELAY
+	if ward_active():
+		var absorbed := minf(amount, ward_charge)
+		ward_charge -= absorbed
+		amount -= absorbed
+		ward_flash = 0.2
+		ward_broken = ward_charge <= 0.0
+		queue_redraw()
+		if amount <= 0.0:
+			return
 	health = maxf(0.0, health - amount)
 	get_node("/root/GameAudio").play(&"damage")
 	hit_flash = 0.15
@@ -66,7 +130,9 @@ func _physics_process(delta: float) -> void:
 	if not running:
 		return
 	# get_vector keeps diagonal movement the same speed as straight movement.
-	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down", MOVE_DEADZONE)
+	# Use intent, including pushing into an arena edge; deadzone drift cannot move us.
+	update_ward(delta, not direction.is_zero_approx())
 	position += direction * move_speed * delta
 	_keep_inside_viewport()
 
@@ -105,6 +171,19 @@ func _update_status() -> void:
 
 
 func _draw() -> void:
+	if running and ward_settle_time > 0.0:
+		var forming := ward_settle_time < WARD_FORM_SECONDS
+		var fraction := ward_settle_time / WARD_FORM_SECONDS if forming else ward_charge / WARD_CAPACITY
+		var tint := Color("#a8e5df") if not ward_broken else Color("#ff806e")
+		if ward_flash > 0.0:
+			tint = Color.WHITE
+		if forming or ward_broken:
+			for index in range(8):
+				draw_arc(Vector2.ZERO, 25.0, index * TAU / 8, (index + 0.6) * TAU / 8, 8, tint, 1.0, true)
+		else:
+			draw_arc(Vector2.ZERO, 25.0, 0, TAU, 48, Color(0.66, 0.9, 0.87, 0.2), 1.0, true)
+		if fraction > 0.0:
+			draw_arc(Vector2.ZERO, 25.0, -PI / 2, -PI / 2 + TAU * fraction, 48, tint, 2.0, true)
 	var pulse: float = 1.0 + sin(elapsed * 2.0) * 0.08
 	var glow_size: float = pulse * LIGHT_SCALES[brightness]
 
