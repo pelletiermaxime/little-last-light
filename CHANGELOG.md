@@ -10,6 +10,12 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ### Added
 
+- Added the Ember Pot prototype: a glowing coal lands after 0.45 seconds and deals 1 damage to enemies within 65 pixels, firing every 3 seconds. Its fixed stats and local-only records let you test splash damage alongside Watchlight before balance tuning.
+
+## [0.0.21] - 2026-09-08
+
+### Added
+
 - The placement screen now shows each turret's base damage, range and firing interval, plus targeting or slowing effects, below its purchase button. Whole-number stats omit unnecessary decimals.
 - Added a standalone sniper visual preview to compare three designs with synchronized firing and recharge animations.
 - Added the Watchlight sniper: long-range shots at the furthest enemy, a directional shuttered housing, and heavy damage with a slow recharge. Build it with right-stick click on a controller or the placement toolbar; damage upgrades and lantern proximity boosts apply.

@@ -108,11 +108,20 @@ func refresh() -> void:
 			prompt.text += "\nEnergy earned this run: %d." % int(pending.energyEarned)
 		if pending.has("turretLayout"):
 			prompt.text += "\nYour %d-turret layout will be public." % pending.turretLayout.turrets.size()
-	publish.disabled = not sending.is_empty() or api_url.is_empty()
+	publish.disabled = not sending.is_empty() or api_url.is_empty() or _has_prototype_layout(pending)
 	skip.disabled = not sending.is_empty()
 	username.editable = sending.is_empty()
 	if api_url.is_empty() and offered:
 		notice.text = "Online publishing is not configured in this build. Your record is saved locally."
+	if _has_prototype_layout(pending):
+		notice.text = "Ember Pot prototype records stay on this device while its balance is being tested."
+
+
+func _has_prototype_layout(pending: Dictionary) -> bool:
+	for turret in pending.get("turretLayout", {}).get("turrets", []):
+		if turret.get("type", "damage") == "ember":
+			return true
+	return false
 
 
 func _load_scores() -> void:
@@ -190,7 +199,7 @@ func _skip() -> void:
 
 
 func _publish() -> void:
-	if not sending.is_empty() or api_url.is_empty() or main.leaderboard_profile.pending.is_empty():
+	if not sending.is_empty() or api_url.is_empty() or main.leaderboard_profile.pending.is_empty() or _has_prototype_layout(main.leaderboard_profile.pending):
 		return
 	var name_text := username.text.strip_edges()
 	var pattern := RegEx.new()

@@ -2,6 +2,10 @@
 
 A small Godot learning project: defend a mobile lantern with fixed, automatically firing turrets.
 
+**Ember Pot prototype:** a delayed coal projectile damages enemies in a small splash.
+It is available alongside Watchlight in placement, with fixed stats for comparison.
+See the [Ember Pot playtest guide](docs/aoe-playtest.md) for a separate profile with both ready to try.
+
 **Watchlight sniper:** click its placement button or press **R3 / right-stick click** on a controller to build one. It fires
 at the furthest living enemy within **360 pixels of the turret**, dealing **3
 damage every 4.5 seconds** before upgrades. Its shuttered housing faces each shot

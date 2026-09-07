@@ -91,7 +91,7 @@ func _ready() -> void:
 
 
 func _create_placement_stats() -> void:
-	var buttons := {"damage": build.build_button, "pulse": build.pulse_button, "sniper": build.sniper_button}
+	var buttons := {"damage": build.build_button, "pulse": build.pulse_button, "sniper": build.sniper_button, "ember": build.ember_button}
 	for kind in buttons:
 		# Read the scene defaults once, before upgrades or proximity are applied.
 		var turret: Node2D = main.turret_scene(kind).instantiate()
@@ -99,6 +99,8 @@ func _create_placement_stats() -> void:
 		var text := "%s dmg · %.0f range · %ss/%s" % [String.num(turret.damage, 1).trim_suffix(".0"), turret.attack_range, String.num(turret.fire_interval, 1).trim_suffix(".0"), cadence]
 		if kind == "pulse":
 			text += "\n%.0f%% slow · lasts %ss" % [(1.0 - turret.slow_factor) * 100, String.num(turret.slow_duration, 1).trim_suffix(".0")]
+		elif kind == "ember":
+			text += "\n65 splash · 0.45s flight\nFixed stats · no upgrades or boost"
 		else:
 			text += "\n" + ("Furthest target" if kind == "sniper" else "Nearest target")
 		var label := STYLE.label(text, 12, Color("#bfd0d8"))
@@ -229,6 +231,8 @@ func refresh() -> void:
 	build.pulse_button.text = "Slow turret · %d" % int(build.turret_cost("pulse"))
 	build.sniper_button.visible = placement
 	build.sniper_button.text = "Watchlight · %d" % int(build.turret_cost("sniper"))
+	build.ember_button.visible = placement
+	build.ember_button.text = "Ember Pot · %d" % int(build.turret_cost("ember"))
 	build.cancel_button.visible = placement and build.placing
 	build.cancel_button.text = "Cancel placement" if build.using_controller else "Cancel placement · Esc"
 	back_button.text = "Done" if build.using_controller else "Done · Esc"

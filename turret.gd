@@ -16,6 +16,13 @@ var shot_endpoint: Vector2 = Vector2.ZERO
 var boosted: bool = false
 
 
+func reset_attack() -> void:
+	boosted = false
+	cooldown = 0.0
+	shot_time = 0.0
+	queue_redraw()
+
+
 func in_boost_range() -> bool:
 	var lantern := get_parent().get_node_or_null("Lantern")
 	return turret_type in ["damage", "sniper"] and lantern != null and lantern.running and lantern.health > 0.0 and global_position.distance_squared_to(lantern.global_position) <= BOOST_RADIUS * BOOST_RADIUS

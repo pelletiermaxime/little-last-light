@@ -14,6 +14,7 @@ var preview: Node2D
 var build_button: Button
 var pulse_button: Button
 var sniper_button: Button
+var ember_button: Button
 var placement_type: String = "damage"
 var cancel_button: Button
 var start_button: Button
@@ -56,6 +57,11 @@ func _ready() -> void:
 	build_button.pressed.connect(begin_placement)
 	pulse_button.pressed.connect(func(): begin_placement("pulse"))
 	sniper_button.pressed.connect(func(): begin_placement("sniper"))
+	ember_button = Button.new()
+	ember_button.name = "EmberButton"
+	actions.add_child(ember_button)
+	actions.move_child(ember_button, sniper_button.get_index() + 1)
+	ember_button.pressed.connect(begin_placement.bind("ember"))
 	cancel_button.pressed.connect(cancel_placement)
 	start_button.pressed.connect(main.start_run)
 	sell_button.pressed.connect(sell_selected_turret)
@@ -183,6 +189,7 @@ func _update_interface() -> void:
 	build_button.disabled = placing or main.banked_energy < turret_cost()
 	pulse_button.disabled = placing or main.banked_energy < turret_cost("pulse")
 	sniper_button.disabled = placing or main.banked_energy < turret_cost("sniper")
+	ember_button.disabled = placing or main.banked_energy < turret_cost("ember")
 	var preparation := main.get_node_or_null("PreparationUI")
 	if preparation != null and preparation.is_node_ready():
 		preparation.refresh()
@@ -268,7 +275,7 @@ func _select_or_place(point: Vector2) -> void:
 
 
 func begin_placement(kind: String = "damage") -> void:
-	if kind not in ["damage", "pulse", "sniper"]:
+	if kind not in ["damage", "pulse", "sniper", "ember"]:
 		return
 	if main.phase == main.Phase.PREPARATION:
 		main.get_node("PreparationUI").open_view(1)
