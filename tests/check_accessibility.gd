@@ -63,24 +63,15 @@ func check() -> void:
 	settings.close()
 	settings._show_assistance(true)
 	settings.assistance_page.get_node("DamageTaken").pressed.emit()
-	settings.assistance_page.get_node("GameSpeed").pressed.emit()
-	expect(game.damage_taken_factor == 0.75 and game.game_speed == 0.75, "Buttons cycle through 75 percent options")
-	settings.assistance_page.get_node("GameSpeed").pressed.emit()
-	expect(game.game_speed == 0.5 and not game.leaderboard_eligible(), "Slower speed disqualifies progress")
+	expect(game.damage_taken_factor == 0.75 and not game.leaderboard_eligible(), "Damage button cycles to 75 percent and marks progress assisted")
 	for frame in range(6):
 		await process_frame
-	for control in ["DamageTaken", "GameSpeed", "BackButton"]:
+	for control in ["DamageTaken", "BackButton"]:
 		expect(root.get_visible_rect().encloses(settings.assistance_page.get_node(control).get_global_rect()), "Extended assist control fits: " + control)
 	settings.close()
 	settings.close()
 	game.start_run()
-	expect(Engine.time_scale == 0.5, "Run applies simulation speed globally")
-	var real_start := Time.get_ticks_usec()
-	game.lantern.set_process(true)
-	await create_timer(0.3, true, false, true).timeout
-	game.lantern.set_process(false)
-	var real_elapsed := float(Time.get_ticks_usec() - real_start) / 1000000.0
-	expect(absf(game.lantern.elapsed - real_elapsed * 0.5) < 0.05, "Engine advances the actual lantern simulation at half wall-clock speed")
+	expect(Engine.time_scale == 1, "Assisted play keeps normal game speed")
 	game.lantern.take_damage(8)
 	expect(game.lantern.health == 19, "Contact damage respects 75 percent factor")
 	game.lantern.take_projectile_damage(8)
@@ -104,17 +95,16 @@ func check() -> void:
 	expect(display.reduce_effects, "Controller can toggle visual option back on without a double activation")
 	settings.close()
 	settings._show_assistance(true)
-	expect(settings.assistance_page.get_node("DamageTaken").disabled and settings.assistance_page.get_node("GameSpeed").disabled, "Gameplay assists stay locked during run")
-	expect(not game.set_game_speed(1) and not game.set_damage_taken(1), "Gameplay setters reject mid-run changes")
+	expect(settings.assistance_page.get_node("DamageTaken").disabled, "Gameplay assists stay locked during run")
+	expect(not game.set_damage_taken(1), "Gameplay setters reject mid-run changes")
 	settings.close()
 	settings.close()
 	pause.resume()
-	expect(Engine.time_scale == 0.5, "Resume restores selected game speed")
+	expect(Engine.time_scale == 1, "Resume keeps normal game speed")
 	game.end_run(true)
 	expect(Engine.time_scale == 1 and game.last_run.assisted, "Results restore normal speed and reject records")
 	game.continue_to_preparation()
 	game.set_damage_taken(0)
-	game.set_game_speed(1)
 	game.start_run()
 	game.lantern.take_damage(999)
 	game.lantern.take_projectile_damage(999)
@@ -122,20 +112,32 @@ func check() -> void:
 	game.end_run(true)
 	game.continue_to_preparation()
 	game.set_damage_taken(0.5)
-	game.set_game_speed(0.75)
 	await process_frame
 	game.free()
+	# A save from the retired speed prototype must load at normal speed and
+	# retain its assisted history, without writing the old option back out.
+	var legacy: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+	legacy.game_speed = 0.5
+	legacy.assists.slow_game = true
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify(legacy))
+	file.close()
 	game = new_game()
 	await process_frame
-	expect(game.damage_taken_factor == 0.5 and game.game_speed == 0.75 and game.assisted_progress, "Gameplay factors survive save reload")
+	expect(game.damage_taken_factor == 0.5 and game.assisted_progress, "Damage factor survives save reload")
+	game.start_run()
+	expect(Engine.time_scale == 1 and not game.assists.has("slow_game"), "Old speed preference is ignored")
+	game.end_run(true)
+	game.continue_to_preparation()
+	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+	expect(not saved.has("game_speed") and not saved.assists.has("slow_game"), "New saves omit the retired speed preference")
 	game.set_damage_taken(1)
-	game.set_game_speed(1)
 	expect(not game.leaderboard_eligible(), "Normal factors do not erase assisted progress")
 	game.reset_progress()
 	for frame in range(6):
 		await process_frame
 	game = current_scene
-	expect(game.game_speed == 1 and game.damage_taken_factor == 1 and Engine.time_scale == 1 and game.leaderboard_eligible(), "Reset restores normal gameplay factors and eligibility")
+	expect(game.damage_taken_factor == 1 and Engine.time_scale == 1 and game.leaderboard_eligible(), "Reset restores normal gameplay factors and eligibility")
 	expect(display.strong_danger_cues and not display.show_turret_ranges, "Progress reset preserves visual preferences")
 	game.free()
 	for key in original:

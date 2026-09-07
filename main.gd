@@ -71,11 +71,9 @@ var game_version: String = "dev" if OS.has_feature("editor") else str(ProjectSet
 var version_bests: Dictionary = {}
 var legacy_best_time: float = 0.0
 var leaderboard_profile: Dictionary = {"token": "", "username": "", "pending": {}}
-var assists: Dictionary = {"cheap_upgrades": false, "short_night": false, "slow_enemies": false, "reduced_damage": false, "slow_game": false}
+var assists: Dictionary = {"cheap_upgrades": false, "short_night": false, "slow_enemies": false, "reduced_damage": false}
 const DAMAGE_FACTORS := [1.0, 0.75, 0.5, 0.0]
-const GAME_SPEEDS := [1.0, 0.75, 0.5]
 var damage_taken_factor := 1.0
-var game_speed := 1.0
 # Energy and upgrades carry between runs, so eligibility belongs to the save.
 var assisted_progress := false
 var run_assisted := false
@@ -102,17 +100,6 @@ func set_damage_taken(value: float) -> bool:
 		return false
 	damage_taken_factor = value
 	return set_assist("reduced_damage", value != 1.0)
-
-
-func set_game_speed(value: float) -> bool:
-	if phase != Phase.PREPARATION or value not in GAME_SPEEDS:
-		return false
-	game_speed = value
-	return set_assist("slow_game", value != 1.0)
-
-
-func _exit_tree() -> void:
-	Engine.time_scale = 1.0
 
 
 func encounter_time() -> float:
@@ -303,7 +290,6 @@ func start_run() -> void:
 	next_charger_time = FIRST_CHARGER_TIME * night_scale()
 	autosave_elapsed = 0.0
 	phase = Phase.RUNNING
-	Engine.time_scale = game_speed
 	lantern.running = true
 	_set_turrets_active(true)
 	lantern._update_status()
@@ -317,7 +303,6 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	if phase != Phase.RUNNING:
 		return
 	phase = Phase.RESULTS
-	Engine.time_scale = 1.0
 	get_tree().paused = false
 	lantern.running = false
 	pickups.reset()
@@ -595,7 +580,6 @@ func save_progress() -> bool:
 	data.upgrades = upgrade_levels()
 	data.assists = assists
 	data.damage_taken_factor = damage_taken_factor
-	data.game_speed = game_speed
 	data.assisted_progress = assisted_progress
 	data.game_version = str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
 	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
@@ -667,10 +651,10 @@ func load_progress() -> void:
 	var data: Dictionary = parser.data
 	assists.merge(data.get("assists", {}), true)
 	damage_taken_factor = float(data.get("damage_taken_factor", 1.0))
-	game_speed = float(data.get("game_speed", 1.0))
 	assists.reduced_damage = damage_taken_factor != 1.0
-	assists.slow_game = game_speed != 1.0
 	assisted_progress = data.get("assisted_progress", false) or assists.values().has(true)
+	# Retire the prototype speed toggle while retaining its assisted history.
+	assists.erase("slow_game")
 	banked_energy = float(data.energy)
 	var upgrades: Dictionary = data.get("upgrades", {})
 	damage_level = int(upgrades.get("damage", 0))
@@ -712,7 +696,7 @@ func _valid_save(data: Variant) -> bool:
 	for kind in assists:
 		if not data.get("assists", {}).get(kind, false) is bool:
 			return false
-	if data.get("damage_taken_factor", 1.0) not in DAMAGE_FACTORS or data.get("game_speed", 1.0) not in GAME_SPEEDS:
+	if data.get("damage_taken_factor", 1.0) not in DAMAGE_FACTORS:
 		return false
 	var upgrades = data.get("upgrades", {})
 	if not upgrades is Dictionary:

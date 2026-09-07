@@ -36,11 +36,6 @@ func _ready() -> void:
 		main.set_damage_taken(main.DAMAGE_FACTORS[(main.DAMAGE_FACTORS.find(main.damage_taken_factor) + 1) % main.DAMAGE_FACTORS.size()])
 		_refresh_assistance()
 	)
-	assistance_page.get_node("GameSpeed").pressed.connect(func():
-		var main = get_parent()
-		main.set_game_speed(main.GAME_SPEEDS[(main.GAME_SPEEDS.find(main.game_speed) + 1) % main.GAME_SPEEDS.size()])
-		_refresh_assistance()
-	)
 	visual_button.pressed.connect(func(): _show_visual(true))
 	visual_page.get_node("BackButton").pressed.connect(func(): _show_visual(false))
 	for control in VISUAL_CONTROLS:
@@ -68,9 +63,7 @@ func _show_assistance(opened: bool) -> void:
 func _refresh_assistance() -> void:
 	var main = get_parent()
 	assistance_page.get_node("DamageTaken").text = "Damage taken: %d%%%s" % [roundi(main.damage_taken_factor * 100), " · invincible" if main.damage_taken_factor == 0 else ""]
-	assistance_page.get_node("GameSpeed").text = "Game speed: %d%%" % roundi(main.game_speed * 100)
-	for control in ["DamageTaken", "GameSpeed"]:
-		assistance_page.get_node(control).disabled = main.phase != main.Phase.PREPARATION
+	assistance_page.get_node("DamageTaken").disabled = main.phase != main.Phase.PREPARATION
 	for pair in [["CheapUpgrades", "cheap_upgrades"], ["ShortNight", "short_night"], ["SlowEnemies", "slow_enemies"]]:
 		var button: CheckButton = assistance_page.get_node(pair[0])
 		button.set_pressed_no_signal(main.assists[pair[1]])

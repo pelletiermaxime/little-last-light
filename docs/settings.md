@@ -39,10 +39,6 @@ Settings → Assistance offers independent options, editable in preparation:
   stacks with movement assistance; warning and attack clocks remain readable.
 - Damage taken: 100%, 75%, 50%, or 0% (invincible). Applies once to contact,
   projectile and water damage, through the lantern's shared damage handler.
-- Game speed: 100%, 75%, or 50%. Slows the entire simulation, including player
-  movement, enemies, warnings, firing, income and the run clock. The clock shows
-  game time: a 7:30 short night takes 15 real minutes at 50% speed before the final
-  fight. Pause, preparation and results use normal speed. Audio pitch is unchanged.
 
 These settings are saved with game progress, unlike audio/display preferences.
 Enabling any switch immediately marks that progress as assisted and removes a
@@ -77,7 +73,7 @@ live in `display-settings.cfg`, survive progress reset, and never mark play assi
   Placement/movement previews retain their circle so positioning remains clear.
   This is independent of Reduce visual effects; neither changes turret mechanics.
 
-`tests/check_accessibility.gd` checks damage sources, invincibility, simulation
-speed and pause restoration, persistence/reset, leaderboard eligibility and menu
+`tests/check_accessibility.gd` checks damage sources, invincibility,
+persistence/reset, leaderboard eligibility and menu
 bounds. Native visual comparison and a human playtest are still required to judge
 cue contrast and clutter in a crowded fight.

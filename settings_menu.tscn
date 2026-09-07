@@ -108,7 +108,7 @@ text = "Assistance"
 
 [node name="Note" type="Label" parent="Center/Panel/Padding/Content/AssistancePage"]
 layout_mode = 2
-text = "Assists disable records for this saved progress, even after turning them off. Reset progress to restore eligibility. Change only before a run.\n\nGame speed slows all gameplay; the timer shows game time."
+text = "Assists disable records for this saved progress, even after turning them off. Reset progress to restore eligibility. Change only before a run."
 autowrap_mode = 3
 
 [node name="CheapUpgrades" type="CheckButton" parent="Center/Panel/Padding/Content/AssistancePage"]
@@ -134,11 +134,6 @@ autowrap_mode = 3
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Damage taken: 100%"
-
-[node name="GameSpeed" type="Button" parent="Center/Panel/Padding/Content/AssistancePage"]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-text = "Game speed: 100%"
 
 [node name="BackButton" type="Button" parent="Center/Panel/Padding/Content/AssistancePage"]
 custom_minimum_size = Vector2(0, 44)
