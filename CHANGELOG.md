@@ -8,11 +8,17 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+## [0.0.19] - 2026-09-07
+
 ### Added
 
 - Early-run Kindling and Flare pickups reward movement with eight seconds of doubled passive energy or a nearby burst of damage. Walk into their marked circles before the countdown expires.
 - Pickup markers are compact, with a detailed explanation only on the first offer of each type per run. Flare bursts reach 180 pixels and deal 8 damage.
 - Sentinel pickups create a powerful turret for 12 seconds at the collection spot. Stillness pickups freeze enemy movement and attacks for 3 seconds while you and your turrets stay active.
+
+## [0.0.18] - 2026-09-07
+
+- Republished the same game content as v0.0.17, including the new ten-minute Rainkeeper boss. No additional gameplay changes.
 
 ## [0.0.17] - 2026-09-07
 
@@ -47,6 +53,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 - Progress now resets when the game version changes during development. Existing saves are not migrated.
 
 ## [0.0.14] - 2026-09-07
+
+### Added
+
+- Added the bullet-hell finale, desperation phase, and victory records.
 
 ### Fixed
 
