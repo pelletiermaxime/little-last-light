@@ -22,6 +22,15 @@ func new_game() -> Node2D:
 	game.get_node("GameHUD").leaderboard.api_url = ""
 	return game
 
+func confirm() -> void:
+	var event := InputEventJoypadButton.new()
+	event.device = 3
+	event.button_index = JOY_BUTTON_A
+	event.pressed = true
+	root.push_input(event)
+	event.pressed = false
+	root.push_input(event)
+
 func check() -> void:
 	var display = root.get_node("DisplaySettings")
 	var original_path: String = display.settings_path
@@ -88,8 +97,11 @@ func check() -> void:
 	expect(Engine.time_scale == 1 and paused, "Pause menu runs at normal speed")
 	settings.open(null)
 	settings._show_visual(true)
-	settings.visual_page.get_node("ReduceEffects").button_pressed = false
+	settings.visual_page.get_node("ReduceEffects").grab_focus()
+	confirm()
 	expect(not display.reduce_effects, "Visual options remain editable while paused")
+	confirm()
+	expect(display.reduce_effects, "Controller can toggle visual option back on without a double activation")
 	settings.close()
 	settings._show_assistance(true)
 	expect(settings.assistance_page.get_node("DamageTaken").disabled and settings.assistance_page.get_node("GameSpeed").disabled, "Gameplay assists stay locked during run")

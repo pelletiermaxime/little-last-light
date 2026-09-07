@@ -102,7 +102,7 @@ func _input(event: InputEvent) -> void:
 		elif event.is_action_pressed("confirm_placement"):
 			var focused := get_viewport().gui_get_focus_owner()
 			if focused is BaseButton and focused in menu_controls():
-				focused.pressed.emit()
+				_activate_button(focused)
 		elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
 			move_focus(-1)
 		elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
@@ -127,7 +127,7 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("confirm_placement"):
 		var focused := get_viewport().gui_get_focus_owner()
 		if focused is BaseButton and focused in menu_controls():
-			focused.pressed.emit()
+			_activate_button(focused)
 		elif placement:
 			var build = main.get_node("BuildController")
 			build._select_or_place(build.controller_cursor)
@@ -162,6 +162,16 @@ func _input(event: InputEvent) -> void:
 		move_menu_direction(JOY_AXIS_LEFT_Y, 1)
 	get_viewport().set_input_as_handled()
 	refresh_prompts()
+
+
+func _activate_button(button: BaseButton) -> void:
+	if button.disabled:
+		return
+	# Emitting pressed alone skips BaseButton's toggle behavior. The property
+	# setter emits toggled, so menus receive the new state exactly once.
+	if button.toggle_mode:
+		button.button_pressed = not button.button_pressed
+	button.pressed.emit()
 
 
 func _process(delta: float) -> void:

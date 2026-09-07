@@ -18,6 +18,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 - Removed the Done button from Settings; use Escape or controller Back to return.
 
+### Fixed
+
+- Controller confirm now switches Assistance and Visual accessibility toggles on and off correctly, without activating twice on release.
+
 ## [0.0.22] - 2026-09-08
 
 ### Added

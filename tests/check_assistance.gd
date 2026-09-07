@@ -22,6 +22,16 @@ func new_game() -> Node2D:
 	game.get_node("GameHUD").leaderboard.api_url = ""
 	return game
 
+func confirm() -> void:
+	# Godot's south face button maps to Cross on PlayStation controllers.
+	var event := InputEventJoypadButton.new()
+	event.device = 3
+	event.button_index = JOY_BUTTON_A
+	event.pressed = true
+	root.push_input(event)
+	event.pressed = false
+	root.push_input(event)
+
 func check() -> void:
 	var game = new_game()
 	await process_frame
@@ -41,7 +51,13 @@ func check() -> void:
 		await process_frame
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("/tmp/lll-assistance.png")
-	settings.assistance_page.get_node("CheapUpgrades").button_pressed = true
+	var cheap: CheckButton = settings.assistance_page.get_node("CheapUpgrades")
+	cheap.grab_focus()
+	confirm()
+	expect(cheap.button_pressed and game.assists.cheap_upgrades, "Controller confirm toggles on once across press and release")
+	confirm()
+	expect(not cheap.button_pressed and not game.assists.cheap_upgrades, "Second controller confirm toggles off")
+	confirm()
 	expect(game.assists.cheap_upgrades and game.assisted_progress, "UI enables assistance and marks progress")
 	game.banked_energy = 60
 	expect(game.buy_upgrade("damage") and game.damage_level == 1 and game.banked_energy == 0, "Half-price upgrade purchases use displayed cost")
