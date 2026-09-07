@@ -6,6 +6,7 @@ const ENEMY_SCENE: PackedScene = preload("res://enemy.tscn")
 const CHARGER_SCENE: PackedScene = preload("res://charger.tscn")
 const BOSS_SCRIPT = preload("res://water_boss.gd")
 const BOSS_TIME: float = 300.0
+const ENCOUNTER_SCHEDULE = preload("res://encounter_schedule.gd")
 const FIRST_CHARGER_TIME: float = 20.0
 const CHARGER_INTERVAL: float = 8.0
 const MIN_CHARGER_INTERVAL: float = 5.0
@@ -157,6 +158,7 @@ func start_run() -> void:
 	lantern.elapsed = 0.0
 	lantern.brightness = 0
 	lantern.hit_flash = 0.0
+	lantern.reset_ward()
 	lantern._center_in_viewport()
 	spawn_progress = 0.0
 	boss_spawned = false
@@ -178,6 +180,7 @@ func end_run(voluntary: bool = false) -> void:
 	phase = Phase.RESULTS
 	get_tree().paused = false
 	lantern.running = false
+	lantern.reset_ward()
 	# Capture the result before banking clears this run's energy.
 	last_run = {"duration": lantern.elapsed, "energy": lantern.energy, "new_best": lantern.elapsed > best_time, "voluntary": voluntary}
 	best_time = maxf(best_time, lantern.elapsed)
@@ -246,7 +249,12 @@ func _set_turrets_active(active: bool) -> void:
 
 
 func current_spawn_interval() -> float:
-	return maxf(0.12, SPAWN_INTERVALS[lantern.brightness] / (1.0 + lantern.elapsed / PRESSURE_RAMP_SECONDS))
+	var rate := ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(lantern.elapsed)
+	if rate <= 0.0:
+		return INF
+	# Cap the time ramp before all brightness levels collapse to the same rate.
+	var ramp := 1.0 + minf(lantern.elapsed, 100.0) / PRESSURE_RAMP_SECONDS
+	return maxf(0.12, SPAWN_INTERVALS[lantern.brightness] / ramp) / rate
 
 
 func current_enemy_health() -> float:
@@ -268,7 +276,10 @@ func _process(delta: float) -> void:
 	if spawn_progress >= 1.0:
 		spawn_progress -= 1.0
 		_spawn_enemy()
-	if lantern.elapsed >= next_charger_time:
+	if not ENCOUNTER_SCHEDULE.chargers_enabled(lantern.elapsed):
+		# No accumulated charger debt or burst when a recovery ends.
+		next_charger_time = lantern.elapsed
+	elif lantern.elapsed >= next_charger_time:
 		# Brightness changes basic spawn pressure, not the charger's warning cadence.
 		next_charger_time = lantern.elapsed + current_charger_interval()
 		_spawn_charger()
@@ -296,7 +307,7 @@ func _spawn_boss() -> void:
 
 
 func _spawn_enemy() -> void:
-	if phase != Phase.RUNNING:
+	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed):
 		return
 	var enemy := ENEMY_SCENE.instantiate() as Node2D
 	enemy.target = lantern
@@ -312,7 +323,7 @@ func current_charger_interval() -> float:
 
 
 func _spawn_charger() -> void:
-	if phase != Phase.RUNNING or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
+	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed) or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
 		return
 	var charger := CHARGER_SCENE.instantiate() as Node2D
 	charger.target = lantern

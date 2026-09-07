@@ -139,8 +139,7 @@ func check() -> void:
 	scene._process(0.0)
 	expect(get_nodes_in_group("chargers").size() == 1, "High brightness does not accelerate charger cadence")
 	for attempt in range(4):
-		scene.lantern.elapsed = scene.next_charger_time
-		scene._process(0.0)
+		scene._spawn_charger()
 	expect(get_nodes_in_group("chargers").size() == 4, "At most four chargers coexist")
 	scene.lantern.elapsed = 70.0
 	expect(is_equal_approx(scene.current_charger_interval(), 6.5), "Charger cadence ramps gradually")

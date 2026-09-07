@@ -57,7 +57,7 @@ func check() -> void:
 	expect(not build.placing, "Build and move locked during combat")
 	var initial: float = game.current_spawn_interval()
 	lantern._process(20)
-	expect(is_equal_approx(game.current_spawn_interval(), initial / 2), "Pressure doubles at 20 seconds")
+	expect(is_equal_approx(game.current_spawn_interval(), initial * 0.65 / 2), "20 seconds combines the time ramp with the pressure period")
 	lantern._process(5)
 	lantern.brightness = 2
 	expect(game.current_spawn_interval() < initial / 2, "Brightness adds pressure")
