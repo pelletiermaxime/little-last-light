@@ -22,9 +22,10 @@ An early arrival uses early-game swarm pressure, not simulated ten-minute balanc
 
 ## Candidates
 
-- **Rainkeeper:** a fixed ripple marks your position for 1.2 seconds. Leave before
-  the filled pool deals damage for two seconds, then return to boost turrets during
-  its recovery. The outlined footprint stays in place and never tracks you.
+- **Rainkeeper:** three consecutive strikes each mark your position for 0.85 seconds.
+  The 100 px-radius pools linger for three seconds, restricting your return route.
+  Keep moving through the burst, then use its 1.5-second recovery to reposition.
+  Every outline locks in place; overlapping pools deal damage only once.
 - **Tidekeeper:** an edge warning has two gold markers around a wide opening.
   Move toward that opening, then cross the slow droplet front. Horizontal and
   vertical fronts alternate; only one front is active at once. The warning allows

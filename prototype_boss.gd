@@ -6,10 +6,13 @@ enum Attack { ARRIVAL, RECOVERY, WARNING, ACTIVE, STALK }
 
 const DROPLET = preload("res://enemy_droplet.gd")
 const NAMES := ["THE RAINKEEPER", "THE TIDEKEEPER", "THE WICKWATCHER"]
-const POOL_RADIUS := 55.0
-const POOL_WARNING := 1.2
-const POOL_DURATION := 2.0
+const POOL_RADIUS := 100.0
+const POOL_WARNING := 0.85
+const POOL_DURATION := 3.0
 const POOL_DPS := 8.0
+const RAIN_STRIKES := 3
+const RAIN_STRIKE_INTERVAL := 0.35
+const RAIN_RECOVERY := 1.5
 const FRONT_SPEED := 150.0
 const GAP_WIDTH := 150.0
 const RUSH_SPEED := 360.0
@@ -21,6 +24,8 @@ var attack: Attack = Attack.ARRIVAL
 var remaining := 3.0
 var arrival_remaining := 3.0
 var mark := Vector2.ZERO
+var rain_strikes := 0
+var rain_pools: Array[Dictionary] = []
 var charge := 0.0
 var vertical_front := false
 var front_forward := true
@@ -59,7 +64,7 @@ func attack_caption() -> String:
 		return "Incoming!"
 	match kind:
 		Kind.RAINKEEPER:
-			if attack == Attack.WARNING: return "Rain marked · move out"
+			if attack == Attack.WARNING: return "Rain %d/%d · keep moving" % [rain_strikes + 1, RAIN_STRIKES]
 			if attack == Attack.ACTIVE: return "Rain falling · keep clear"
 			return "Recovering · return to your turrets"
 		Kind.TIDEKEEPER:
@@ -92,12 +97,12 @@ func _process(delta: float) -> void:
 		else:
 			step = minf(step, remaining)
 		var movement_time := _consume_slow(step)
+		if kind == Kind.RAINKEEPER:
+			_tick_rain(step)
 		if attack == Attack.RECOVERY or attack == Attack.STALK:
 			_drift(movement_time)
 		elif attack == Attack.ACTIVE:
-			if kind == Kind.RAINKEEPER and target.global_position.distance_to(mark) <= POOL_RADIUS + 10.0:
-				target.take_damage(POOL_DPS * step)
-			elif kind == Kind.WICKWATCHER:
+			if kind == Kind.WICKWATCHER:
 				_rush(step)
 				if attack == Attack.RECOVERY:
 					time_left -= step
@@ -127,6 +132,7 @@ func _advance() -> void:
 			if kind == Kind.WICKWATCHER:
 				attack = Attack.STALK
 			else:
+				rain_strikes = 0
 				attack = Attack.WARNING
 				mark = target.global_position
 				remaining = POOL_WARNING
@@ -135,18 +141,38 @@ func _advance() -> void:
 		Attack.WARNING:
 			attack = Attack.ACTIVE
 			match kind:
-				Kind.RAINKEEPER: remaining = POOL_DURATION
+				Kind.RAINKEEPER:
+					rain_pools.append({"point": mark, "remaining": POOL_DURATION})
+					rain_strikes += 1
+					remaining = RAIN_STRIKE_INTERVAL
 				Kind.TIDEKEEPER:
 					_fire_front()
 					remaining = (front_travel + 64.0) / FRONT_SPEED
 				Kind.WICKWATCHER: remaining = RUSH_DURATION
 		Attack.ACTIVE:
-			_recover()
+			if kind == Kind.RAINKEEPER and rain_strikes < RAIN_STRIKES:
+				mark = target.global_position
+				attack = Attack.WARNING
+				remaining = POOL_WARNING
+			else:
+				_recover()
+
+
+func _tick_rain(step: float) -> void:
+	# Old pools obstruct the return route, but overlap never multiplies damage.
+	var exposure := 0.0
+	for pool in rain_pools:
+		if target.global_position.distance_to(pool.point) <= POOL_RADIUS + 10.0:
+			exposure = maxf(exposure, minf(step, pool.remaining))
+		pool.remaining -= step
+	rain_pools = rain_pools.filter(func(pool: Dictionary): return pool.remaining > 0.0)
+	if exposure > 0.0:
+		target.take_damage(POOL_DPS * exposure)
 
 
 func _recover() -> void:
 	attack = Attack.RECOVERY
-	remaining = 2.0
+	remaining = RAIN_RECOVERY if kind == Kind.RAINKEEPER else 2.0
 	charge = 0.0
 	_retire_projectiles()
 
@@ -216,6 +242,7 @@ func take_damage(amount: float) -> void:
 	if attack == Attack.ARRIVAL: return
 	super.take_damage(amount)
 	if health <= 0.0:
+		rain_pools.clear()
 		_retire_projectiles()
 
 
@@ -225,17 +252,18 @@ func _draw() -> void:
 		draw_circle(Vector2.ZERO, 32, Color("#246780"))
 		draw_circle(Vector2(-8, -6), 23, Color("#388fa3"))
 		draw_circle(Vector2(-12, -13), 8, pale)
-		if attack == Attack.WARNING or attack == Attack.ACTIVE:
+		for pool in rain_pools:
+			var point := to_local(pool.point)
+			var fade: float = minf(1.0, pool.remaining / 0.5)
+			draw_circle(point, POOL_RADIUS, Color(0.12, 0.5, 0.66, 0.48 * fade))
+			draw_arc(point, POOL_RADIUS, 0, TAU, 64, Color(pale, fade), 2.0, true)
+			draw_arc(point, 35, 0, PI, 32, Color(pale, fade), 2.0, true)
+		if attack == Attack.WARNING:
 			var point := to_local(mark)
-			if attack == Attack.WARNING:
-				draw_arc(point, POOL_RADIUS, 0, TAU, 64, pale, 3.0, true)
-				draw_arc(point, POOL_RADIUS * remaining / POOL_WARNING, 0, TAU, 64, pale, 2.0, true)
-				draw_dashed_line(Vector2.ZERO, point, Color(pale, 0.45), 1.5, 10.0)
-				draw_circle(point + Vector2(0, -70 * remaining / POOL_WARNING), 5.0, pale)
-			else:
-				draw_circle(point, POOL_RADIUS, Color(0.12, 0.5, 0.66, 0.48))
-				draw_arc(point, POOL_RADIUS, 0, TAU, 64, pale, 2.0, true)
-				draw_arc(point, 22, 0, PI, 32, pale, 2.0, true)
+			draw_arc(point, POOL_RADIUS, 0, TAU, 64, pale, 3.0, true)
+			draw_arc(point, POOL_RADIUS * remaining / POOL_WARNING, 0, TAU, 64, pale, 2.0, true)
+			draw_dashed_line(Vector2.ZERO, point, Color(pale, 0.45), 1.5, 10.0)
+			draw_circle(point + Vector2(0, -70 * remaining / POOL_WARNING), 5.0, pale)
 	elif kind == Kind.TIDEKEEPER:
 		draw_arc(Vector2.ZERO, 30, 0.2, TAU - 0.2, 48, Color("#388fa3"), 17.0, true)
 		if attack == Attack.WARNING:
