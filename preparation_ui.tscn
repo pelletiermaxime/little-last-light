@@ -71,6 +71,13 @@ size_flags_horizontal = 3
 text = "New turret"
 visible = false
 
+[node name="PulseButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Slow turret"
+visible = false
+
 [node name="CancelButton" type="Button" parent="Card/Padding/Content/Actions"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
@@ -90,6 +97,27 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Refund layout"
+visible = false
+
+[node name="SlowRateButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Activation rate"
+visible = false
+
+[node name="SlowStrengthButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Slow strength"
+visible = false
+
+[node name="SlowDurationButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Slow duration"
 visible = false
 
 [node name="DamageButton" type="Button" parent="Card/Padding/Content/Actions"]
@@ -112,6 +140,18 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Health"
 visible = false
+
+[node name="UpgradePanel" type="MarginContainer" parent="Card/Padding/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+visible = false
+
+[node name="Groups" type="GridContainer" parent="Card/Padding/Content/UpgradePanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 12
+columns = 3
 
 [node name="RecordsHost" type="VBoxContainer" parent="Card/Padding/Content"]
 layout_mode = 2

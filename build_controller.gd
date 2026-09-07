@@ -1,6 +1,8 @@
 extends Node2D
 
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
+const PULSE_TURRET_SCENE: PackedScene = preload("res://pulse_turret.tscn")
+const PULSE_COST_PREMIUM: float = 20.0
 const BASE_TURRET_COST: float = 20.0
 const EXTRA_TURRET_COST: float = 10.0
 const PLACEMENT_MARGIN: float = 20.0
@@ -12,6 +14,8 @@ const TURRET_SPACING: float = 36.0
 var placing: bool = false
 var preview: Node2D
 var build_button: Button
+var pulse_button: Button
+var placement_type: String = "damage"
 var cancel_button: Button
 var start_button: Button
 var reset_button: Button
@@ -33,12 +37,14 @@ func _ready() -> void:
 	preview = TURRET_SCENE.instantiate()
 	preview.process_mode = Node.PROCESS_MODE_DISABLED
 	preview.remove_from_group("turrets")
+	main.configure_turret(preview)
 	add_child(preview)
 	preview.hide()
 	placement_hint = $PlacementUI/PlacementHint
 	var preparation := main.get_node("PreparationUI")
 	var actions := preparation.get_node("Card/Padding/Content/Actions")
 	build_button = actions.get_node("BuildButton")
+	pulse_button = actions.get_node("PulseButton")
 	cancel_button = actions.get_node("CancelButton")
 	start_button = actions.get_node("StartButton")
 	sell_button = actions.get_node("SellButton")
@@ -48,6 +54,7 @@ func _ready() -> void:
 	health_button = actions.get_node("HealthButton")
 	quit_button = preparation.get_node("Card/Padding/Content/Footer/QuitButton")
 	build_button.pressed.connect(begin_placement)
+	pulse_button.pressed.connect(func(): begin_placement("pulse"))
 	cancel_button.pressed.connect(cancel_placement)
 	start_button.pressed.connect(main.start_run)
 	sell_button.pressed.connect(sell_selected_turret)
@@ -79,7 +86,7 @@ func _process(delta: float) -> void:
 		var valid := reason.is_empty()
 		preview.modulate = Color(0.6, 1.0, 0.7, 0.65) if valid else Color(1.0, 0.3, 0.3, 0.65)
 		var confirm: String = main.get_node("Controls").hint("confirm_placement") if using_controller else "Click"
-		placement_hint.text = ((confirm + " to move here · Free") if is_instance_valid(selected_turret) else (confirm + " to build · %d energy" % int(turret_cost()))) if valid else reason
+		placement_hint.text = ((confirm + " to move here · Free") if is_instance_valid(selected_turret) else (confirm + " to build · %d energy" % int(turret_cost(placement_type)))) if valid else reason
 		placement_hint.modulate = Color("#a5edb7") if valid else Color("#ffb4a8")
 		placement_hint.reset_size()
 		var mouse := get_canvas_transform() * _cursor_position()
@@ -87,9 +94,9 @@ func _process(delta: float) -> void:
 		placement_hint.position = (mouse + Vector2(20, 24)).clamp(Vector2(8, 8), limit)
 
 
-func turret_cost() -> float:
+func turret_cost(kind: String = "damage") -> float:
 	var purchased := maxi(0, get_tree().get_nodes_in_group("turrets").size() - 1)
-	return BASE_TURRET_COST + purchased * EXTRA_TURRET_COST
+	return BASE_TURRET_COST + purchased * EXTRA_TURRET_COST + (PULSE_COST_PREMIUM if kind == "pulse" else 0.0)
 
 
 func layout_refund() -> float:
@@ -173,6 +180,7 @@ func _update_interface() -> void:
 	cancel_button.text = "Cancel (%s)" % ("Back" if using_controller else "Esc")
 	start_button.text = "Start run (%s)" % ("Menu" if using_controller else "Enter")
 	build_button.disabled = placing or main.banked_energy < turret_cost()
+	pulse_button.disabled = placing or main.banked_energy < turret_cost("pulse")
 	var preparation := main.get_node_or_null("PreparationUI")
 	if preparation != null and preparation.is_node_ready():
 		preparation.refresh()
@@ -206,6 +214,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("build_turret"):
 		begin_placement()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("build_pulse_turret"):
+		begin_placement("pulse")
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("reset_layout"):
 		reset_layout()
 		get_viewport().set_input_as_handled()
@@ -214,24 +225,24 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("upgrade_damage"):
 		if not placing:
-			main.get_node("PreparationUI").open_view(2)
+			main.get_node("PreparationUI").open_view(main.get_node("PreparationUI").View.UPGRADES)
 		main.buy_upgrade("damage")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("upgrade_health"):
 		if not placing:
-			main.get_node("PreparationUI").open_view(2)
+			main.get_node("PreparationUI").open_view(main.get_node("PreparationUI").View.UPGRADES)
 		main.buy_upgrade("health")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("upgrade_fire_rate"):
 		if not placing:
-			main.get_node("PreparationUI").open_view(2)
+			main.get_node("PreparationUI").open_view(main.get_node("PreparationUI").View.UPGRADES)
 		main.buy_upgrade("fire_rate")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("cancel_placement"):
 		if placing:
 			cancel_placement()
 		else:
-			main.get_node("PreparationUI").open_view(0)
+			main.get_node("PreparationUI").go_back()
 		get_viewport().set_input_as_handled()
 	# Focused buttons confirm on release; do not start a run on their key press.
 	elif event.is_action_pressed("start_run") and get_viewport().gui_get_focus_owner() == null:
@@ -266,12 +277,15 @@ func _select_or_place(point: Vector2) -> void:
 				break
 
 
-func begin_placement() -> void:
+func begin_placement(kind: String = "damage") -> void:
+	if kind not in ["damage", "pulse"]:
+		return
 	if main.phase == main.Phase.PREPARATION:
 		main.get_node("PreparationUI").open_view(1)
-	if placing or main.phase != main.Phase.PREPARATION or main.banked_energy < turret_cost():
+	if placing or main.phase != main.Phase.PREPARATION or main.banked_energy < turret_cost(kind):
 		return
 	selected_turret = null
+	placement_type = kind
 	_show_preview()
 
 
@@ -280,11 +294,17 @@ func begin_move(turret: Node2D) -> void:
 		return
 	main.get_node("PreparationUI").open_view(1)
 	selected_turret = turret
+	placement_type = turret.turret_type
 	selected_turret.hide()
 	_show_preview()
 
 
 func _show_preview() -> void:
+	preview.free()
+	preview = (PULSE_TURRET_SCENE if placement_type == "pulse" else TURRET_SCENE).instantiate()
+	preview.process_mode = Node.PROCESS_MODE_DISABLED
+	preview.remove_from_group("turrets")
+	add_child(preview)
 	placing = true
 	preview.global_position = _cursor_position()
 	preview.show()
@@ -318,10 +338,10 @@ func try_place(point: Vector2) -> bool:
 	if is_instance_valid(selected_turret):
 		selected_turret.global_position = point
 	else:
-		var cost := turret_cost()
+		var cost := turret_cost(placement_type)
 		if main.banked_energy < cost:
 			return false
-		var turret := TURRET_SCENE.instantiate() as Node2D
+		var turret := (PULSE_TURRET_SCENE if placement_type == "pulse" else TURRET_SCENE).instantiate() as Node2D
 		turret.purchase_cost = cost
 		main.configure_turret(turret)
 		turret.process_mode = Node.PROCESS_MODE_DISABLED

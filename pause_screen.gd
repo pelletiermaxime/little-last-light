@@ -24,6 +24,8 @@ func _ready() -> void:
 	end_run_button.pressed.connect(end_run)
 	settings_button.pressed.connect(func(): main.get_node("SettingsScreen").open(settings_button))
 	get_viewport().size_changed.connect(_layout)
+	# Wrapped labels settle after container layout; refit when their height changes.
+	$Overlay/Card.minimum_size_changed.connect(_layout.call_deferred)
 	_layout.call_deferred()
 	overlay.hide()
 

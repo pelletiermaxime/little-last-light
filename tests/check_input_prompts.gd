@@ -49,7 +49,7 @@ func check() -> void:
 	assert(build.build_button.icon != null and not prep.back_button.text.contains("Esc"))
 	# A synthetic, disconnected device exercises the addon's default fallback.
 	assert(build.build_button.icon == prompts.parse_path("build_turret"))
-	for action in ["build_turret", "cancel_placement", "toggle_build_controls", "sell_turret", "cycle_brightness", "pause_run", "confirm_placement"]:
+	for action in ["build_turret", "build_pulse_turret", "cancel_placement", "toggle_build_controls", "sell_turret", "cycle_brightness", "pause_run", "confirm_placement"]:
 		var icon: Texture2D = controls.icon_for(action)
 		assert(icon != null and icon.resource_path.begins_with("res://addons/controller_icons/assets/"), "Every controller prompt must use addon artwork: " + action)
 	assert(build.cancel_button.icon == prompts.parse_path("cancel_placement"))
@@ -110,6 +110,10 @@ func check() -> void:
 	assert(not prep.controls_hidden and build.placing)
 	press(JOY_BUTTON_B)
 	assert(not build.placing and prep.view == prep.View.PLACEMENT)
+	press(JOY_BUTTON_LEFT_SHOULDER)
+	assert(build.placing and build.preview.turret_type == "pulse", "L1/LB begins pulse placement")
+	assert(build.pulse_button.icon == prompts.parse_path("build_pulse_turret"), "Pulse shows mapped shoulder icon")
+	press(JOY_BUTTON_B)
 	var cursor: Vector2 = build.controller_cursor
 	press(JOY_BUTTON_DPAD_DOWN)
 	assert(root.gui_get_focus_owner() != null, "D-pad selects toolbar")
@@ -132,6 +136,8 @@ func check() -> void:
 	press(JOY_BUTTON_LEFT_SHOULDER)
 	press(JOY_BUTTON_RIGHT_SHOULDER)
 	assert(scene.damage_level == 1 and scene.fire_rate_level == 0, "Old shoulder shortcuts cannot purchase upgrades")
+	assert(build.placing and build.preview.turret_type == "pulse", "Left shoulder opens pulse placement from preparation menus")
+	press(JOY_BUTTON_B)
 	# Keyboard still edits a name and restores keyboard prompts.
 	var key := InputEventKey.new()
 	key.physical_keycode = KEY_Z

@@ -96,6 +96,32 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Done"
 
+[node name="ResetProgressButton" type="Button" parent="Center/Panel/Padding/Content"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Reset all progress…"
+visible = false
+
+[node name="ResetConfirmation" type="VBoxContainer" parent="Center/Panel/Padding/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+visible = false
+
+[node name="Warning" type="Label" parent="Center/Panel/Padding/Content/ResetConfirmation"]
+layout_mode = 2
+text = "Start over? This clears saved energy, turrets, upgrades, and local records.\n\nAudio and display settings stay unchanged. Already published online records remain.\n\nThis cannot be undone."
+autowrap_mode = 3
+
+[node name="CancelButton" type="Button" parent="Center/Panel/Padding/Content/ResetConfirmation"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Keep my progress"
+
+[node name="ConfirmButton" type="Button" parent="Center/Panel/Padding/Content/ResetConfirmation"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Reset all progress"
+
 [connection signal="pressed" from="Center/Panel/Padding/Content/VolumeButton" to="." method="_on_volume_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/SoundButton" to="." method="_on_sound_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/DisplayModeButton" to="." method="_on_display_mode_button_pressed"]
