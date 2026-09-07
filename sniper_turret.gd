@@ -3,9 +3,12 @@ extends "res://turret.gd"
 const VISUAL = preload("res://sniper_visual.gd")
 const STAT_MULTIPLIER: float = 3.0
 const SNIPER_RANGE: float = 360.0
+const TURN_SPEED: float = TAU
 var visual: Node2D
 var aim_target: Node2D
 var aim_angle: float = 0.0
+var target_search_remaining: float = 0.0
+var fired_this_frame: bool = false
 
 
 func _init() -> void:
@@ -22,6 +25,16 @@ func _ready() -> void:
 
 
 func _find_target() -> Node2D:
+	aim_target = _furthest_enemy()
+	target_search_remaining = IDLE_SEARCH_INTERVAL
+	if aim_target != null:
+		# The shot must face its actual hit, even if priority changed since aiming.
+		aim_angle = (aim_target.global_position - global_position).angle()
+		fired_this_frame = true
+	return aim_target
+
+
+func _furthest_enemy() -> Node2D:
 	var furthest: Node2D = null
 	var furthest_distance_squared: float = -1.0
 	var range_squared := attack_range * attack_range
@@ -34,19 +47,23 @@ func _find_target() -> Node2D:
 		if distance_squared <= range_squared and distance_squared > furthest_distance_squared:
 			furthest = enemy
 			furthest_distance_squared = distance_squared
-	aim_target = furthest
-	if furthest != null:
-		# Capture the angle before take_damage can remove a killed enemy.
-		aim_angle = (furthest.global_position - global_position).angle()
 	return furthest
 
 
 func _process(delta: float) -> void:
+	fired_this_frame = false
+	target_search_remaining = maxf(0.0, target_search_remaining - delta)
+	var flash_remaining := shot_time
 	super._process(delta)
-	# Keep the aperture aligned with the actual flash, then follow the surviving
-	# target while recharging. The next shot always reselects the furthest enemy.
-	if shot_time <= 0.0 and is_instance_valid(aim_target) and not aim_target.is_queued_for_deletion():
-		aim_angle = (aim_target.global_position - global_position).angle()
+	# Select after damage so a just-killed enemy cannot hold the reload aim.
+	# Between shots, poll at the same bounded rate as the base turret's idle scan.
+	if fired_this_frame or target_search_remaining <= 0.0:
+		aim_target = _furthest_enemy()
+		target_search_remaining = IDLE_SEARCH_INTERVAL
+	# The flash stays aligned with the shot; use only time after its expiry to turn.
+	if shot_time <= 0.0 and is_instance_valid(aim_target) and not aim_target.is_queued_for_deletion() and aim_target.health > 0.0 and global_position.distance_squared_to(aim_target.global_position) <= attack_range * attack_range:
+		var desired_angle := (aim_target.global_position - global_position).angle()
+		aim_angle = rotate_toward(aim_angle, desired_angle, TURN_SPEED * maxf(0.0, delta - flash_remaining))
 	queue_redraw()
 
 
