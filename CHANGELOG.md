@@ -18,7 +18,7 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [0.0.18] - 2026-09-07
 
-- No player-facing changes recorded for this release.
+- Republished the same game content as v0.0.17, including the new ten-minute Rainkeeper boss. No additional gameplay changes.
 
 ## [0.0.17] - 2026-09-07
 
