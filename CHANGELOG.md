@@ -8,8 +8,6 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
-## [0.0.19] - 2026-09-07
-
 ### Added
 
 - The placement screen now shows each turret's base damage, range and firing interval, plus targeting or slowing effects, below its purchase button. Whole-number stats omit unnecessary decimals.
