@@ -9,6 +9,10 @@ const CONTACT_TOLERANCE: float = 0.1
 @export var turn_speed: float = 5.0 * PI / 12.0
 @export var contact_damage_per_second: float = 15.0
 @export var max_health: float = 1.0
+@export_range(0.0, 1.0) var slow_susceptibility: float = 1.0
+
+var slow_remaining: float = 0.0
+var slow_factor: float = 1.0
 
 var health: float
 
@@ -29,7 +33,41 @@ func _ready() -> void:
 	
 
 func _process(delta: float) -> void:
-	if not is_instance_valid(target) or delta <= 0.0:
+	if delta <= 0.0 or is_queued_for_deletion():
+		return
+	# Split expiry frames so contact damage uses actual time at each speed.
+	var slowed_step := minf(delta, slow_remaining)
+	if slowed_step > 0.0:
+		_move(slowed_step, slow_factor)
+	_consume_slow(delta)
+	if delta > slowed_step:
+		_move(delta - slowed_step, 1.0)
+
+
+func apply_slow(factor: float, duration: float) -> void:
+	if health <= 0.0 or is_queued_for_deletion() or duration <= 0.0:
+		return
+	var effective := lerpf(1.0, clampf(factor, 0.0, 1.0), slow_susceptibility)
+	if effective >= 1.0:
+		return
+	slow_factor = minf(slow_factor, effective)
+	slow_remaining = maxf(slow_remaining, duration)
+	modulate = Color("#a0f4d4")
+
+
+func _consume_slow(delta: float) -> float:
+	# Return movement time for subclasses; attack clocks continue at normal speed.
+	var slowed_step := minf(delta, slow_remaining)
+	var movement_time := slowed_step * slow_factor + delta - slowed_step
+	slow_remaining = maxf(0.0, slow_remaining - delta)
+	if slow_remaining <= 0.0 and slow_factor != 1.0:
+		slow_factor = 1.0
+		modulate = Color.WHITE
+	return movement_time
+
+
+func _move(delta: float, movement_factor: float) -> void:
+	if not is_instance_valid(target) or is_queued_for_deletion():
 		return
 
 	var distance: float = global_position.distance_to(target.global_position)
@@ -48,7 +86,7 @@ func _process(delta: float) -> void:
 		heading = desired
 	var max_turn := maxf(0.0, turn_speed) * delta
 	heading = heading.rotated(clampf(heading.angle_to(desired), -max_turn, max_turn)).normalized()
-	var movement := heading * speed * delta
+	var movement := heading * speed * movement_factor * delta
 	var fraction := _first_contact_fraction(movement)
 	global_position += movement * fraction
 	# Only the part of the frame spent touching the lantern deals damage.

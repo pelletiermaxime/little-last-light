@@ -29,13 +29,14 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not is_instance_valid(target) or delta <= 0.0 or is_queued_for_deletion():
 		return
+	var movement_time := _consume_slow(delta)
 	if state == State.APPROACH:
 		var distance := global_position.distance_to(target.global_position)
 		heading = global_position.direction_to(target.global_position)
 		if heading.is_zero_approx():
 			heading = Vector2.DOWN
 		if distance > trigger_distance:
-			global_position += heading * minf(approach_speed * delta, distance - trigger_distance)
+			global_position += heading * minf(approach_speed * movement_time, distance - trigger_distance)
 			queue_redraw()
 			return
 		# Track slowly first, then hold the final aim before charging.

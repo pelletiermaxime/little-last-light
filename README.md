@@ -59,6 +59,8 @@ The results screen offers to publish a new survival record with a username; pend
 - [The Drencher water boss (M11)](docs/milestone-11.md)
 - [Full arena and preparation cards (M12)](docs/milestone-12.md)
 - [Sound effects and settings (M13)](docs/milestone-13.md)
+- [Slow support turret (M14)](docs/milestone-14.md)
+- [M14–M16 shared roadmap](docs/roadmap-m14-m16.md)
 - [Audio and display settings](docs/settings.md)
 - [Editing menu scenes and the shared Theme](docs/menu-scenes.md)
 - [Design concept](docs/concept.html) — open this HTML file in a browser.

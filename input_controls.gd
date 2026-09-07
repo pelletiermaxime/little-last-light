@@ -28,6 +28,9 @@ func _ready() -> void:
 	var settings = main.get_node("SettingsScreen")
 	# These actions play their own cue after validating the game action.
 	get_node("/root/GameAudio").bind_buttons(main, [prep.place_button, prep.upgrades_button, prep.records_button, prep.back_button, prep.hide_button, prep.show_button, build.start_button, build.cancel_button, build.damage_button, build.rate_button, build.health_button, pause.resume_button, pause.end_run_button, pause.settings_button, prep.settings_button, settings.volume_button, settings.mute_button, settings.display_mode_button, settings.fps_button, settings.vsync_button, settings.done_button, results.page_button, results.continue_button])
+	# The autoload remembers the device across scene resets. A new BuildController
+	# must inherit it even when the next controller event does not change devices.
+	_input_type_changed(prompts.get_last_input_type(), prompts._last_controller)
 
 
 func using_controller() -> bool:
@@ -74,15 +77,16 @@ func _input(event: InputEvent) -> void:
 		elif _menu_open():
 			# Keep the active axis until released. Neutral/jitter events from
 			# the other axis must not reset the held direction's repeat delay.
+			var previous_axis := menu_axis
 			if menu_axis == -1 or absf(menu_stick[menu_axis]) <= 0.5:
 				menu_axis = JOY_AXIS_LEFT_X if absf(menu_stick.x) > absf(menu_stick.y) else JOY_AXIS_LEFT_Y
 			var value: float = menu_stick[menu_axis]
 			var direction := int(signf(value)) if absf(value) > 0.5 else 0
-			if direction != repeat_direction:
+			if direction != repeat_direction or menu_axis != previous_axis:
 				repeat_direction = direction
 				repeat_left = 0.35
 				if direction != 0:
-					move_focus(direction)
+					move_menu_direction(menu_axis, direction)
 			get_viewport().set_input_as_handled()
 		return
 	if not event.pressed:
@@ -119,7 +123,7 @@ func _input(event: InputEvent) -> void:
 		elif main.get_node("BuildController").placing:
 			main.get_node("BuildController").cancel_placement()
 		else:
-			preparation.open_view(preparation.View.HOME)
+			preparation.go_back()
 	elif event.is_action_pressed("confirm_placement"):
 		var focused := get_viewport().gui_get_focus_owner()
 		if focused is BaseButton and focused in menu_controls():
@@ -132,6 +136,9 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("build_turret") and main.phase == main.Phase.PREPARATION and not get_tree().paused:
 		main.get_node("BuildController").begin_placement()
 		_release_focus()
+	elif event.is_action_pressed("build_pulse_turret") and main.phase == main.Phase.PREPARATION and not get_tree().paused:
+		main.get_node("BuildController").begin_placement("pulse")
+		_release_focus()
 	elif event.is_action_pressed("toggle_build_controls") and placement:
 		preparation._toggle_controls()
 		_release_focus()
@@ -139,10 +146,14 @@ func _input(event: InputEvent) -> void:
 		main.get_node("BuildController").sell_selected_turret()
 	elif event.is_action_pressed("start_run") and main.phase == main.Phase.PREPARATION:
 		main.start_run()
-	elif event.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT]:
-		move_focus(-1)
-	elif event.button_index in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
-		move_focus(1)
+	elif event.button_index == JOY_BUTTON_DPAD_LEFT:
+		move_menu_direction(JOY_AXIS_LEFT_X, -1)
+	elif event.button_index == JOY_BUTTON_DPAD_RIGHT:
+		move_menu_direction(JOY_AXIS_LEFT_X, 1)
+	elif event.button_index == JOY_BUTTON_DPAD_UP:
+		move_menu_direction(JOY_AXIS_LEFT_Y, -1)
+	elif event.button_index == JOY_BUTTON_DPAD_DOWN:
+		move_menu_direction(JOY_AXIS_LEFT_Y, 1)
 	get_viewport().set_input_as_handled()
 	refresh_prompts()
 
@@ -162,7 +173,7 @@ func _process(delta: float) -> void:
 			return
 		repeat_left -= delta
 		if repeat_left <= 0:
-			move_focus(repeat_direction)
+			move_menu_direction(menu_axis, repeat_direction)
 			repeat_left = 0.14
 
 
@@ -192,7 +203,9 @@ func menu_controls() -> Array[Control]:
 func _collect_controls(node: Node, controls: Array[Control]) -> void:
 	if node is Control and not node.is_visible_in_tree():
 		return
-	if node is BaseButton and not node.disabled and node.focus_mode == Control.FOCUS_ALL or node is LineEdit:
+	# Unavailable upgrades remain navigation stops so gaps cannot trap focus.
+	# Purchase validation in Main still rejects capped or unaffordable actions.
+	if node is BaseButton and (not node.disabled or node.has_meta("upgrade_kind")) and node.focus_mode == Control.FOCUS_ALL or node is LineEdit:
 		controls.append(node)
 	for child in node.get_children():
 		_collect_controls(child, controls)
@@ -206,6 +219,22 @@ func move_focus(direction: int) -> void:
 	index = posmod(index + direction, controls.size()) if index >= 0 else (0 if direction > 0 else controls.size() - 1)
 	controls[index].grab_focus()
 	refresh_prompts()
+
+
+func move_menu_direction(axis: int, direction: int) -> void:
+	var prep = main.get_node("PreparationUI")
+	var spatial: bool = main.phase == main.Phase.PREPARATION and prep.view == prep.View.UPGRADES and not main.get_node("SettingsScreen").is_open() and not get_tree().paused
+	var focused := get_viewport().gui_get_focus_owner()
+	if not spatial or focused == null:
+		move_focus(direction)
+		return
+	# Use the same directional neighbors as keyboard arrows, including the
+	# explicit column links on the compact upgrade page.
+	var side := (SIDE_LEFT if direction < 0 else SIDE_RIGHT) if axis == JOY_AXIS_LEFT_X else (SIDE_TOP if direction < 0 else SIDE_BOTTOM)
+	var next := focused.find_valid_focus_neighbor(side)
+	if next != null and next in menu_controls():
+		next.grab_focus()
+		refresh_prompts()
 
 
 func hint(action: String) -> String:
@@ -228,7 +257,7 @@ func refresh_prompts() -> void:
 	var build = main.get_node("BuildController")
 	for button in [prep.place_button, prep.upgrades_button, prep.records_button, prep.back_button, build.start_button, build.quit_button, build.reset_button, build.damage_button, build.rate_button, build.health_button]:
 		decorate(button, "confirm_placement")
-	for pair in [[build.build_button, "build_turret"], [build.cancel_button, "cancel_placement"], [prep.hide_button, "toggle_build_controls"], [prep.show_button, "toggle_build_controls"], [build.sell_button, "sell_turret"]]:
+	for pair in [[build.build_button, "build_turret"], [build.pulse_button, "build_pulse_turret"], [build.cancel_button, "cancel_placement"], [prep.hide_button, "toggle_build_controls"], [prep.show_button, "toggle_build_controls"], [build.sell_button, "sell_turret"]]:
 		decorate(pair[0], pair[1])
 	for button in main.get_node("GameHUD").leaderboard.find_children("*", "Button", true, false):
 		decorate(button, "confirm_placement")

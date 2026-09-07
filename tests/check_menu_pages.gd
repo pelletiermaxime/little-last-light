@@ -31,7 +31,7 @@ func check() -> void:
 	scene.end_run(true)
 	var results = scene.get_node("ResultsScreen")
 	await settle()
-	assert(scene.find_children("*", "ScrollContainer", true, false).is_empty(), "Game menus have no scroll containers")
+	assert(scene.find_children("*", "ScrollContainer", true, false).is_empty(), "All upgrade groups fit without scrolling")
 	visible_inside(results.continue_button)
 	visible_inside(results.page_button)
 	assert(not panel.is_visible_in_tree(), "Summary has its own page")
@@ -70,13 +70,16 @@ func check() -> void:
 	assert(panel.scores_rows.get_child_count() == 1 and panel.next_page.disabled)
 	results.continue_button.pressed.emit()
 	var prep = scene.get_node("PreparationUI")
-	for view in [0, 1, 2, 3]:
+	for view in prep.View.values():
 		prep.open_view(view)
 		await settle()
 		visible_inside(prep.card)
 		for button in controls.menu_controls():
+			if view == prep.View.UPGRADES:
+				button.grab_focus()
+				await settle()
 			visible_inside(button)
 	scene.free()
 	DirAccess.remove_absolute(path)
-	print("PASS: no scroll containers, visible results footer, submission and ranking pages, controller pagination, all preparation menus fit at 640x480")
+	print("PASS: grouped upgrades fit without scrolling, visible results footer, ranking pages, controller pagination, all preparation menus fit at 640x480")
 	quit()
