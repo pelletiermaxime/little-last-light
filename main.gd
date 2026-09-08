@@ -20,6 +20,7 @@ const MAX_CHARGERS: int = 8
 const TURRET_SCENE: PackedScene = preload("res://turret.tscn")
 const PULSE_TURRET_SCENE: PackedScene = preload("res://pulse_turret.tscn")
 const SNIPER_TURRET_SCENE: PackedScene = preload("res://sniper_turret.tscn")
+const EMBER_TURRET_SCENE: PackedScene = preload("res://ember_turret.tscn")
 const SPAWN_INTERVALS: Array[float] = [2.0, 1.2, 0.65]
 const MIN_SPAWN_INTERVALS: Array[float] = [0.25, 0.15, 0.10]
 const PRESSURE_RAMP_SECONDS: float = 20.0
@@ -120,12 +121,15 @@ func configure_turret(turret: Node2D) -> void:
 	if turret.turret_type == "sniper":
 		turret.damage *= turret.STAT_MULTIPLIER
 		turret.fire_interval *= turret.STAT_MULTIPLIER
+	elif turret.turret_type == "ember":
+		turret.fire_interval *= 2.0
 
 
 func turret_scene(kind: String) -> PackedScene:
 	match kind:
 		"pulse": return PULSE_TURRET_SCENE
 		"sniper": return SNIPER_TURRET_SCENE
+		"ember": return EMBER_TURRET_SCENE
 		_: return TURRET_SCENE
 
 
@@ -328,11 +332,8 @@ func _clear_enemies() -> void:
 
 func _set_turrets_active(active: bool) -> void:
 	for turret in get_tree().get_nodes_in_group("turrets"):
-		turret.boosted = false
 		turret.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
-		turret.cooldown = 0.0
-		turret.shot_time = 0.0
-		turret.queue_redraw()
+		turret.reset_attack()
 
 
 func current_spawn_interval() -> float:
@@ -687,7 +688,7 @@ func _valid_save(data: Variant) -> bool:
 		if not types is Array or types.size() != positions.size() or types[0] != "damage":
 			return false
 		for kind in types:
-			if kind not in ["damage", "pulse", "sniper"]:
+			if kind not in ["damage", "pulse", "sniper", "ember"]:
 				return false
 	if data.has("turret_costs"):
 		var costs = data.turret_costs
@@ -728,7 +729,7 @@ func _valid_run_layout(layout: Variant) -> bool:
 	for point in layout.turrets:
 		if not point is Dictionary:
 			return false
-		if point.has("type") and point.type not in ["damage", "pulse", "sniper"]:
+		if point.has("type") and point.type not in ["damage", "pulse", "sniper", "ember"]:
 			return false
 		for key in ["x", "y"]:
 			var value = point.get(key)

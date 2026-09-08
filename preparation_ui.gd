@@ -91,7 +91,7 @@ func _ready() -> void:
 
 
 func _create_placement_stats() -> void:
-	var buttons := {"damage": build.build_button, "pulse": build.pulse_button, "sniper": build.sniper_button}
+	var buttons := {"damage": build.build_button, "pulse": build.pulse_button, "sniper": build.sniper_button, "ember": build.ember_button}
 	for kind in buttons:
 		# Read the scene defaults once, before upgrades or proximity are applied.
 		var turret: Node2D = main.turret_scene(kind).instantiate()
@@ -99,6 +99,8 @@ func _create_placement_stats() -> void:
 		var text := "%s dmg · %.0f range · %ss/%s" % [String.num(turret.damage, 1).trim_suffix(".0"), turret.attack_range, String.num(turret.fire_interval, 1).trim_suffix(".0"), cadence]
 		if kind == "pulse":
 			text += "\n%.0f%% slow · lasts %ss" % [(1.0 - turret.slow_factor) * 100, String.num(turret.slow_duration, 1).trim_suffix(".0")]
+		elif kind == "ember":
+			text += "\n65 splash · 0.45s flight"
 		else:
 			text += "\n" + ("Furthest target" if kind == "sniper" else "Nearest target")
 		var label := STYLE.label(text, 12, Color("#bfd0d8"))
@@ -229,6 +231,8 @@ func refresh() -> void:
 	build.pulse_button.text = "Slow turret · %d" % int(build.turret_cost("pulse"))
 	build.sniper_button.visible = placement
 	build.sniper_button.text = "Watchlight · %d" % int(build.turret_cost("sniper"))
+	build.ember_button.visible = placement
+	build.ember_button.text = "Ember Pot · %d" % int(build.turret_cost("ember"))
 	build.cancel_button.visible = placement and build.placing
 	build.cancel_button.text = "Cancel placement" if build.using_controller else "Cancel placement · Esc"
 	back_button.text = "Done" if build.using_controller else "Done · Esc"
@@ -249,10 +253,10 @@ func refresh() -> void:
 	build.health_button.visible = upgrades
 	energy_button.visible = upgrades
 	energy_button.disabled = build.placing or main.energy_level >= main.MAX_UPGRADE_LEVEL or main.banked_energy < main.upgrade_cost("energy")
-	energy_button.text = "Energy gain · +125% · MAX" if main.energy_level >= main.MAX_UPGRADE_LEVEL else "Energy gain · +%d%% → +%d%%\n%d energy" % [main.energy_level * 25, (main.energy_level + 1) * 25, int(main.upgrade_cost("energy"))]
+	energy_button.text = "Energy gain · +125% · MAX" if main.energy_level >= main.MAX_UPGRADE_LEVEL else "Energy gain · +%d%% to +%d%%\n%d energy" % [main.energy_level * 25, (main.energy_level + 1) * 25, int(main.upgrade_cost("energy"))]
 	proximity_button.visible = upgrades
 	proximity_button.disabled = build.placing or main.proximity_level >= main.MAX_UPGRADE_LEVEL or main.banked_energy < main.upgrade_cost("proximity")
-	proximity_button.text = "Proximity · ×2.0 damage & rate · MAX" if main.proximity_level >= main.MAX_UPGRADE_LEVEL else "Proximity · ×%.1f → ×%.1f damage & rate\n%d energy" % [main.proximity_multiplier(), main.proximity_multiplier() + 0.1, int(main.upgrade_cost("proximity"))]
+	proximity_button.text = "Proximity · ×2.0 damage & rate · MAX" if main.proximity_level >= main.MAX_UPGRADE_LEVEL else "Proximity · ×%.1f to ×%.1f damage & rate\n%d energy" % [main.proximity_multiplier(), main.proximity_multiplier() + 0.1, int(main.upgrade_cost("proximity"))]
 	_refresh_slow_upgrades()
 	var levels: Dictionary = main.upgrade_levels()
 	for kind in upgrade_progress:
@@ -260,7 +264,7 @@ func refresh() -> void:
 		for level in range(main.MAX_UPGRADE_LEVEL):
 			progress.get_child(level).color = Color("#ffd17b") if level < levels[kind] else Color("#354955")
 		progress.get_child(main.MAX_UPGRADE_LEVEL).text = " %d/%d" % [levels[kind], main.MAX_UPGRADE_LEVEL]
-	upgrade_summaries["Damage turrets"].text = "Basic: %.1f damage · %.2f shots/s\nWatchlight: %.1f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second(), main.turret_damage() * 3.0, main.turret_shots_per_second() / 3.0]
+	upgrade_summaries["Damage turrets"].text = "Basic: %.1f damage · %.2f shots/s\nWatchlight: %.1f damage · %.2f shots/s\nEmber Pot: %.1f damage · %.2f shots/s" % [main.turret_damage(), main.turret_shots_per_second(), main.turret_damage() * 3.0, main.turret_shots_per_second() / 3.0, main.turret_damage(), main.turret_shots_per_second() / 2.0]
 	upgrade_summaries["Slow turrets"].text = "%.0f%% slow · lasts %.2fs\nActivates every %.1fs" % [main.slow_strength() * 100, main.slow_duration(), main.slow_interval()]
 	upgrade_summaries["Lantern"].text = "%.0f maximum HP\n+%d%% passive & boss energy" % [main.lantern_max_health(), main.energy_level * 25]
 	back_button.visible = not home and not (placement and build.placing)
@@ -328,9 +332,9 @@ func refresh() -> void:
 
 func _refresh_slow_upgrades() -> void:
 	var labels := {
-		"slow_rate": "Activation · every %.2fs → %.2fs" % [main.slow_interval(), main.slow_interval() - 0.15],
-		"slow_strength": "Strength · %.0f%% → %.0f%% slower" % [main.slow_strength() * 100, main.slow_strength() * 100 + 5],
-		"slow_duration": "Duration · %.2fs → %.2fs" % [main.slow_duration(), main.slow_duration() + 0.15],
+		"slow_rate": "Activation · every %.2fs to %.2fs" % [main.slow_interval(), main.slow_interval() - 0.15],
+		"slow_strength": "Strength · %.0f%% to %.0f%% slower" % [main.slow_strength() * 100, main.slow_strength() * 100 + 5],
+		"slow_duration": "Duration · %.2fs to %.2fs" % [main.slow_duration(), main.slow_duration() + 0.15],
 	}
 	var capped := {
 		"slow_rate": "Activation · every %.1fs · MAX" % main.slow_interval(),
