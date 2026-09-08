@@ -25,7 +25,7 @@ func reset_attack() -> void:
 
 func in_boost_range() -> bool:
 	var lantern := get_parent().get_node_or_null("Lantern")
-	return turret_type in ["damage", "sniper"] and lantern != null and lantern.running and lantern.health > 0.0 and global_position.distance_squared_to(lantern.global_position) <= BOOST_RADIUS * BOOST_RADIUS
+	return turret_type in ["damage", "sniper", "ember"] and lantern != null and lantern.running and lantern.health > 0.0 and global_position.distance_squared_to(lantern.global_position) <= BOOST_RADIUS * BOOST_RADIUS
 
 
 func _process(delta: float) -> void:

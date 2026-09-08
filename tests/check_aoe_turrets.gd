@@ -70,7 +70,10 @@ func check() -> void:
 		scene.damage_level = 5
 		scene.fire_rate_level = 5
 		scene.configure_turret(turret)
-		expect(turret.damage == 1.0 and not turret.in_boost_range(), "Fixed prototype damage and no proximity")
+		expect(turret.damage == scene.turret_damage() and is_equal_approx(turret.fire_interval, 2.0 / scene.turret_shots_per_second()), "Shared upgrades retain Ember's slower cadence")
+		scene.damage_level = 0
+		scene.fire_rate_level = 0
+		scene.configure_turret(turret)
 		var origin: Vector2 = turret.position
 		var first := target(scene, origin + Vector2(70, 0))
 		var second := target(scene, origin + Vector2(90, 10))
@@ -127,7 +130,7 @@ func check() -> void:
 	expect(get_nodes_in_group("turrets").size() == 3, "All types reload")
 	for index in range(1, 2):
 		var turret = get_nodes_in_group("turrets")[index]
-		expect(turret.turret_type == kinds[index - 1] and turret.damage == 1.0, "Reload retains type and fixed stats")
+		expect(turret.turret_type == kinds[index - 1] and turret.damage == 1.0, "Reload retains type and base stats")
 	build = scene.get_node("BuildController")
 	var funds: float = scene.banked_energy
 	expect(get_nodes_in_group("turrets").back().turret_type == "sniper", "Watchlight type reloads")
@@ -141,7 +144,7 @@ func check() -> void:
 	await process_frame
 	DirAccess.remove_absolute(save_path)
 	if failures == 0:
-		print("PASS: AOE placement, timing, locked aim, area exclusions, single hits, fixed stats, reset, save/reload, records and refunds")
+		print("PASS: Ember controller/placement, timing, locked aim, area exclusions, single hits, upgrades, reset, save/reload, records and refunds")
 	quit(1 if failures else 0)
 
 

@@ -17,11 +17,14 @@ Ember Pot is also available in the regular placement toolbar with its stats belo
 the purchase button. In **Place turrets**, press **L3 / left-stick click** to
 select Ember Pot directly; its purchase button shows the matching controller icon.
 It follows the shared 60, 85, 110… energy price ladder and
-saves, moves, and refunds normally. Its fixed 1 damage is unaffected by upgrades
-and proximity; balance and progression integration remain provisional. Records
+saves, moves, and refunds normally. Damage and Fire Rate upgrades now apply to
+Ember Pot too: it has the basic turret's damage and twice its firing interval.
+Lantern proximity boosts damage and recharge speed, including the Proximity
+Power upgrade. Each coal keeps its damage at launch; moving during flight does
+not change that coal's damage or its 0.45-second flight time. Records
 with Ember layouts stay local until tuning and leaderboard support are ready.
 
-Every 3 seconds, Ember Pot selects the nearest enemy within 220 pixels and lobs
+At base stats, every 3 seconds Ember Pot selects the nearest enemy within 220 pixels and lobs
 a coal at that enemy's current position. The landing point stays fixed. After
 0.45 seconds, all living enemies within 65 pixels of that point take 1 damage
 once. Flight time is included in the cadence. A broken circle marks the splash
@@ -33,5 +36,5 @@ Lantern Flare have been removed. The Flare **pickup** from main is unaffected.
 
 Compare Ember against a sparse stream, then a group led through its coverage.
 Try adding a Slow turret. Watchlight retains its long-range, furthest-target
-behavior and its normal upgrade/proximity bonuses. These starting values are
+behavior. Both Ember and Watchlight benefit from damage/rate upgrades and proximity. These starting values are
 not a claim of equal balance between splash and sniper damage.

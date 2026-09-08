@@ -111,9 +111,6 @@ func configure_lantern() -> void:
 
 
 func configure_turret(turret: Node2D) -> void:
-	if turret.turret_type == "ember":
-		# Keep the selected prototype's tuning fixed during comparison with Watchlight.
-		return
 	if turret.turret_type == "pulse":
 		turret.fire_interval = slow_interval()
 		turret.slow_factor = 1.0 - slow_strength()
@@ -124,6 +121,8 @@ func configure_turret(turret: Node2D) -> void:
 	if turret.turret_type == "sniper":
 		turret.damage *= turret.STAT_MULTIPLIER
 		turret.fire_interval *= turret.STAT_MULTIPLIER
+	elif turret.turret_type == "ember":
+		turret.fire_interval *= 2.0
 
 
 func turret_scene(kind: String) -> PackedScene:

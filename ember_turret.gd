@@ -5,6 +5,7 @@ const SPLASH_RADIUS := 65.0
 const FLASH_TIME := 0.25
 const AMBER := Color("#ffc16b")
 var pending_time: float = 0.0
+var launched_damage: float = 0.0
 
 
 func _init() -> void:
@@ -17,11 +18,15 @@ func _init() -> void:
 func reset_attack() -> void:
 	super.reset_attack()
 	pending_time = 0.0
+	launched_damage = 0.0
 
 
 func _process(delta: float) -> void:
 	var was_animating := pending_time > 0.0 or shot_time > 0.0
-	cooldown = maxf(0.0, cooldown - delta)
+	var was_boosted := boosted
+	boosted = in_boost_range()
+	var multiplier: float = get_parent().proximity_multiplier() if boosted else 1.0
+	cooldown = maxf(0.0, cooldown - delta * multiplier)
 	shot_time = maxf(0.0, shot_time - delta)
 	if pending_time > 0.0:
 		pending_time = maxf(0.0, pending_time - delta)
@@ -32,11 +37,13 @@ func _process(delta: float) -> void:
 		if target != null:
 			# Snapshot the landing point, so movement or a killed target cannot steer the coal.
 			shot_endpoint = target.global_position
+			# Damage belongs to the launched coal, even if the lantern moves during flight.
+			launched_damage = damage * multiplier
 			pending_time = FLIGHT_TIME
 			cooldown = fire_interval
 		else:
 			cooldown = IDLE_SEARCH_INTERVAL
-	if was_animating or pending_time > 0.0 or shot_time > 0.0:
+	if was_animating or pending_time > 0.0 or shot_time > 0.0 or boosted or was_boosted:
 		queue_redraw()
 
 
@@ -45,12 +52,13 @@ func _release_attack() -> void:
 		if enemy.is_queued_for_deletion() or enemy.health <= 0.0:
 			continue
 		if enemy.global_position.distance_squared_to(shot_endpoint) <= SPLASH_RADIUS * SPLASH_RADIUS:
-			enemy.take_damage(damage)
+			enemy.take_damage(launched_damage)
 	shot_time = FLASH_TIME
 	get_node("/root/GameAudio").play(&"shot")
 
 
 func _draw() -> void:
+	_draw_boost()
 	draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 64, Color(1.0, 0.7, 0.35, 0.12), 1.0, true)
 	var progress := 1.0 - pending_time / FLIGHT_TIME
 	var flash := shot_time / FLASH_TIME
