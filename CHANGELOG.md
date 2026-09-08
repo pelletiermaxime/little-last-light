@@ -15,6 +15,7 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ### Changed
 
+- Published versions and dated release notes are now recorded automatically in the repository after publication; rebuilding a release preserves corrections to its published notes.
 - Ember Pot now benefits from Damage and Fire Rate upgrades and lantern proximity, with its stats shown on the upgrades page. Each coal keeps the damage bonus it had at launch.
 
 ### Fixed
@@ -26,7 +27,6 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 ### Added
 
 - The placement screen now shows each turret's base damage, range and firing interval, plus targeting or slowing effects, below its purchase button. Whole-number stats omit unnecessary decimals.
-- Added a standalone sniper visual preview to compare three designs with synchronized firing and recharge animations.
 - Added the Watchlight sniper: long-range shots at the furthest enemy, a directional shuttered housing, and heavy damage with a slow recharge. Build it with right-stick click on a controller or the placement toolbar; damage upgrades and lantern proximity boosts apply.
 
 ### Changed
