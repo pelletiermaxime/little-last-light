@@ -92,6 +92,12 @@ func check() -> void:
 	expect(game.boss_spawned, "Drencher arrives at 2:30")
 	var drencher = get_nodes_in_group("bosses")[0]
 	expect(drencher.assist_movement_factor == 0.5 and drencher.arrival_remaining == 3, "Boss movement is halved but arrival warning preserved")
+	game.lantern.elapsed = 299.99
+	game.update_rainkeeper_encounter()
+	expect(not game.rainkeeper_spawned, "Rainkeeper does not arrive early")
+	game.lantern.elapsed = 300
+	game.update_rainkeeper_encounter()
+	expect(game.rainkeeper_spawned and get_nodes_in_group("rainkeepers")[0].assist_movement_factor == 0.5, "Rainkeeper arrives at 5:00 and receives movement assistance")
 	game.lantern.elapsed = 449.99
 	expect(not game.update_final_encounter(), "Snuffer does not arrive early")
 	game.lantern.elapsed = 450

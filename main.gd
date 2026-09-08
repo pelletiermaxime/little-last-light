@@ -452,11 +452,12 @@ func update_final_encounter() -> bool:
 
 
 func update_rainkeeper_encounter() -> void:
-	if phase != Phase.RUNNING or rainkeeper_spawned or final_boss_spawned or lantern.elapsed < RAINKEEPER_TIME:
+	if phase != Phase.RUNNING or rainkeeper_spawned or final_boss_spawned or encounter_time() < RAINKEEPER_TIME:
 		return
 	rainkeeper_spawned = true
 	var boss := RAINKEEPER_SCRIPT.new()
 	boss.target = lantern
+	boss.assist_movement_factor = enemy_movement_multiplier()
 	var size := get_arena_rect().size
 	boss.position = Vector2(48 if lantern.position.x > size.x / 2.0 else size.x - 48, 64 if lantern.position.y > size.y / 2.0 else size.y - 64)
 	add_child(boss)

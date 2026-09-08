@@ -30,8 +30,8 @@ Settings → Assistance offers independent options, editable in preparation:
 - Half-price upgrades: all eight upgrade families cost 50% less. Turret purchase
   and sell prices are unchanged.
 - Short night: the encounter timeline advances twice as fast. The Drencher arrives
-  at 2:30 and the Snuffer at 7:30; Gathering/Pressure/Recovery, charger unlocks,
-  and health/pressure progression use that same timeline. The HUD and results
+  at 2:30, the Rainkeeper at 5:00, and the Snuffer at 7:30; Gathering/Pressure/Recovery,
+  charger unlocks, pickup offers, and health/pressure progression use that same timeline. The HUD and results
   show real elapsed time. Spawn cadence, income, attack warnings and boss combat
   clocks retain their normal durations, leaving less grinding before the finale.
 - Half-speed enemies and projectiles: pursuers, charger approaches and charges,
@@ -52,7 +52,7 @@ During a run the submenu is readable, but its switches are locked.
 
 Playtest with disposable progress: enable each switch, check upgrade prices,
 start a short night, inspect the assisted HUD and pause-settings lock, then check
-the 2:30/7:30 arrivals and result. Disable all switches and restart the game;
+the 2:30/5:00/7:30 arrivals and result. Disable all switches and restart the game;
 publishing must remain disabled. Reset progress to confirm normal eligibility.
 Use `tests/check_assistance.gd` for deterministic boundaries and save regression.
 

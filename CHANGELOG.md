@@ -10,7 +10,7 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ### Added
 
-- Added an Assistance submenu with half-price upgrades, a shorter night (bosses at 2:30 and 7:30), and half-speed enemies and projectiles. Assisted progress cannot publish leaderboard records, even after assists are turned off; reset progress to return to eligible play.
+- Added an Assistance submenu with half-price upgrades, a shorter night (bosses at 2:30, 5:00, and 7:30), and half-speed enemies and projectiles. Assisted progress cannot publish leaderboard records, even after assists are turned off; reset progress to return to eligible play.
 - Added damage-taken options (75%, 50%, or invincible) for assisted play.
 - Added visual accessibility options for stronger danger cues, reduced decorative effects and flashes, and hiding turret range circles while retaining placement guides. Visual preferences keep leaderboard eligibility.
 

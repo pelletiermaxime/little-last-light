@@ -119,7 +119,7 @@ text = "Half-price upgrades"
 [node name="ShortNight" type="CheckButton" parent="Center/Panel/Padding/Content/AssistancePage"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Short night · bosses at 2:30 / 7:30"
+text = "Short night · bosses at 2:30 / 5:00 / 7:30"
 
 [node name="SlowEnemies" type="CheckButton" parent="Center/Panel/Padding/Content/AssistancePage"]
 custom_minimum_size = Vector2(0, 44)
