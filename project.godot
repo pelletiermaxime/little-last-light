@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Little Last Light"
-config/version="0.0.2"
+config/version="0.0.22"
 run/main_scene="uid://cnjhfdvymo7wv"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"

@@ -8,6 +8,8 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+## [0.0.22] - 2026-09-08
+
 ### Added
 
 - Press L3 / left-stick click in Place turrets to select Ember Pot, with a matching controller prompt beside its purchase button.
