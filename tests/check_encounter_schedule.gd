@@ -24,7 +24,7 @@ func check() -> void:
 	var lantern = scene.lantern
 	lantern.set_process(false)
 	lantern.set_physics_process(false)
-	var schedule = scene.ENCOUNTER_SCHEDULE
+	var schedule = scene.encounters.ENCOUNTER_SCHEDULE
 	for base in [0.0, 60.0, 240.0, 840.0]:
 		expect(schedule.period(base + 19.99) == "Gathering", "Gathering boundary")
 		expect(schedule.chargers_enabled(base + 20.0), "Pressure begins with chargers")
@@ -36,8 +36,8 @@ func check() -> void:
 		var previous := INF
 		for brightness in range(3):
 			lantern.brightness = brightness
-			expect(scene.current_spawn_interval() < previous, "Brightness always increases pursuer pressure")
-			previous = scene.current_spawn_interval()
+			expect(scene.encounters.current_spawn_interval() < previous, "Brightness always increases pursuer pressure")
+			previous = scene.encounters.current_spawn_interval()
 	scene._clear_enemies()
 	for time in [20.0, 40.0, 60.0, 80.0]:
 		lantern.elapsed = time
@@ -47,16 +47,16 @@ func check() -> void:
 	scene._clear_enemies()
 	lantern.elapsed = 299.99
 	scene._process(0.0)
-	expect(not scene.boss_spawned, "Drencher does not arrive early")
+	expect(not scene.encounters.boss_spawned, "Drencher does not arrive early")
 	lantern.elapsed = 300.0
 	scene._process(0.0)
-	expect(scene.boss_spawned and get_nodes_in_group("bosses").size() == 1, "Drencher preserved at five minutes")
+	expect(scene.encounters.boss_spawned and get_nodes_in_group("bosses").size() == 1, "Drencher preserved at five minutes")
 	scene._clear_enemies()
 	lantern.elapsed = 900.0
-	scene.spawn_progress = 1.0
+	scene.encounters.spawn_progress = 1.0
 	scene._process(1.0)
-	scene._spawn_charger()
-	expect(get_nodes_in_group("final_bosses").size() == 1 and get_nodes_in_group("enemies").size() >= 3 and scene.current_spawn_interval() < INF, "Final boss joins continuing ordinary pressure")
+	scene.encounters._spawn_charger()
+	expect(get_nodes_in_group("final_bosses").size() == 1 and get_nodes_in_group("enemies").size() >= 3 and scene.encounters.current_spawn_interval() < INF, "Final boss joins continuing ordinary pressure")
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:

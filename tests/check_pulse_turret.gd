@@ -77,7 +77,7 @@ func check() -> void:
 	expect(pulse.turret_type == "pulse" and pulse.position.is_equal_approx(Vector2(200, 100)) and pulse.purchase_cost == 60.0, "Mixed layout reloads with exact price and location")
 	scene.start_run()
 	scene.lantern.position = Vector2(1000, 100)
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.position = Vector2(250, 100)
 	enemy.heading = Vector2.RIGHT
@@ -105,7 +105,7 @@ func check() -> void:
 	enemy._process(2.0)
 	expect(is_equal_approx(scene.lantern.health, 89.5), "Only 0.7 seconds of contact damage after slowed approach")
 	scene.lantern.position = Vector2(1000, 100)
-	scene._spawn_charger()
+	scene.encounters._spawn_charger()
 	var charger = get_nodes_in_group("chargers")[0]
 	charger.position = Vector2(200, 100)
 	charger.apply_slow(0.55, 1.5)
@@ -120,7 +120,7 @@ func check() -> void:
 	var before: float = charger.position.x
 	charger._process(0.1)
 	expect(is_equal_approx(charger.position.x - before, 38.0), "Committed charge retains its advertised speed")
-	scene._spawn_boss()
+	scene.encounters._spawn_boss()
 	var boss = get_nodes_in_group("bosses")[0]
 	boss.apply_slow(0.55, 1.5)
 	expect(is_equal_approx(boss.slow_factor, 0.775), "Boss resists half the slowdown")

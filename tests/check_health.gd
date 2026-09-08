@@ -18,7 +18,7 @@ func check() -> void:
 	lantern.set_process(false)
 	scene.get_node("Turret").set_process(false)
 	lantern.died.connect(func(): deaths += 1)
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.set_process(false)
 	# Approach naturally from many angles; teleporting into contact misses rounding bugs.
@@ -53,10 +53,10 @@ func check() -> void:
 	assert(lantern.health == 0 and deaths == 1, "Death emits once and health clamps")
 	assert(scene.phase == scene.Phase.RESULTS and not lantern.running, "Death opens results")
 	var energy: float = lantern.energy
-	var progress: float = scene.spawn_progress
+	var progress: float = scene.encounters.spawn_progress
 	await process_frame
 	await process_frame
-	assert(lantern.energy == energy and scene.spawn_progress == progress, "Run freezes")
+	assert(lantern.energy == energy and scene.encounters.spawn_progress == progress, "Run freezes")
 	scene.get_node("ResultsScreen").continue_button.pressed.emit()
 	scene.get_node("BuildController").start_button.pressed.emit()
 	assert(not paused and scene.phase == scene.Phase.RUNNING, "Start begins a fresh run")

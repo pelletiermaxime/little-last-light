@@ -1,6 +1,0 @@
-[gd_scene format=3]
-
-[ext_resource type="Script" path="res://pulse_turret.gd" id="1"]
-
-[node name="PulseTurret" type="Node2D" groups=["turrets"]]
-script = ExtResource("1")

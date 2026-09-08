@@ -10,7 +10,7 @@ func launch() -> void:
 	ProjectSettings.set_setting("leaderboard/api_url", "")
 	var scene = load("res://main.tscn").instantiate()
 	scene.save_path = "/tmp/lll-interactive-final-%d.json" % OS.get_process_id()
-	scene.final_boss_time = 60.0
+	scene.encounters.final_boss_time = 60.0
 	root.add_child(scene)
 	current_scene = scene
 	root.title = "Little Last Light — M16 test — Snuffer at 01:00"

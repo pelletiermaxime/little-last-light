@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Little Last Light rendering benchmark</title>
+<style>
+body { margin: 16px; background: #15232c; color: #e6edf3; font: 14px system-ui; }
+canvas { display: block; width: min(100%, 1280px); height: auto; background: black; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+button { margin-bottom: 12px; padding: 8px 16px; }
+</style>
+<h1>Little Last Light rendering benchmark</h1>
+<p>24 mixed turrets, moving lantern, 100 / 500 / 1,000 enemies; bosses in the last scenario. Keep this tab visible for the entire run.</p>
+<button id="start">Start benchmark</button>
+<pre id="environment"></pre>
+<pre id="results" aria-live="polite">Ready. Each scenario measures 360 frames after 120 warmup frames.</pre>
+<canvas id="canvas" width="1280" height="720"></canvas>
+<script src="index.js"></script>
+<script>
+const output = document.querySelector('#results');
+const canvas = document.querySelector('#canvas');
+const config = {
+  executable: 'index', canvas, canvasResizePolicy: 0,
+  args: ['--fixed-fps', '60'],
+  onPrint: (...args) => {
+    const message = args.join(' ');
+    if (message.startsWith('RENDER_BENCHMARK')) output.textContent += message + '\n';
+  },
+  onPrintError: (...args) => { output.textContent += 'ERROR ' + args.join(' ') + '\n'; }
+};
+document.querySelector('#start').onclick = async () => {
+  document.querySelector('#start').disabled = true;
+  output.textContent = 'Running…\n';
+  document.querySelector('#environment').textContent = JSON.stringify({
+    userAgent: navigator.userAgent, devicePixelRatio,
+    canvas: [canvas.width, canvas.height], visibility: document.visibilityState,
+    simulationHz: 60
+  });
+  try {
+    const engine = new Engine(config);
+    await engine.startGame();
+    const gl = canvas.getContext('webgl2');
+    if (gl) {
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      document.querySelector('#environment').textContent += '\nRenderer: ' +
+        gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
+    }
+  } catch (error) { output.textContent += String(error); }
+};
+document.addEventListener('visibilitychange', () => {
+  if (document.querySelector('#start').disabled)
+    output.textContent += 'VISIBILITY_CHANGED ' + document.visibilityState + ' — rerun if hidden during measurement\n';
+});
+</script>
+</html>

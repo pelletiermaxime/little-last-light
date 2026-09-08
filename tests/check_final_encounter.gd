@@ -28,22 +28,22 @@ func check() -> void:
 		enemy.set_process(false)
 	drencher.trail.set_process(false)
 	scene.lantern.elapsed = 899.99
-	assert(not scene.update_final_encounter())
+	assert(not scene.encounters.update_final_encounter())
 	scene.lantern.elapsed = 900
-	assert(scene.update_final_encounter())
+	assert(scene.encounters.update_final_encounter())
 	assert(not drencher.is_queued_for_deletion() and not get_nodes_in_group("hazards").is_empty(), "Final arrival preserves Drencher and water")
 	for enemy in existing_enemies:
 		assert(not enemy.is_queued_for_deletion() and enemy.is_in_group("enemies"), "Existing enemies remain in combat")
 	var boss = get_nodes_in_group("final_bosses")[0]
 	boss.set_process(false)
 	assert(get_nodes_in_group("enemies").size() == existing_enemies.size() + 1)
-	scene.spawn_progress = 1.0
+	scene.encounters.spawn_progress = 1.0
 	scene._process(0.5)
 	assert(get_nodes_in_group("enemies").size() > existing_enemies.size() + 1, "Normal scheduling keeps spawning during final combat")
 	var before_extra_spawns := get_nodes_in_group("enemies").size()
-	scene._spawn_enemy()
-	scene._spawn_charger()
-	scene._spawn_boss()
+	scene.encounters._spawn_enemy()
+	scene.encounters._spawn_charger()
+	scene.encounters._spawn_boss()
 	assert(get_nodes_in_group("final_bosses").size() == 1 and get_nodes_in_group("enemies").size() == before_extra_spawns + 2, "Pursuers and chargers can spawn; final boss remains unique")
 	for enemy in get_nodes_in_group("enemies"):
 		enemy.set_process(false)
@@ -54,7 +54,7 @@ func check() -> void:
 	assert(boss.position == start and boss.attack == boss.Attack.VOLLEY_WARNING)
 	assert(boss.arrival_remaining == 0)
 	# The one-minute launcher reaches the Snuffer before the Drencher ever spawns.
-	scene.boss_spawned = false
+	scene.encounters.boss_spawned = false
 	var hud = scene.get_node("GameHUD")
 	hud.refresh()
 	assert(hud.boss_status.visible)
@@ -117,10 +117,10 @@ func check() -> void:
 	scene.continue_to_preparation()
 	assert(not results.overlay.visible)
 	scene.start_run()
-	assert(not scene.final_boss_spawned)
+	assert(not scene.encounters.final_boss_spawned)
 	scene._set_turrets_active(false)
 	scene.lantern.elapsed = 900
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	boss = get_nodes_in_group("final_bosses")[0]
 	boss.set_process(false)
 	boss._process(3.0)
@@ -133,7 +133,7 @@ func check() -> void:
 	scene.start_run()
 	scene._set_turrets_active(false)
 	scene.lantern.elapsed = 950
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	boss = get_nodes_in_group("final_bosses")[0]
 	boss._process(3.0)
 	boss.take_damage(10000)
@@ -145,7 +145,7 @@ func check() -> void:
 	scene.start_run()
 	scene._set_turrets_active(false)
 	scene.lantern.elapsed = 920
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	boss = get_nodes_in_group("final_bosses")[0]
 	boss._process(3)
 	boss.take_damage(10000)
@@ -154,7 +154,7 @@ func check() -> void:
 	scene.start_run()
 	scene._set_turrets_active(false)
 	scene.lantern.elapsed = 900
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	scene.get_node("PauseScreen").pause()
 	scene.get_node("PauseScreen").end_run()
 	assert(not paused and get_nodes_in_group("final_bosses").is_empty() and not scene.last_run.victory)

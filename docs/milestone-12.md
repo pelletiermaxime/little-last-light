@@ -34,7 +34,7 @@ The UI integration check covers full arena bounds, home actions, background clic
 
 Rendered previews exercise home, placement, upgrades, and combat. Menus use finite pages and scale to fit short windows, with preparation actions in a single column.
 
-Start with [preparation_ui.gd](../preparation_ui.gd), [game_hud.gd](../game_hud.gd), and [tests/check_preparation_ui.gd](../tests/check_preparation_ui.gd).
+Start with [preparation_ui.gd](../screens/preparation_ui.gd), [game_hud.gd](../ui/game_hud.gd), and [tests/check_preparation_ui.gd](../tests/check_preparation_ui.gd).
 
 ### Controller prompts and navigation
 

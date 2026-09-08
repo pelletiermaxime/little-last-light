@@ -30,7 +30,7 @@ func check() -> void:
 		scene.lantern.set_physics_process(false)
 		scene._set_turrets_active(false)
 		scene.lantern.elapsed = 900
-		scene.update_final_encounter()
+		scene.encounters.update_final_encounter()
 		var boss = get_nodes_in_group("final_bosses")[0]
 		boss.set_process(false)
 		var fight_time := 0.0

@@ -1,0 +1,19 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://game_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://game/build_controller.gd" id="2_script"]
+
+[node name="BuildController" type="Node2D"]
+script = ExtResource("2_script")
+
+[node name="PlacementUI" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="PlacementHint" type="Label" parent="PlacementUI"]
+layout_mode = 0
+mouse_filter = 2
+text = "Click to build"
+autowrap_mode = 0
+theme_type_variation = &"PlacementHint"
+visible = false
+theme = ExtResource("1_theme")

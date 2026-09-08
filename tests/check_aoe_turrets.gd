@@ -121,7 +121,7 @@ func check() -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(save_path))
 	expect(data.turret_types == ["damage", "ember", "sniper"] and scene._valid_save(data), "Mixed Ember and Watchlight save is valid")
 	var layout: Dictionary = scene._run_turret_layout()
-	expect(scene._valid_run_layout(layout), "Record layout preserves new types")
+	expect(scene.PROGRESS_STORE.valid_run_layout(layout), "Record layout preserves new types")
 	var panel = scene.get_node("GameHUD").leaderboard
 	expect(panel._has_prototype_layout({"turretLayout": layout}), "Prototype records remain local")
 	scene.free()

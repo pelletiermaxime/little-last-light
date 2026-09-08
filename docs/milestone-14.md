@@ -137,6 +137,6 @@ access for the isolated preview. The expanding pulse and overlapping coverage
 render correctly. Full balance comparisons between all-damage and mixed layouts
 remain a playtest task, particularly alongside the M15 ward and encounter pacing.
 
-Start with [pulse_turret.gd](../pulse_turret.gd), [enemy.gd](../enemy.gd),
-[build_controller.gd](../build_controller.gd), and
+Start with [pulse_turret.gd](../turrets/pulse_turret.gd), [enemy.gd](../enemies/enemy.gd),
+[build_controller.gd](../game/build_controller.gd), and
 [the pulse regression checks](../tests/check_pulse_turret.gd).

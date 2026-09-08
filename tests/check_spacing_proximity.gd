@@ -51,7 +51,7 @@ func check() -> void:
 	scene.start_run()
 	expect(scene.phase == scene.Phase.RUNNING, "Repaired layout starts normally")
 	scene.lantern.position = tower.position
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.health = 100.0
 	enemy.max_health = 100.0

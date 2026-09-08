@@ -64,6 +64,8 @@ The results screen offers to publish a new survival record with a username; pend
 
 ## Learn and explore
 
+- [Code structure and browser performance review](docs/refactor-performance.md)
+
 - [Reset layout and refund arithmetic](docs/reset-layout.md)
 
 - [Pause screen and scene-tree processing](docs/pause-screen.md)

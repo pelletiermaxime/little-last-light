@@ -16,10 +16,10 @@ func check() -> void:
 	scene._set_turrets_active(false)
 	var hud = scene.get_node("GameHUD")
 	hud.set_process(false)
-	scene.lantern.elapsed = scene.BOSS_TIME - 0.1
+	scene.lantern.elapsed = scene.encounters.BOSS_TIME - 0.1
 	scene._process(0.01)
 	assert(get_nodes_in_group("bosses").is_empty())
-	scene.lantern.elapsed = scene.BOSS_TIME
+	scene.lantern.elapsed = scene.encounters.BOSS_TIME
 	scene._process(0.01)
 	assert(get_nodes_in_group("bosses").size() == 1)
 	var boss = get_nodes_in_group("bosses")[0]
@@ -82,7 +82,7 @@ func check() -> void:
 	assert(trail.is_queued_for_deletion())
 	await process_frame
 	scene._process(0.01)
-	assert(get_nodes_in_group("bosses").is_empty() and scene.boss_spawned)
+	assert(get_nodes_in_group("bosses").is_empty() and scene.encounters.boss_spawned)
 	hud.refresh()
 	assert(hud.boss_status.visible and not hud.boss_card.visible and not hud.boss_bar.visible, "Victory shows text without a card or health bar")
 	assert(hud.boss_text.text == "THE DRENCHER DEFEATED")
@@ -96,10 +96,10 @@ func check() -> void:
 	scene.end_run()
 	scene.continue_to_preparation()
 	scene.start_run()
-	assert(not scene.boss_spawned)
+	assert(not scene.encounters.boss_spawned)
 	hud.refresh()
 	assert(not hud.boss_status.visible and hud.boss_victory_remaining == 0.0, "New runs clear victory state")
-	scene.lantern.elapsed = scene.BOSS_TIME
+	scene.lantern.elapsed = scene.encounters.BOSS_TIME
 	scene._process(0.01)
 	assert(get_nodes_in_group("bosses").size() == 1)
 	hud.refresh()

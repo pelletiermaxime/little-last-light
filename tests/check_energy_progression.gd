@@ -38,7 +38,7 @@ func check() -> void:
 	scene.lantern._process(180.0)
 	expect(is_equal_approx(scene.lantern.energy, 540.0), "High brightness with one upgrade earns 540 in three minutes")
 	scene.lantern.elapsed = 300.0
-	scene._spawn_boss()
+	scene.encounters._spawn_boss()
 	var boss = get_nodes_in_group("bosses")[0]
 	boss.take_damage(1.0)
 	expect(not scene.boss_reward_earned, "Damaging the boss gives no reward")
@@ -65,7 +65,7 @@ func check() -> void:
 	scene.lantern.brightness = 0
 	scene.lantern._process(10.0)
 	expect(is_equal_approx(scene.lantern.energy, 13.5), "Maximum energy upgrade multiplies low-brightness income")
-	scene._spawn_boss()
+	scene.encounters._spawn_boss()
 	scene.end_run(true)
 	expect(scene.last_run.boss_bonus == 0.0 and is_equal_approx(scene.last_run.energy, 13.5), "Ending a run with a living boss never grants its reward")
 	for level in range(6):
@@ -74,7 +74,7 @@ func check() -> void:
 		scene.start_run()
 		scene._set_turrets_active(false)
 		expect(scene.boss_reward_amount == 0.0, "New runs clear the previous reward amount")
-		scene._spawn_boss()
+		scene.encounters._spawn_boss()
 		var next_boss = get_nodes_in_group("bosses")[0]
 		next_boss.take_damage(10000.0)
 		next_boss.take_damage(10000.0)

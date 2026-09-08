@@ -18,7 +18,7 @@ func check() -> void:
 	scene.lantern.set_physics_process(false)
 	scene._set_turrets_active(false)
 	scene.lantern.elapsed = 900
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	var boss = get_nodes_in_group("final_bosses")[0]
 	boss.set_process(false)
 	boss._process(3.0)
@@ -71,7 +71,7 @@ func check() -> void:
 	scene.continue_to_preparation()
 	scene.start_run()
 	scene.lantern.elapsed = 900
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	boss = get_nodes_in_group("final_bosses")[0]
 	assert(not boss.desperate and boss.desperation_announcement == 0.0)
 	boss._process(3.0)

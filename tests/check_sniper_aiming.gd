@@ -1,6 +1,6 @@
 extends SceneTree
 
-class CountingSniper extends "res://sniper_turret.gd":
+class CountingSniper extends "res://turrets/sniper_turret.gd":
 	var searches := 0
 	func _furthest_enemy() -> Node2D:
 		searches += 1
@@ -26,7 +26,7 @@ func expect(condition: bool, message: String) -> void:
 
 
 func enemy_at(offset: Vector2, health: float = 100.0) -> Node2D:
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy: Node2D = get_nodes_in_group("enemies").back()
 	enemy.position = sniper.position + offset
 	enemy.health = health

@@ -63,7 +63,7 @@ func check() -> void:
 	# Real enemies establish radius, damage amount and single application.
 	var enemies: Array[Node2D] = []
 	for distance in [0.0, 180.0, 181.0]:
-		var enemy = scene.ENEMY_SCENE.instantiate()
+		var enemy = scene.encounters.ENEMY_SCENE.instantiate()
 		enemy.max_health = 10.0
 		scene.add_child(enemy)
 		enemy.position = scene.lantern.position + Vector2(distance, 0)
@@ -102,7 +102,7 @@ func check() -> void:
 	pickups.sentinel.set_process(false)
 	# Stillness stops real processing, including a locked charger warning.
 	scene._clear_enemies()
-	scene._spawn_charger()
+	scene.encounters._spawn_charger()
 	var charger = get_nodes_in_group("chargers")[0]
 	charger.state = charger.State.WARNING
 	charger.state_remaining = 0.4
@@ -114,7 +114,7 @@ func check() -> void:
 	for frame in range(5):
 		await process_frame
 	expect(charger.position == frozen_position and charger.state_remaining == 0.4, "Stillness stops charger movement and attack clock")
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var newcomer = get_nodes_in_group("enemies")[-1]
 	newcomer.position = scene.lantern.position
 	pickups._process(0.1)

@@ -58,7 +58,7 @@ func launch() -> void:
 	pickups.kind = pickups.Kind.STILLNESS
 	pickups.pickup_position -= Vector2(180, 0)
 	await capture("stillness")
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	scene.lantern.position = pickups.pickup_position
 	await capture("stillness-active")
 	scene.free()

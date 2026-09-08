@@ -55,7 +55,7 @@ func check() -> void:
 	lantern.position += Vector2(10, 0)
 	assert(turret.global_position == point, "Purchased turret stays fixed")
 	scene.start_run()
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.global_position = point + Vector2(50, 0)
 	turret._process(0.1)

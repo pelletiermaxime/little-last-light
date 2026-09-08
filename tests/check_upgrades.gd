@@ -76,7 +76,7 @@ func check() -> void:
 	scene.continue_to_preparation()
 	scene.start_run()
 	var turret = get_nodes_in_group("turrets")[0]
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.position = turret.position + Vector2(40, 0)
 	enemy.health = 9.0
@@ -90,7 +90,7 @@ func check() -> void:
 	enemy.take_damage(1000.0)
 	scene.lantern.elapsed = 60.0
 	scene.lantern.position = turret.position + Vector2(-80, 0)
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var minute_enemy = get_nodes_in_group("enemies").back()
 	minute_enemy.position = turret.position + Vector2(40, 0)
 	expect(minute_enemy.health == 3.0, "One-minute basic pursuer has three health")

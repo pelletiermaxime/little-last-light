@@ -50,16 +50,16 @@ func check() -> void:
 	var arena: Vector2 = scene.get_arena_rect().size
 	var turret_point: Vector2 = scene.get_node("Turret").position / arena
 	expect(first_offer.turretLayout == {"width": arena.x, "height": arena.y, "turrets": [{"x": turret_point.x, "y": turret_point.y, "type": "damage"}], "upgrades": {"damage": 0, "fireRate": 0, "health": 0}}, "Layout captures normalized positions, turret types, arena aspect ratio and upgrades")
-	var pulse = load("res://pulse_turret.tscn").instantiate()
+	var pulse = load("res://turrets/pulse_turret.tscn").instantiate()
 	pulse.position = Vector2(200, 100)
 	scene.add_child(pulse)
 	var mixed: Dictionary = scene._run_turret_layout()
 	expect(mixed.turrets.size() == 2 and mixed.turrets[1].type == "pulse", "Snapshot distinguishes slow turrets")
-	expect(scene._valid_run_layout(mixed), "Mixed turret types pass save validation")
+	expect(scene.PROGRESS_STORE.valid_run_layout(mixed), "Mixed turret types pass save validation")
 	mixed.turrets[1].type = "unknown"
-	expect(not scene._valid_run_layout(mixed), "Unknown turret types fail save validation")
+	expect(not scene.PROGRESS_STORE.valid_run_layout(mixed), "Unknown turret types fail save validation")
 	mixed.turrets[1].erase("type")
-	expect(scene._valid_run_layout(mixed), "Legacy untyped snapshots remain valid")
+	expect(scene.PROGRESS_STORE.valid_run_layout(mixed), "Legacy untyped snapshots remain valid")
 	pulse.free()
 	scene.get_node("Turret").position = Vector2(30, 40)
 	expect(scene.leaderboard_profile.pending == first_offer, "Moving a turret cannot change the completed run snapshot")

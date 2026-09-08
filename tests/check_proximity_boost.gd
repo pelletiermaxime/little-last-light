@@ -43,7 +43,7 @@ func check() -> void:
 	pulse.cooldown = 2.0
 	pulse._process(0.5)
 	expect(pulse.cooldown == 1.5, "Slow turret timing remains unchanged")
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.process_mode = Node.PROCESS_MODE_DISABLED
 	enemy.position = turret.position + Vector2(40, 0)

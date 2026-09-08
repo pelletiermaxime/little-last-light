@@ -1,6 +1,6 @@
 extends SceneTree
 
-class CountingTurret extends "res://turret.gd":
+class CountingTurret extends "res://turrets/turret.gd":
 	var searches: int = 0
 	func _find_target() -> Node2D:
 		searches += 1
@@ -10,6 +10,7 @@ var failures: int = 0
 var body_redraws: int = 0
 var health_redraws: int = 0
 var turret_redraws: int = 0
+var range_redraws: int = 0
 
 
 func _initialize() -> void:
@@ -35,7 +36,7 @@ func check() -> void:
 	var hud = scene.get_node("GameHUD")
 	hud.set_process(false)
 	scene.lantern.elapsed = 300.0
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.set_process(false)
 	enemy.position = scene.lantern.position + Vector2(200, 0)
@@ -81,6 +82,33 @@ func check() -> void:
 	await process_frame
 	expect(turret.shot_time == 0.0 and turret_redraws == 2, "Expired shot is erased without ongoing redraws")
 	expect(enemy.health == previous_health - turret.damage, "Shot interval is still respected")
+	for kind in ["damage", "pulse", "sniper", "ember"]:
+		var animated: Node2D = scene.turret_scene(kind).instantiate()
+		animated.position = scene.lantern.position + Vector2(60, 0)
+		scene.configure_turret(animated)
+		scene.add_child(animated)
+		animated.set_process(false)
+		animated.range_indicator.draw.connect(func(): range_redraws += 1)
+		animated.draw.connect(func(): turret_redraws += 1)
+		await process_frame
+		await process_frame
+		range_redraws = 0
+		turret_redraws = 0
+		for frame in range(12):
+			scene.lantern.position += Vector2(0, 1)
+			animated._process(1.0 / 144.0)
+			await process_frame
+		expect(turret_redraws > 0, "%s still animates its attack or boost" % kind)
+		expect(range_redraws == 0, "%s animation reuses its cached range circle" % kind)
+		animated.position += Vector2(10, 0)
+		await process_frame
+		await process_frame
+		expect(range_redraws == 0, "%s placement moves the cached range with its parent" % kind)
+		animated.attack_range += 25.0
+		await process_frame
+		await process_frame
+		expect(range_redraws == 1, "%s range changes invalidate the cached circle" % kind)
+		animated.free()
 	var stale_text: String = hud.health_text.text
 	var health_before_hits: float = scene.lantern.health
 	for hit in range(100):
@@ -94,5 +122,5 @@ func check() -> void:
 	scene.free()
 	DirAccess.remove_absolute(test_path)
 	if failures == 0:
-		print("PASS: cached swarm drawings, idle scan budget, targeting latency, shot expiry, batched HUD damage, immediate death")
+		print("PASS: cached swarm and animated turret ranges, range invalidation, idle scan budget, targeting latency, shot expiry, batched HUD damage, immediate death")
 	quit(0 if failures == 0 else 1)

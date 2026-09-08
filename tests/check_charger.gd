@@ -17,7 +17,7 @@ func expect(condition: bool, message: String) -> void:
 
 func fixture() -> Node2D:
 	scene._clear_enemies()
-	var enemy = scene.CHARGER_SCENE.instantiate()
+	var enemy = scene.encounters.CHARGER_SCENE.instantiate()
 	enemy.target = scene.lantern
 	enemy.max_health = 4.0
 	scene.add_child(enemy)
@@ -133,26 +133,26 @@ func check() -> void:
 	scene.lantern.elapsed = 20.0
 	scene._process(0.0)
 	expect(get_nodes_in_group("chargers").size() == 1, "First charger appears at 20 seconds")
-	expect(scene.current_charger_interval() == 4.0, "Charger cadence starts at four seconds")
+	expect(scene.encounters.current_charger_interval() == 4.0, "Charger cadence starts at four seconds")
 	scene.lantern.brightness = 2
 	scene.lantern.elapsed = 23.9
 	scene._process(0.0)
 	expect(get_nodes_in_group("chargers").size() == 1, "High brightness does not accelerate charger cadence")
 	for attempt in range(10):
-		scene._spawn_charger()
+		scene.encounters._spawn_charger()
 	expect(get_nodes_in_group("chargers").size() == 8, "At most eight chargers coexist")
 	scene.lantern.elapsed = 70.0
-	expect(is_equal_approx(scene.current_charger_interval(), 6.5), "Gathering uses half the pressure spawn frequency")
+	expect(is_equal_approx(scene.encounters.current_charger_interval(), 6.5), "Gathering uses half the pressure spawn frequency")
 	for elapsed in [140.0, 620.0]:
 		scene.lantern.elapsed = elapsed
-		expect(is_equal_approx(scene.current_charger_interval(), 2.5 - 0.5 * clampf((elapsed - 120.0) / 480.0, 0.0, 1.0)), "Pressure accelerates toward a two-second late cadence")
+		expect(is_equal_approx(scene.encounters.current_charger_interval(), 2.5 - 0.5 * clampf((elapsed - 120.0) / 480.0, 0.0, 1.0)), "Pressure accelerates toward a two-second late cadence")
 	scene.end_run(true)
 	expect(get_nodes_in_group("chargers").is_empty(), "End Run clears charger membership immediately")
-	scene._spawn_charger()
+	scene.encounters._spawn_charger()
 	expect(get_nodes_in_group("chargers").is_empty(), "Preparation cannot spawn chargers")
 	scene.continue_to_preparation()
 	scene.start_run()
-	expect(scene.next_charger_time == 20.0, "Fresh run resets introduction time")
+	expect(scene.encounters.next_charger_time == 20.0, "Fresh run resets introduction time")
 	enemy = fixture()
 	scene.lantern.health = 10.0
 	enemy._process(2.0)

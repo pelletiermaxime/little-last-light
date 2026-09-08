@@ -25,7 +25,7 @@ func game() -> Node2D:
 
 
 func enemy_at(scene: Node2D, at: Vector2) -> Node2D:
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy: Node2D = get_nodes_in_group("enemies").back()
 	enemy.position = at
 	enemy.health = 100.0
@@ -84,7 +84,7 @@ func check() -> void:
 	scene.save_progress()
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	expect(data.turret_types == ["damage", "sniper"] and data.turret_costs == [0.0, 60.0], "Mixed layout persists sniper type and cost: %s / %s" % [data.turret_types, data.turret_costs])
-	expect(scene._valid_run_layout(scene._run_turret_layout()), "Sniper layout is valid for pending records")
+	expect(scene.PROGRESS_STORE.valid_run_layout(scene._run_turret_layout()), "Sniper layout is valid for pending records")
 	scene.free()
 	await process_frame
 	scene = game()

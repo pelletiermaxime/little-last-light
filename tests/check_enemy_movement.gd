@@ -24,10 +24,10 @@ func check() -> void:
 	var lantern = scene.lantern
 	for elapsed in [0.0, 30.0, 300.0, 899.0, 900.0, 1800.0]:
 		lantern.elapsed = elapsed
-		expect(scene.current_enemy_speed() == 85.0, "Time never accelerates basic enemies")
-		expect(lantern.move_speed > scene.current_enemy_speed() * 2.0, "Lantern has a large speed advantage")
+		expect(scene.encounters.current_enemy_speed() == 85.0, "Time never accelerates basic enemies")
+		expect(lantern.move_speed > scene.encounters.current_enemy_speed() * 2.0, "Lantern has a large speed advantage")
 	lantern.elapsed = 0.0
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	var default_turn_speed: float = enemy.turn_speed
 	enemy.process_mode = Node.PROCESS_MODE_DISABLED
@@ -91,7 +91,7 @@ func check() -> void:
 	expect(is_equal_approx(lantern.health, 97.0), "Existing overlap still deals time-based damage")
 	# Fresh pursuers face the target and must hit a stationary lantern.
 	# After a dodge, slow steering can orbit a nearby target; see M6's limitations.
-	enemy.speed = scene.current_enemy_speed()
+	enemy.speed = scene.encounters.current_enemy_speed()
 	enemy.turn_speed = default_turn_speed
 	for angle in range(0, 360, 30):
 		lantern.health = 100.0

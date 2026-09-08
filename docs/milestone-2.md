@@ -6,7 +6,7 @@ At zero health, the game freezes and shows your survival time. Click **Try again
 
 ## Follow one hit through the code
 
-1. [enemy.gd](../enemy.gd) checks its distance to the lantern. Within 20 pixels, it calls `target.take_damage(contact_damage_per_second * delta)`. Multiplying by seconds makes damage independent of frame rate. Multiple enemies each contribute damage.
+1. [enemy.gd](../enemies/enemy.gd) checks its distance to the lantern. Within 20 pixels, it calls `target.take_damage(contact_damage_per_second * delta)`. Multiplying by seconds makes damage independent of frame rate. Multiple enemies each contribute damage.
 2. [lantern.gd](../lantern.gd) owns its health. `take_damage()` subtracts damage, updates the HUD, and flashes the red ring. Health never drops below zero.
 3. When health reaches zero, the lantern emits its `died` signal. A signal is an announcement: the lantern says what happened without needing to know how a defeat menu works.
 4. [main.gd](../main.gd) connects that signal to `_on_lantern_died()`. It opens the menu and pauses the scene tree. Movement, enemies, turret fire, energy, and the survival timer all stop.

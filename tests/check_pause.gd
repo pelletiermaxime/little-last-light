@@ -48,7 +48,7 @@ func check() -> void:
 	expect(not build.placing and not paused, "Escape still cancels placement")
 	options()
 	expect(scene.lantern.running and not paused, "Options starts a run from preparation")
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.max_health = 50.0
 	enemy.health = 50.0
@@ -57,13 +57,13 @@ func check() -> void:
 	key(KEY_ESCAPE)
 	expect(paused and screen.overlay.visible, "Escape opens pause screen")
 	var lantern = scene.lantern
-	var state: Array = [lantern.position, lantern.elapsed, lantern.energy, lantern.health, scene.spawn_progress, scene.autosave_elapsed, enemy.position, enemy.health, scene.get_node("Turret").cooldown]
+	var state: Array = [lantern.position, lantern.elapsed, lantern.energy, lantern.health, scene.encounters.spawn_progress, scene.autosave_elapsed, enemy.position, enemy.health, scene.get_node("Turret").cooldown]
 	var light: int = lantern.brightness
 	key(KEY_D)
 	key(KEY_B)
 	for frame in range(12):
 		await process_frame
-	var after: Array = [lantern.position, lantern.elapsed, lantern.energy, lantern.health, scene.spawn_progress, scene.autosave_elapsed, enemy.position, enemy.health, scene.get_node("Turret").cooldown]
+	var after: Array = [lantern.position, lantern.elapsed, lantern.energy, lantern.health, scene.encounters.spawn_progress, scene.autosave_elapsed, enemy.position, enemy.health, scene.get_node("Turret").cooldown]
 	expect(state == after, "Pause freezes movement, time, income, damage, spawns, autosave timer, and turret firing")
 	expect(not build.placing and scene.banked_energy == 20.0, "Pause does not enable building or spend energy")
 	expect(lantern.brightness == light, "Pause UI does not change brightness")

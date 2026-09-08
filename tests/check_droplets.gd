@@ -1,6 +1,6 @@
 extends SceneTree
 
-const DROPLET = preload("res://enemy_droplet.gd")
+const DROPLET = preload("res://hazards/enemy_droplet.gd")
 
 
 func _initialize() -> void:
@@ -24,7 +24,7 @@ func check() -> void:
 	scene.lantern.set_physics_process(false)
 	scene._set_turrets_active(false)
 	scene.lantern.elapsed = 900
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	var boss = get_nodes_in_group("final_bosses")[0]
 	boss.set_process(false)
 	boss.position = Vector2(300, 300)

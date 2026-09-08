@@ -1,6 +1,6 @@
 extends SceneTree
 
-const BOSS = preload("res://rainkeeper.gd")
+const BOSS = preload("res://bosses/rainkeeper.gd")
 
 
 func _initialize() -> void:
@@ -96,18 +96,18 @@ func check() -> void:
 	assert(hud.boss_text.text == "THE RAINKEEPER DEFEATED")
 	assert(scene.phase == scene.Phase.RUNNING, "Rainkeeper defeat does not win the run")
 	await process_frame
-	scene.update_rainkeeper_encounter()
+	scene.encounters.update_rainkeeper_encounter()
 	assert(get_nodes_in_group("rainkeepers").is_empty(), "No respawn after defeat")
 	scene.end_run(true)
 	scene.continue_to_preparation()
 	scene.start_run()
-	assert(not scene.rainkeeper_spawned)
+	assert(not scene.encounters.rainkeeper_spawned)
 	scene._set_turrets_active(false)
 	scene.lantern.elapsed = 600.0
-	scene.update_rainkeeper_encounter()
+	scene.encounters.update_rainkeeper_encounter()
 	assert(get_nodes_in_group("rainkeepers").size() == 1, "Restart resets arrival")
 	scene.lantern.elapsed = 900.0
-	scene.update_final_encounter()
+	scene.encounters.update_final_encounter()
 	hud.refresh()
 	assert(hud.boss_warning.text.begins_with("THE SNUFFER"))
 	assert(get_nodes_in_group("rainkeepers").size() == 1)

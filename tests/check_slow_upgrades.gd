@@ -76,7 +76,7 @@ func check() -> void:
 	scene.start_run()
 	scene.lantern.set_process(false)
 	scene.lantern.position = Vector2(800, 100)
-	scene._spawn_enemy()
+	scene.encounters._spawn_enemy()
 	var enemy = get_nodes_in_group("enemies")[0]
 	enemy.set_process(false)
 	enemy.position = pulse.position + Vector2(170, 0)

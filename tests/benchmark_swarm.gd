@@ -20,7 +20,7 @@ func benchmark() -> void:
 	scene.lantern.health = scene.lantern.max_health
 	scene.lantern.elapsed = 300.0
 	for index in range(24):
-		var turret = load("res://turret.tscn").instantiate()
+		var turret = load("res://turrets/turret.tscn").instantiate()
 		turret.position = Vector2(-1000, -1000)
 		scene.add_child(turret)
 		turret.draw.connect(func(): redraws += 1)
@@ -28,7 +28,7 @@ func benchmark() -> void:
 		scene._clear_enemies()
 		await process_frame
 		for index in range(count):
-			scene._spawn_enemy()
+			scene.encounters._spawn_enemy()
 			var enemy = scene.get_child(scene.get_child_count() - 1)
 			enemy.position = scene.lantern.position + Vector2.from_angle(index * 2.39996) * (120.0 + index % 200)
 			enemy.contact_damage_per_second = 0.0
