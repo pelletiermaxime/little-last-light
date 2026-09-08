@@ -8,6 +8,8 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+## [0.0.23] - 2026-09-08
+
 ### Added
 
 - Added an Assistance submenu with half-price upgrades, a shorter night (bosses at 2:30, 5:00, and 7:30), and half-speed enemies and projectiles. Assisted progress cannot publish leaderboard records, even after assists are turned off; reset progress to return to eligible play.
