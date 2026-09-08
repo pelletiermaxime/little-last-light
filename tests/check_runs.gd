@@ -40,7 +40,7 @@ func check() -> void:
 	lantern.take_damage(10)
 	expect(lantern.energy == 0 and lantern.elapsed == 0 and lantern.health == lantern.max_health, "Preparation has no income, time, or damage")
 	expect(get_nodes_in_group("enemies").is_empty(), "Preparation does not spawn enemies")
-	key(KEY_B)
+	build.build_button.pressed.emit()
 	expect(not build.placing, "Cannot buy without banked energy")
 	var turret = get_nodes_in_group("turrets")[0]
 	var original: Vector2 = turret.position
@@ -52,7 +52,7 @@ func check() -> void:
 	key(KEY_ENTER)
 	expect(game.phase == game.Phase.RUNNING and lantern.running, "Enter starts combat")
 	game.banked_energy = 60.0
-	key(KEY_B)
+	build.build_button.pressed.emit()
 	build.begin_move(turret)
 	expect(not build.placing, "Build and move locked during combat")
 	var initial: float = game.current_spawn_interval()
@@ -73,7 +73,7 @@ func check() -> void:
 	expect(is_equal_approx(game.banked_energy, 77.4), "Repeated death cannot duplicate currency")
 	expect(get_nodes_in_group("enemies").is_empty() and not turret.can_process(), "Death clears enemies and stops turrets")
 	game.continue_to_preparation()
-	key(KEY_B)
+	build.build_button.pressed.emit()
 	expect(build.placing, "Can buy after death despite zero health")
 	expect(not build.try_place(original) and not build.try_place(Vector2(-10, 0)), "Invalid placement rejected")
 	var arena: Vector2 = game.get_arena_rect().size

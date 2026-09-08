@@ -18,7 +18,7 @@ var boosted: bool = false
 
 func in_boost_range() -> bool:
 	var lantern := get_parent().get_node_or_null("Lantern")
-	return turret_type == "damage" and lantern != null and lantern.running and lantern.health > 0.0 and global_position.distance_squared_to(lantern.global_position) <= BOOST_RADIUS * BOOST_RADIUS
+	return turret_type in ["damage", "sniper"] and lantern != null and lantern.running and lantern.health > 0.0 and global_position.distance_squared_to(lantern.global_position) <= BOOST_RADIUS * BOOST_RADIUS
 
 
 func _process(delta: float) -> void:
@@ -36,7 +36,7 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 	if cooldown <= 0.0:
-		var enemy: Node2D = _find_nearest_enemy()
+		var enemy: Node2D = _find_target()
 
 		if enemy != null:
 			shot_endpoint = enemy.global_position
@@ -49,7 +49,7 @@ func _process(delta: float) -> void:
 			cooldown = IDLE_SEARCH_INTERVAL
 
 
-func _find_nearest_enemy() -> Node2D:
+func _find_target() -> Node2D:
 	var nearest: Node2D = null
 	var nearest_distance_squared: float = attack_range * attack_range
 
@@ -70,13 +70,17 @@ func _find_nearest_enemy() -> Node2D:
 	return nearest
 
 
-func _draw() -> void:
+func _draw_boost() -> void:
 	if boosted:
 		var lantern := get_parent().get_node_or_null("Lantern")
 		if lantern != null:
 			draw_line(Vector2.ZERO, to_local(lantern.global_position), Color(1.0, 0.75, 0.3, 0.45), 1.5, true)
 		draw_circle(Vector2.ZERO, 25.0, Color(1.0, 0.65, 0.2, 0.16))
 		draw_arc(Vector2.ZERO, 17.0, 0.0, TAU, 32, Color("#ffce78"), 2.0, true)
+
+
+func _draw() -> void:
+	_draw_boost()
 	# A faint circle shows how far the turret can shoot.
 	draw_arc(
 		Vector2.ZERO,

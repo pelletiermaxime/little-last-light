@@ -8,6 +8,19 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Added
+
+- The placement screen now shows each turret's base damage, range and firing interval, plus targeting or slowing effects, below its purchase button. Whole-number stats omit unnecessary decimals.
+- Added a standalone sniper visual preview to compare three designs with synchronized firing and recharge animations.
+- Added the Watchlight sniper: long-range shots at the furthest enemy, a directional shuttered housing, and heavy damage with a slow recharge. Build it with right-stick click on a controller or the placement toolbar; damage upgrades and lantern proximity boosts apply.
+
+### Changed
+
+- Basic, Slow, and Watchlight turrets now share the same purchase price: 60 energy initially, increasing by 25 for each purchased turret in the layout.
+- Upgrade purchases use mouse clicks or menu navigation and confirmation. Removed the G, F, and H shortcuts and their button hints.
+- Watchlights now acquire their next target immediately after shooting and turn toward it during reload, updating their aim as enemies move or die.
+- Turret purchases use the mouse toolbar or controller shortcuts. Removed the B, V, and N keyboard purchase shortcuts; right-stick click now selects the Watchlight on controllers.
+
 ## [0.0.19] - 2026-09-07
 
 ### Added

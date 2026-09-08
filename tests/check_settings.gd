@@ -115,6 +115,7 @@ func check() -> void:
 	joy(JOY_BUTTON_A)
 	expect(display.fps_limit == 60, "Controller changes setting exactly once")
 	key(KEY_B)
+	joy(JOY_BUTTON_RIGHT_STICK)
 	key(KEY_ENTER)
 	expect(not scene.get_node("BuildController").placing and scene.phase == scene.Phase.PREPARATION, "Settings blocks gameplay shortcuts")
 	joy(JOY_BUTTON_B)

@@ -78,6 +78,13 @@ size_flags_horizontal = 3
 text = "Slow turret"
 visible = false
 
+[node name="SniperButton" type="Button" parent="Card/Padding/Content/Actions"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Watchlight sniper"
+visible = false
+
 [node name="CancelButton" type="Button" parent="Card/Padding/Content/Actions"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2

@@ -25,15 +25,9 @@ func check() -> void:
 	build.begin_placement()
 	assert(not scene.buy_upgrade("health"))
 	build.cancel_placement()
-	var event := InputEventKey.new()
-	event.physical_keycode = KEY_H
-	event.pressed = true
-	build._unhandled_input(event)
+	build.health_button.pressed.emit()
 	assert(scene.health_level == 1 and scene.banked_energy == 2400)
 	assert(scene.lantern.health == 40 and scene.lantern.max_health == 40)
-	event.echo = true
-	build._unhandled_input(event)
-	assert(scene.health_level == 1)
 	scene.free()
 	await process_frame
 	scene = game()
@@ -79,5 +73,5 @@ func check() -> void:
 	assert(scene.phase == scene.Phase.RESULTS)
 	scene.free()
 	DirAccess.remove_absolute(path)
-	print("PASS: base health, purchases, shortcuts, persistence, migration, cap, phase guards, refill, three-hit death")
+	print("PASS: base health, button purchases, persistence, migration, cap, phase guards, refill, three-hit death")
 	quit()
