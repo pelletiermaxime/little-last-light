@@ -91,10 +91,94 @@ theme_type_variation = &"SettingsNote"
 text = "VSync may cap FPS at your display's refresh rate."
 autowrap_mode = 3
 
-[node name="DoneButton" type="Button" parent="Center/Panel/Padding/Content" unique_id=544479408]
+[node name="AssistanceButton" type="Button" parent="Center/Panel/Padding/Content"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Done"
+text = "Assistance…"
+
+[node name="AssistancePage" type="VBoxContainer" parent="Center/Panel/Padding/Content"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Center/Panel/Padding/Content/AssistancePage"]
+layout_mode = 2
+theme_type_variation = &"SettingsTitle"
+text = "Assistance"
+
+[node name="Note" type="Label" parent="Center/Panel/Padding/Content/AssistancePage"]
+layout_mode = 2
+text = "Assists disable records for this saved progress, even after turning them off. Reset progress to restore eligibility. Change only before a run."
+autowrap_mode = 3
+
+[node name="CheapUpgrades" type="CheckButton" parent="Center/Panel/Padding/Content/AssistancePage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Half-price upgrades"
+
+[node name="ShortNight" type="CheckButton" parent="Center/Panel/Padding/Content/AssistancePage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Short night · bosses at 2:30 / 5:00 / 7:30"
+
+[node name="SlowEnemies" type="CheckButton" parent="Center/Panel/Padding/Content/AssistancePage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Half-speed enemies and projectiles"
+
+[node name="Status" type="Label" parent="Center/Panel/Padding/Content/AssistancePage"]
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="DamageTaken" type="Button" parent="Center/Panel/Padding/Content/AssistancePage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Damage taken: 100%"
+
+[node name="BackButton" type="Button" parent="Center/Panel/Padding/Content/AssistancePage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Back to Settings"
+
+[node name="VisualButton" type="Button" parent="Center/Panel/Padding/Content"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Visual accessibility…"
+
+[node name="VisualPage" type="VBoxContainer" parent="Center/Panel/Padding/Content"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Center/Panel/Padding/Content/VisualPage"]
+layout_mode = 2
+theme_type_variation = &"SettingsTitle"
+text = "Visual accessibility"
+
+[node name="Note" type="Label" parent="Center/Panel/Padding/Content/VisualPage"]
+layout_mode = 2
+text = "Adjust visual clarity at any time. These options keep leaderboard eligibility and remain after resetting progress. Enemy attack warnings stay visible."
+autowrap_mode = 3
+
+[node name="StrongDangerCues" type="CheckButton" parent="Center/Panel/Padding/Content/VisualPage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Stronger danger cues"
+
+[node name="ReduceEffects" type="CheckButton" parent="Center/Panel/Padding/Content/VisualPage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Reduce visual effects"
+
+[node name="ShowTurretRanges" type="CheckButton" parent="Center/Panel/Padding/Content/VisualPage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Show turret range circles"
+
+[node name="BackButton" type="Button" parent="Center/Panel/Padding/Content/VisualPage"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Back to Settings"
 
 [node name="ResetProgressButton" type="Button" parent="Center/Panel/Padding/Content"]
 custom_minimum_size = Vector2(0, 44)
@@ -127,4 +211,3 @@ text = "Reset all progress"
 [connection signal="pressed" from="Center/Panel/Padding/Content/DisplayModeButton" to="." method="_on_display_mode_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/FPSButton" to="." method="_on_fps_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/VSyncButton" to="." method="_on_vsync_button_pressed"]
-[connection signal="pressed" from="Center/Panel/Padding/Content/DoneButton" to="." method="_on_done_button_pressed"]

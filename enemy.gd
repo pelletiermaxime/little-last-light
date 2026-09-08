@@ -1,5 +1,7 @@
 extends Node2D
 
+var assist_movement_factor := 1.0
+
 const CONTACT_DISTANCE: float = 20.0
 const CONTACT_TOLERANCE: float = 0.1
 
@@ -28,6 +30,7 @@ var body: Node2D
 func _ready() -> void:
 	health = max_health
 	add_to_group("enemies")
+	get_node("/root/DisplaySettings").changed.connect(queue_redraw)
 	_create_body()
 	queue_redraw()
 	
@@ -63,7 +66,7 @@ func _consume_slow(delta: float) -> float:
 	if slow_remaining <= 0.0 and slow_factor != 1.0:
 		slow_factor = 1.0
 		modulate = Color.WHITE
-	return movement_time
+	return movement_time * assist_movement_factor
 
 
 func _move(delta: float, movement_factor: float) -> void:
@@ -86,7 +89,7 @@ func _move(delta: float, movement_factor: float) -> void:
 		heading = desired
 	var max_turn := maxf(0.0, turn_speed) * delta
 	heading = heading.rotated(clampf(heading.angle_to(desired), -max_turn, max_turn)).normalized()
-	var movement := heading * speed * movement_factor * delta
+	var movement := heading * speed * movement_factor * assist_movement_factor * delta
 	var fraction := _first_contact_fraction(movement)
 	global_position += movement * fraction
 	# Only the part of the frame spent touching the lantern deals damage.

@@ -14,6 +14,13 @@ var cooldown: float = 0.0
 var shot_time: float = 0.0
 var shot_endpoint: Vector2 = Vector2.ZERO
 var boosted: bool = false
+var range_preview := false
+
+func _ready() -> void:
+	get_node("/root/DisplaySettings").changed.connect(queue_redraw)
+
+func range_visible() -> bool:
+	return range_preview or get_node("/root/DisplaySettings").show_turret_ranges
 
 
 func reset_attack() -> void:
@@ -78,7 +85,8 @@ func _find_target() -> Node2D:
 
 
 func _draw_boost() -> void:
-	if boosted:
+	var reduced: bool = get_node("/root/DisplaySettings").reduce_effects
+	if boosted and not reduced:
 		var lantern := get_parent().get_node_or_null("Lantern")
 		if lantern != null:
 			draw_line(Vector2.ZERO, to_local(lantern.global_position), Color(1.0, 0.75, 0.3, 0.45), 1.5, true)
@@ -87,25 +95,18 @@ func _draw_boost() -> void:
 
 
 func _draw() -> void:
+	var reduced: bool = get_node("/root/DisplaySettings").reduce_effects
 	_draw_boost()
 	# A faint circle shows how far the turret can shoot.
-	draw_arc(
-		Vector2.ZERO,
-		attack_range,
-		0.0,
-		TAU,
-		64,
-		Color(0.4, 0.8, 1.0, 0.15),
-		1.0,
-		true
-	)
+	if range_visible():
+		draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 64, Color(0.4, 0.8, 1.0, 0.15), 1.0, true)
 
 	# Turret body.
 	draw_circle(Vector2.ZERO, 13.0, Color("#36566f"))
 	draw_circle(Vector2.ZERO, 7.0, Color("#ffe3a3") if boosted else Color("#9bddff"))
 
 	# A short flash connects the turret to its last target.
-	if shot_time > 0.0:
+	if shot_time > 0.0 and not reduced:
 		draw_line(
 			Vector2.ZERO,
 			to_local(shot_endpoint),

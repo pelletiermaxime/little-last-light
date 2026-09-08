@@ -71,6 +71,52 @@ var game_version: String = "dev" if OS.has_feature("editor") else str(ProjectSet
 var version_bests: Dictionary = {}
 var legacy_best_time: float = 0.0
 var leaderboard_profile: Dictionary = {"token": "", "username": "", "pending": {}}
+var assists: Dictionary = {"cheap_upgrades": false, "short_night": false, "slow_enemies": false, "reduced_damage": false}
+const DAMAGE_FACTORS := [1.0, 0.75, 0.5, 0.0]
+var damage_taken_factor := 1.0
+# Energy and upgrades carry between runs, so eligibility belongs to the save.
+var assisted_progress := false
+var run_assisted := false
+
+
+func set_assist(kind: String, enabled: bool) -> bool:
+	if phase != Phase.PREPARATION or not assists.has(kind):
+		return false
+	assists[kind] = enabled
+	if enabled:
+		assisted_progress = true
+		leaderboard_profile.pending = {}
+	save_progress()
+	$BuildController._update_interface()
+	return true
+
+
+func night_scale() -> float:
+	return 0.5 if assists.short_night else 1.0
+
+
+func set_damage_taken(value: float) -> bool:
+	if phase != Phase.PREPARATION or value not in DAMAGE_FACTORS:
+		return false
+	damage_taken_factor = value
+	return set_assist("reduced_damage", value != 1.0)
+
+
+func encounter_time() -> float:
+	# Child HUD readiness precedes Main's @onready bindings.
+	return $Lantern.elapsed / night_scale()
+
+
+func night_duration() -> float:
+	return final_boss_time * night_scale()
+
+
+func enemy_movement_multiplier() -> float:
+	return 0.5 if assists.slow_enemies else 1.0
+
+
+func leaderboard_eligible() -> bool:
+	return not assisted_progress and not assists.values().has(true)
 
 
 func _ready() -> void:
@@ -162,14 +208,14 @@ func proximity_multiplier() -> float:
 func upgrade_cost(kind: String) -> float:
 	if not UPGRADE_BASE_COSTS.has(kind):
 		return INF
-	return UPGRADE_BASE_COSTS[kind] * pow(2.0, upgrade_levels()[kind])
+	return UPGRADE_BASE_COSTS[kind] * pow(2.0, upgrade_levels()[kind]) * (0.5 if assists.cheap_upgrades else 1.0)
 
 
 func defense_investment() -> float:
 	var invested: float = $BuildController.layout_refund()
 	# Upgrade prices double; their cumulative cost is next price minus base price.
 	for kind in UPGRADE_BASE_COSTS:
-		invested += upgrade_cost(kind) - UPGRADE_BASE_COSTS[kind]
+		invested += UPGRADE_BASE_COSTS[kind] * (pow(2.0, upgrade_levels()[kind]) - 1.0)
 	return invested
 
 
@@ -225,6 +271,8 @@ func start_run() -> void:
 	pickups.reset()
 	# Snapshot the defense budget before the run. Unspent savings do not help survival.
 	run_energy_invested = defense_investment()
+	run_assisted = not leaderboard_eligible()
+	assisted_progress = assisted_progress or run_assisted
 	lantern.health = lantern.max_health
 	lantern.energy = 0.0
 	lantern.elapsed = 0.0
@@ -239,7 +287,7 @@ func start_run() -> void:
 	boss_reward_notice_until = 0.0
 	final_boss_spawned = false
 	rainkeeper_spawned = false
-	next_charger_time = FIRST_CHARGER_TIME
+	next_charger_time = FIRST_CHARGER_TIME * night_scale()
 	autosave_elapsed = 0.0
 	phase = Phase.RUNNING
 	lantern.running = true
@@ -259,16 +307,20 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	lantern.running = false
 	pickups.reset()
 	# Capture the result before banking clears this run's energy.
-	var survival := minf(lantern.elapsed, final_boss_time)
+	var survival := minf(lantern.elapsed, night_duration())
 	var previous_clear := float(version_clears.get(game_version, 0.0))
-	var new_clear: bool = victory and (previous_clear == 0.0 or lantern.elapsed < previous_clear)
+	var eligible := leaderboard_eligible() and not run_assisted
+	var new_clear: bool = eligible and victory and (previous_clear == 0.0 or lantern.elapsed < previous_clear)
 	last_run = {"duration": lantern.elapsed, "survival": survival, "victory": victory, "energy": lantern.energy, "new_best": new_clear if victory else survival > best_time, "voluntary": voluntary}
 	last_run.boss_bonus = boss_reward_amount
-	best_time = maxf(best_time, survival)
+	last_run.assisted = not eligible
+	last_run.new_best = eligible and last_run.new_best
+	if eligible:
+		best_time = maxf(best_time, survival)
 	if new_clear:
 		version_clears[game_version] = lantern.elapsed
 	version_bests[game_version] = best_time
-	if new_clear or (last_run.new_best and previous_clear == 0.0):
+	if eligible and (new_clear or (last_run.new_best and previous_clear == 0.0)):
 		leaderboard_profile.pending = {
 			"version": game_version,
 			"durationMs": maxi(1, int(survival * 1000.0)),
@@ -337,18 +389,18 @@ func _set_turrets_active(active: bool) -> void:
 
 
 func current_spawn_interval() -> float:
-	var rate := ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(lantern.elapsed)
+	var rate := ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(encounter_time())
 	if rate <= 0.0:
 		return INF
 	# Continue slower growth after the opening, with distinct brightness caps.
-	var ramp := 1.0 + minf(lantern.elapsed, 100.0) / PRESSURE_RAMP_SECONDS
-	ramp += clampf((lantern.elapsed - 100.0) / 100.0, 0.0, 4.0)
+	var ramp := 1.0 + minf(encounter_time(), 100.0) / PRESSURE_RAMP_SECONDS
+	ramp += clampf((encounter_time() - 100.0) / 100.0, 0.0, 4.0)
 	return maxf(MIN_SPAWN_INTERVALS[lantern.brightness], SPAWN_INTERVALS[lantern.brightness] / ramp) / rate
 
 
 func current_enemy_health() -> float:
 	# Toughness keeps growing after the performance-safe spawn caps.
-	return 1.0 + floorf(lantern.elapsed / TOUGHNESS_STEP_SECONDS) + floorf(maxf(0.0, lantern.elapsed - 300.0) / 45.0)
+	return 1.0 + floorf(encounter_time() / TOUGHNESS_STEP_SECONDS) + floorf(maxf(0.0, encounter_time() - 300.0) / 45.0)
 
 
 func current_enemy_speed() -> float:
@@ -366,13 +418,13 @@ func _process(delta: float) -> void:
 	# M15 integration point: final arrival runs alongside ordinary spawn pressure.
 	update_final_encounter()
 	update_rainkeeper_encounter()
-	if not boss_spawned and lantern.elapsed >= BOSS_TIME:
+	if not boss_spawned and encounter_time() >= BOSS_TIME:
 		_spawn_boss()
 	spawn_progress += delta / current_spawn_interval()
 	if spawn_progress >= 1.0:
 		spawn_progress -= 1.0
 		_spawn_enemy()
-	if not ENCOUNTER_SCHEDULE.chargers_enabled(lantern.elapsed):
+	if not ENCOUNTER_SCHEDULE.chargers_enabled(encounter_time()):
 		# No accumulated charger debt or burst when a recovery ends.
 		next_charger_time = lantern.elapsed
 	elif lantern.elapsed >= next_charger_time:
@@ -384,12 +436,13 @@ func _process(delta: float) -> void:
 func update_final_encounter() -> bool:
 	if phase != Phase.RUNNING:
 		return false
-	if not final_boss_spawned and lantern.elapsed >= final_boss_time:
+	if not final_boss_spawned and lantern.elapsed >= night_duration():
 		final_boss_spawned = true
 		# Final arrival adds pressure: existing enemies and water stay until defeated
 		# or the run ends. Ordinary spawning continues throughout final combat.
 		var boss := FINAL_BOSS_SCRIPT.new()
 		boss.target = lantern
+		boss.assist_movement_factor = enemy_movement_multiplier()
 		var size := get_arena_rect().size
 		boss.position = Vector2(48 if lantern.position.x > size.x / 2.0 else size.x - 48, 64 if lantern.position.y > size.y / 2.0 else size.y - 64)
 		boss.defeated.connect(_on_final_boss_defeated)
@@ -399,11 +452,12 @@ func update_final_encounter() -> bool:
 
 
 func update_rainkeeper_encounter() -> void:
-	if phase != Phase.RUNNING or rainkeeper_spawned or final_boss_spawned or lantern.elapsed < RAINKEEPER_TIME:
+	if phase != Phase.RUNNING or rainkeeper_spawned or final_boss_spawned or encounter_time() < RAINKEEPER_TIME:
 		return
 	rainkeeper_spawned = true
 	var boss := RAINKEEPER_SCRIPT.new()
 	boss.target = lantern
+	boss.assist_movement_factor = enemy_movement_multiplier()
 	var size := get_arena_rect().size
 	boss.position = Vector2(48 if lantern.position.x > size.x / 2.0 else size.x - 48, 64 if lantern.position.y > size.y / 2.0 else size.y - 64)
 	add_child(boss)
@@ -422,6 +476,7 @@ func _spawn_boss() -> void:
 	boss_spawned = true
 	var boss := BOSS_SCRIPT.new()
 	boss.target = lantern
+	boss.assist_movement_factor = enemy_movement_multiplier()
 	boss.defeated.connect(_on_drencher_defeated)
 	# Arrive at the farthest inset corner, giving space and a visible warning.
 	var size := get_arena_rect().size
@@ -447,31 +502,33 @@ func _on_drencher_defeated() -> void:
 
 
 func _spawn_enemy() -> void:
-	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed):
+	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(encounter_time()):
 		return
 	var enemy := ENEMY_SCENE.instantiate() as Node2D
 	enemy.target = lantern
 	enemy.max_health = current_enemy_health()
 	enemy.speed = current_enemy_speed()
+	enemy.assist_movement_factor = enemy_movement_multiplier()
 	add_child(enemy)
 	enemy.global_position = _random_edge_position()
 
 
 func current_charger_interval() -> float:
-	var progress := clampf((lantern.elapsed - FIRST_CHARGER_TIME) / (CHARGER_RAMP_END - FIRST_CHARGER_TIME), 0.0, 1.0)
+	var progress := clampf((encounter_time() - FIRST_CHARGER_TIME) / (CHARGER_RAMP_END - FIRST_CHARGER_TIME), 0.0, 1.0)
 	var interval := lerpf(CHARGER_INTERVAL, MIN_CHARGER_INTERVAL, progress)
-	interval -= 0.5 * clampf((lantern.elapsed - 120.0) / 480.0, 0.0, 1.0)
-	if ENCOUNTER_SCHEDULE.period(lantern.elapsed) == "Gathering":
+	interval -= 0.5 * clampf((encounter_time() - 120.0) / 480.0, 0.0, 1.0)
+	if ENCOUNTER_SCHEDULE.period(encounter_time()) == "Gathering":
 		return interval * 2.0
 	# Recovery retains breathing room even after chargers join it at five minutes.
-	return maxf(12.0, interval * 3.0) if ENCOUNTER_SCHEDULE.period(lantern.elapsed) == "Recovery" else interval
+	return maxf(12.0, interval * 3.0) if ENCOUNTER_SCHEDULE.period(encounter_time()) == "Recovery" else interval
 
 
 func _spawn_charger() -> void:
-	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed) or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
+	if phase != Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(encounter_time()) or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
 		return
 	var charger := CHARGER_SCENE.instantiate() as Node2D
 	charger.target = lantern
+	charger.assist_movement_factor = enemy_movement_multiplier()
 	charger.max_health = maxf(3.0, current_enemy_health() + 1.0)
 	add_child(charger)
 	charger.global_position = _random_edge_position()
@@ -522,6 +579,9 @@ func save_progress() -> bool:
 	data.version_clears = version_clears
 	data.turret_types = turret_types
 	data.upgrades = upgrade_levels()
+	data.assists = assists
+	data.damage_taken_factor = damage_taken_factor
+	data.assisted_progress = assisted_progress
 	data.game_version = str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
 	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if file == null:
@@ -590,6 +650,12 @@ func load_progress() -> void:
 		save_message = "Save could not be read; original file preserved. This session will not save."
 		return
 	var data: Dictionary = parser.data
+	assists.merge(data.get("assists", {}), true)
+	damage_taken_factor = float(data.get("damage_taken_factor", 1.0))
+	assists.reduced_damage = damage_taken_factor != 1.0
+	assisted_progress = data.get("assisted_progress", false) or assists.values().has(true)
+	# Retire the prototype speed toggle while retaining its assisted history.
+	assists.erase("slow_game")
 	banked_energy = float(data.energy)
 	var upgrades: Dictionary = data.get("upgrades", {})
 	damage_level = int(upgrades.get("damage", 0))
@@ -605,6 +671,8 @@ func load_progress() -> void:
 	version_clears = data.get("version_clears", {})
 	best_time = float(version_bests.get(game_version, 0.0))
 	leaderboard_profile = data.get("leaderboard", {"token": "", "username": "", "pending": {}})
+	if assisted_progress:
+		leaderboard_profile.pending = {}
 	for turret in get_tree().get_nodes_in_group("turrets"):
 		turret.remove_from_group("turrets")
 		turret.queue_free()
@@ -623,6 +691,13 @@ func load_progress() -> void:
 
 func _valid_save(data: Variant) -> bool:
 	if not data is Dictionary or data.get("version") != 1:
+		return false
+	if not data.get("assisted_progress", false) is bool or not data.get("assists", {}) is Dictionary:
+		return false
+	for kind in assists:
+		if not data.get("assists", {}).get(kind, false) is bool:
+			return false
+	if data.get("damage_taken_factor", 1.0) not in DAMAGE_FACTORS:
 		return false
 	var upgrades = data.get("upgrades", {})
 	if not upgrades is Dictionary:

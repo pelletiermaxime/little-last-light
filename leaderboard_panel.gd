@@ -88,7 +88,7 @@ func refresh() -> void:
 		displayed_pending = pending.duplicate()
 		if not pending.is_empty() and sending.is_empty():
 			notice.text = ""
-	var offered := not pending.is_empty()
+	var offered: bool = main.leaderboard_eligible() and not pending.is_empty()
 	if pending != displayed_section_pending:
 		displayed_section_pending = pending.duplicate(true)
 		show_submission(offered)
@@ -115,6 +115,8 @@ func refresh() -> void:
 		notice.text = "Online publishing is not configured in this build. Your record is saved locally."
 	if _has_prototype_layout(pending):
 		notice.text = "Ember Pot prototype records stay on this device while its balance is being tested."
+	if not main.leaderboard_eligible():
+		notice.text = "Assisted progress · publishing disabled. Reset all progress with assists off to earn eligible records."
 
 
 func _has_prototype_layout(pending: Dictionary) -> bool:
@@ -199,7 +201,7 @@ func _skip() -> void:
 
 
 func _publish() -> void:
-	if not sending.is_empty() or api_url.is_empty() or main.leaderboard_profile.pending.is_empty() or _has_prototype_layout(main.leaderboard_profile.pending):
+	if not main.leaderboard_eligible() or not sending.is_empty() or api_url.is_empty() or main.leaderboard_profile.pending.is_empty() or _has_prototype_layout(main.leaderboard_profile.pending):
 		return
 	var name_text := username.text.strip_edges()
 	var pattern := RegEx.new()

@@ -19,6 +19,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	super._ready()
 	visual = VISUAL.new()
 	visual.design = VISUAL.Design.WATCHLIGHT
 	add_child(visual)
@@ -69,10 +70,11 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	_draw_boost()
-	draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 96, Color(1.0, 0.9, 0.65, 0.10), 1.0, true)
+	if range_visible():
+		draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 96, Color(1.0, 0.9, 0.65, 0.10), 1.0, true)
 	if is_instance_valid(visual):
 		visual.charge = clampf(1.0 - cooldown / fire_interval, 0.0, 1.0)
-		visual.flash = shot_time / 0.12
+		visual.flash = 0.0 if get_node("/root/DisplaySettings").reduce_effects else shot_time / 0.12
 		visual.aim_angle = aim_angle
 		visual.shot_endpoint = to_local(shot_endpoint)
 		visual.queue_redraw()

@@ -37,10 +37,11 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 64, Color(0.4, 1.0, 0.75, 0.18), 1.0, true)
+	if range_visible():
+		draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 64, Color(0.4, 1.0, 0.75, 0.18), 1.0, true)
 	draw_circle(Vector2.ZERO, 13.0, Color("#285c51"))
 	draw_arc(Vector2.ZERO, 8.0, 0.0, TAU, 24, Color("#8ff0c4"), 3.0, true)
 	draw_circle(Vector2.ZERO, 3.0, Color("#d2ffe9"))
-	if shot_time > 0.0:
+	if shot_time > 0.0 and not get_node("/root/DisplaySettings").reduce_effects:
 		var progress := 1.0 - shot_time / FLASH_DURATION
 		draw_arc(Vector2.ZERO, lerpf(15.0, attack_range, progress), 0.0, TAU, 64, Color(0.55, 1.0, 0.8, 1.0 - progress), 3.0, true)

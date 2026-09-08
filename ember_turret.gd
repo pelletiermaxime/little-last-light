@@ -59,7 +59,8 @@ func _release_attack() -> void:
 
 func _draw() -> void:
 	_draw_boost()
-	draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 64, Color(1.0, 0.7, 0.35, 0.12), 1.0, true)
+	if range_visible():
+		draw_arc(Vector2.ZERO, attack_range, 0.0, TAU, 64, Color(1.0, 0.7, 0.35, 0.12), 1.0, true)
 	var progress := 1.0 - pending_time / FLIGHT_TIME
 	var flash := shot_time / FLASH_TIME
 	var landing := to_local(shot_endpoint)
@@ -72,7 +73,7 @@ func _draw() -> void:
 		draw_circle(coal, 9.0, Color(1.0, 0.6, 0.15, 0.12))
 		draw_circle(coal, 4.0, AMBER)
 		draw_circle(coal, 1.5, Color("#fff3d4"))
-	if flash > 0.0:
+	if flash > 0.0 and not get_node("/root/DisplaySettings").reduce_effects:
 		draw_circle(landing, SPLASH_RADIUS, Color(1.0, 0.7, 0.3, flash * 0.15))
 		draw_arc(landing, SPLASH_RADIUS, 0.0, TAU, 48, Color(1.0, 0.85, 0.6, flash), 2.0, true)
 		for ray in range(8):
