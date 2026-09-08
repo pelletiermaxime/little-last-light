@@ -8,6 +8,8 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+## [0.0.24] - 2026-09-08
+
 ### Changed
 
 - Reduced rendering overhead in crowded fights, including basic enemies and animated turret range indicators.
