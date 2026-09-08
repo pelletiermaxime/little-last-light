@@ -12,13 +12,7 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ### Added
 
-- Press L3 / left-stick click in Place turrets to select Ember Pot, with a matching controller prompt beside its purchase button.
-- Added the Ember Pot prototype: a glowing coal lands after 0.45 seconds and deals 1 base damage to enemies within 65 pixels, firing every 3 seconds before upgrades. Records remain local during balance tuning.
-
-### Changed
-
-- Published versions and dated release notes are now recorded automatically in the repository after publication; rebuilding a release preserves corrections to its published notes.
-- Ember Pot now benefits from Damage and Fire Rate upgrades and lantern proximity, with its stats shown on the upgrades page. Each coal keeps the damage bonus it had at launch.
+- Added Ember Pot, an area-damage turret whose lobbed coals explode to damage nearby enemies. It benefits from Damage and Fire Rate upgrades and lantern proximity bonuses. Build it from the placement toolbar or with L3 / left-stick click. Runs using Ember Pot are saved locally and cannot be published to the leaderboard.
 
 ### Fixed
 
