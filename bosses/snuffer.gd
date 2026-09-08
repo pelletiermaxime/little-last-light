@@ -117,7 +117,7 @@ func _emit_droplet(direction: Vector2, projectile_speed: float, color: Color) ->
 		return
 	var droplet := DROPLET.new()
 	droplet.target = target
-	droplet.velocity = direction * projectile_speed
+	droplet.velocity = direction * projectile_speed * assist_movement_factor
 	droplet.tint = color
 	droplet.position = global_position + direction * 42.0
 	get_parent().add_child(droplet)
@@ -173,6 +173,13 @@ func _draw_body() -> void:
 
 
 func _draw() -> void:
+	if get_node("/root/DisplaySettings").strong_danger_cues:
+		if attack in [Attack.RING_WARNING, Attack.RINGS, Attack.ARRIVAL]:
+			draw_arc(Vector2.ZERO, 62, 0, TAU, 48, Color("#080d13"), 7.0, true)
+			draw_arc(Vector2.ZERO, 62, 0, TAU, 48, Color.WHITE, 4.0, true)
+		elif attack == Attack.VOLLEY_WARNING:
+			draw_line(heading * 42, heading * 230, Color("#080d13"), 7.0, true)
+			draw_dashed_line(heading * 42, heading * 230, Color.WHITE, 4.0, 12, true)
 	if attack == Attack.RING_WARNING or attack == Attack.RINGS:
 		draw_arc(Vector2.ZERO, 62, 0, TAU, 48, Color("#e4c5ff"), 3.0, true)
 	elif attack == Attack.VOLLEY_WARNING:

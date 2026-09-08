@@ -37,7 +37,7 @@ func reset() -> void:
 	boss_spawned = false
 	final_boss_spawned = false
 	rainkeeper_spawned = false
-	next_charger_time = FIRST_CHARGER_TIME
+	next_charger_time = FIRST_CHARGER_TIME * game.night_scale()
 
 
 func update(delta: float) -> void:
@@ -45,13 +45,13 @@ func update(delta: float) -> void:
 		return
 	update_final_encounter()
 	update_rainkeeper_encounter()
-	if not boss_spawned and lantern.elapsed >= BOSS_TIME:
+	if not boss_spawned and game.encounter_time() >= BOSS_TIME:
 		_spawn_boss()
 	spawn_progress += delta / current_spawn_interval()
 	if spawn_progress >= 1.0:
 		spawn_progress -= 1.0
 		_spawn_enemy()
-	if not ENCOUNTER_SCHEDULE.chargers_enabled(lantern.elapsed):
+	if not ENCOUNTER_SCHEDULE.chargers_enabled(game.encounter_time()):
 		# No accumulated charger debt or burst when a recovery ends.
 		next_charger_time = lantern.elapsed
 	elif lantern.elapsed >= next_charger_time:
@@ -61,18 +61,18 @@ func update(delta: float) -> void:
 
 
 func current_spawn_interval() -> float:
-	var rate := ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(lantern.elapsed)
+	var rate := ENCOUNTER_SCHEDULE.pursuer_rate_multiplier(game.encounter_time())
 	if rate <= 0.0:
 		return INF
 	# Continue slower growth after the opening, with distinct brightness caps.
-	var ramp := 1.0 + minf(lantern.elapsed, 100.0) / PRESSURE_RAMP_SECONDS
-	ramp += clampf((lantern.elapsed - 100.0) / 100.0, 0.0, 4.0)
+	var ramp := 1.0 + minf(game.encounter_time(), 100.0) / PRESSURE_RAMP_SECONDS
+	ramp += clampf((game.encounter_time() - 100.0) / 100.0, 0.0, 4.0)
 	return maxf(MIN_SPAWN_INTERVALS[lantern.brightness], SPAWN_INTERVALS[lantern.brightness] / ramp) / rate
 
 
 func current_enemy_health() -> float:
 	# Toughness keeps growing after the performance-safe spawn caps.
-	return 1.0 + floorf(lantern.elapsed / TOUGHNESS_STEP_SECONDS) + floorf(maxf(0.0, lantern.elapsed - 300.0) / 45.0)
+	return 1.0 + floorf(game.encounter_time() / TOUGHNESS_STEP_SECONDS) + floorf(maxf(0.0, game.encounter_time() - 300.0) / 45.0)
 
 
 func current_enemy_speed() -> float:
@@ -83,12 +83,13 @@ func current_enemy_speed() -> float:
 func update_final_encounter() -> bool:
 	if game.phase != game.Phase.RUNNING:
 		return false
-	if not final_boss_spawned and lantern.elapsed >= final_boss_time:
+	if not final_boss_spawned and lantern.elapsed >= game.night_duration():
 		final_boss_spawned = true
 		# Final arrival adds pressure: existing enemies and water stay until defeated
 		# or the run ends. Ordinary spawning continues throughout final combat.
 		var boss := FINAL_BOSS_SCRIPT.new()
 		boss.target = lantern
+		boss.assist_movement_factor = game.enemy_movement_multiplier()
 		boss.position = _opposite_corner()
 		boss.defeated.connect(game._on_final_boss_defeated)
 		game.add_child(boss)
@@ -97,11 +98,12 @@ func update_final_encounter() -> bool:
 
 
 func update_rainkeeper_encounter() -> void:
-	if game.phase != game.Phase.RUNNING or rainkeeper_spawned or final_boss_spawned or lantern.elapsed < RAINKEEPER_TIME:
+	if game.phase != game.Phase.RUNNING or rainkeeper_spawned or final_boss_spawned or game.encounter_time() < RAINKEEPER_TIME:
 		return
 	rainkeeper_spawned = true
 	var boss := RAINKEEPER_SCRIPT.new()
 	boss.target = lantern
+	boss.assist_movement_factor = game.enemy_movement_multiplier()
 	boss.position = _opposite_corner()
 	game.add_child(boss)
 	game.get_node("GameHUD").refresh()
@@ -113,6 +115,7 @@ func _spawn_boss() -> void:
 	boss_spawned = true
 	var boss := BOSS_SCRIPT.new()
 	boss.target = lantern
+	boss.assist_movement_factor = game.enemy_movement_multiplier()
 	boss.defeated.connect(game._on_drencher_defeated)
 	# Arrive at the farthest inset corner, giving space and a visible warning.
 	var size: Vector2 = game.get_arena_rect().size
@@ -126,10 +129,11 @@ func _spawn_boss() -> void:
 
 
 func _spawn_enemy() -> void:
-	if game.phase != game.Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed):
+	if game.phase != game.Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(game.encounter_time()):
 		return
 	var enemy := ENEMY_SCENE.instantiate() as Node2D
 	enemy.target = lantern
+	enemy.assist_movement_factor = game.enemy_movement_multiplier()
 	enemy.max_health = current_enemy_health()
 	enemy.speed = current_enemy_speed()
 	game.add_child(enemy)
@@ -137,20 +141,21 @@ func _spawn_enemy() -> void:
 
 
 func current_charger_interval() -> float:
-	var progress := clampf((lantern.elapsed - FIRST_CHARGER_TIME) / (CHARGER_RAMP_END - FIRST_CHARGER_TIME), 0.0, 1.0)
+	var progress := clampf((game.encounter_time() - FIRST_CHARGER_TIME) / (CHARGER_RAMP_END - FIRST_CHARGER_TIME), 0.0, 1.0)
 	var interval := lerpf(CHARGER_INTERVAL, MIN_CHARGER_INTERVAL, progress)
-	interval -= 0.5 * clampf((lantern.elapsed - 120.0) / 480.0, 0.0, 1.0)
-	if ENCOUNTER_SCHEDULE.period(lantern.elapsed) == "Gathering":
+	interval -= 0.5 * clampf((game.encounter_time() - 120.0) / 480.0, 0.0, 1.0)
+	if ENCOUNTER_SCHEDULE.period(game.encounter_time()) == "Gathering":
 		return interval * 2.0
 	# Recovery retains breathing room even after chargers join it at five minutes.
-	return maxf(12.0, interval * 3.0) if ENCOUNTER_SCHEDULE.period(lantern.elapsed) == "Recovery" else interval
+	return maxf(12.0, interval * 3.0) if ENCOUNTER_SCHEDULE.period(game.encounter_time()) == "Recovery" else interval
 
 
 func _spawn_charger() -> void:
-	if game.phase != game.Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(lantern.elapsed) or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
+	if game.phase != game.Phase.RUNNING or not ENCOUNTER_SCHEDULE.ordinary_spawns_enabled(game.encounter_time()) or get_tree().get_nodes_in_group("chargers").size() >= MAX_CHARGERS:
 		return
 	var charger := CHARGER_SCENE.instantiate() as Node2D
 	charger.target = lantern
+	charger.assist_movement_factor = game.enemy_movement_multiplier()
 	charger.max_health = maxf(3.0, current_enemy_health() + 1.0)
 	game.add_child(charger)
 	charger.global_position = _random_edge_position()

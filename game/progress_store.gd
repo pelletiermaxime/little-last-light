@@ -23,6 +23,9 @@ static func save_progress(game: Node2D) -> bool:
 	data.version_clears = game.version_clears
 	data.turret_types = turret_types
 	data.upgrades = game.upgrade_levels()
+	data.assists = game.assists
+	data.damage_taken_factor = game.damage_taken_factor
+	data.assisted_progress = game.assisted_progress
 	data.game_version = str(ProjectSettings.get_setting("application/config/version", "0.0.1"))
 	if not write_atomic(game.save_path, data):
 		game.save_message = "Could not save progress. Keep this window open and retry."
@@ -63,6 +66,12 @@ static func load_progress(game: Node2D) -> void:
 		game.save_message = "Save could not be read; original file preserved. This session will not save."
 		return
 	var data: Dictionary = parser.data
+	game.assists.merge(data.get("assists", {}), true)
+	game.damage_taken_factor = float(data.get("damage_taken_factor", 1.0))
+	game.assists.reduced_damage = game.damage_taken_factor != 1.0
+	game.assisted_progress = data.get("assisted_progress", false) or game.assists.values().has(true)
+	# Retire the prototype speed toggle while retaining its assisted history.
+	game.assists.erase("slow_game")
 	game.banked_energy = float(data.energy)
 	var upgrades: Dictionary = data.get("upgrades", {})
 	game.damage_level = int(upgrades.get("damage", 0))
@@ -78,6 +87,8 @@ static func load_progress(game: Node2D) -> void:
 	game.version_clears = data.get("version_clears", {})
 	game.best_time = float(game.version_bests.get(game.game_version, 0.0))
 	game.leaderboard_profile = data.get("leaderboard", {"token": "", "username": "", "pending": {}})
+	if game.assisted_progress:
+		game.leaderboard_profile.pending = {}
 	for turret in game.get_tree().get_nodes_in_group("turrets"):
 		turret.remove_from_group("turrets")
 		turret.queue_free()
@@ -96,6 +107,13 @@ static func load_progress(game: Node2D) -> void:
 
 static func is_valid(data: Variant, game: Node2D) -> bool:
 	if not data is Dictionary or data.get("version") != 1:
+		return false
+	if not data.get("assisted_progress", false) is bool or not data.get("assists", {}) is Dictionary:
+		return false
+	for kind in game.assists:
+		if not data.get("assists", {}).get(kind, false) is bool:
+			return false
+	if data.get("damage_taken_factor", 1.0) not in game.DAMAGE_FACTORS:
 		return false
 	var upgrades = data.get("upgrades", {})
 	if not upgrades is Dictionary:

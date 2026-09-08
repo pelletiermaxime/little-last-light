@@ -53,7 +53,8 @@ links were updated for the moves.
   attack timing, targeting and damage behavior remain separate.
 - Removed the obsolete sniper gallery and playtest launchers, along with the
   gallery-only alternate sniper designs. The shipped Watchlight visual is preserved.
-- Main is now 383 lines, down from roughly 740. It retains run transitions where
+- Main is now 435 lines, including the incoming assistance controls, down from
+  roughly 740 before those controls were added. It retains run transitions where
   ordering matters rather than scattering them across utility classes.
 
 The save format, malformed-save protection, empty-save recovery, legacy purchase
@@ -95,7 +96,11 @@ from the old procedural circles. Bosses and chargers retain their custom visuals
 
 ## Browser measurements
 
-Baseline: Git revision `0cf5261`. Updated build: this working tree.
+Baseline: Git revision `0cf5261`. Updated build: refactor revision `3db9004`.
+These measurements precede integration of the published 0.0.23 assistance and
+accessibility settings. The merge preserves the rendering optimizations and adds
+coverage for toggling cached range visibility, including while paused; the browser
+timing table has not been remeasured after that integration.
 
 Both isolated Web release exports used the current benchmark harness, the same
 random seed, a **fixed simulation step of 1/60 second**, 120 warmup frames and
@@ -159,7 +164,8 @@ recovery behavior remains intact.
 ## Validation
 
 - Godot headless editor import/type parsing: passed.
-- All **41** `tests/check_*.gd` scripts: passed.
+- All **43** `tests/check_*.gd` scripts after integration: passed, including
+  assistance scheduling, save eligibility and accessibility settings.
 - All **19** Python release-tool tests: passed.
 - Performance regression coverage now checks all four permanent turret types:
   animation still redraws, static rings remain cached, placement preserves the

@@ -13,6 +13,7 @@ var tint := Color("#90e6ff")
 
 func _ready() -> void:
 	add_to_group("hazards")
+	get_node("/root/DisplaySettings").changed.connect(queue_redraw)
 	add_to_group("enemy_projectiles")
 	z_index = 3
 	rotation = velocity.angle()
@@ -53,7 +54,13 @@ func retire() -> void:
 
 func _draw() -> void:
 	# Bright core is the hitbox; the translucent halo is only visual.
-	draw_circle(Vector2.ZERO, 10, Color(tint, 0.13))
-	draw_colored_polygon(PackedVector2Array([Vector2(-13, 0), Vector2(-2, -5), Vector2(-2, 5)]), tint)
+	var display = get_node("/root/DisplaySettings")
+	if not display.reduce_effects:
+		draw_circle(Vector2.ZERO, 10, Color(tint, 0.13))
+		draw_colored_polygon(PackedVector2Array([Vector2(-13, 0), Vector2(-2, -5), Vector2(-2, 5)]), tint)
+	if display.strong_danger_cues:
+		draw_circle(Vector2.ZERO, 8, Color("#080d13"))
 	draw_circle(Vector2.ZERO, 6.0, tint)
 	draw_circle(Vector2(1, -1), 2.5, Color("#f1fcff"))
+	if display.strong_danger_cues:
+		draw_arc(Vector2.ZERO, HIT_RADIUS, 0, TAU, 24, Color.WHITE, 2.0, true)

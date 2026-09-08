@@ -35,6 +35,7 @@ func _ready() -> void:
 	# Preparation uses an explicit phase; it does not pause the scene tree.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	preview = TURRET_SCENE.instantiate()
+	preview.range_preview = true
 	preview.process_mode = Node.PROCESS_MODE_DISABLED
 	preview.remove_from_group("turrets")
 	main.configure_turret(preview)
@@ -299,6 +300,7 @@ func begin_move(turret: Node2D) -> void:
 func _show_preview() -> void:
 	preview.free()
 	preview = main.turret_scene(placement_type).instantiate()
+	preview.range_preview = true
 	preview.process_mode = Node.PROCESS_MODE_DISABLED
 	preview.remove_from_group("turrets")
 	main.configure_turret(preview)

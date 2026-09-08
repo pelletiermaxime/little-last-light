@@ -76,6 +76,3 @@ func _on_vsync_button_pressed() -> void:
 	DisplaySettings.set_vsync(not DisplaySettings.vsync)
 	_refresh_display_labels()
 	GameAudio.play(&"confirm")
-
-func _on_done_button_pressed() -> void:
-	closed.emit()

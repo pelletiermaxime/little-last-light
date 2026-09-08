@@ -11,6 +11,17 @@ var windowed_size := Vector2i.ZERO
 var windowed_maximized := false
 var settings_path := "user://display-settings.cfg"
 var resize_timer: Timer
+const VISUAL_OPTIONS := ["strong_danger_cues", "reduce_effects", "show_turret_ranges"]
+var strong_danger_cues := false
+var reduce_effects := false
+var show_turret_ranges := true
+
+func set_visual_option(key: String, value: bool) -> void:
+	if key not in VISUAL_OPTIONS:
+		return
+	set(key, value)
+	save_settings()
+	changed.emit()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -107,6 +118,8 @@ func load_settings() -> void:
 	var config := ConfigFile.new()
 	if config.load(settings_path) != OK:
 		return
+	for key in VISUAL_OPTIONS:
+		set(key, bool(config.get_value("visual", key, key == "show_turret_ranges")))
 	var saved_fps := int(config.get_value("display", "fps_limit", 0))
 	fps_limit = saved_fps if saved_fps in FPS_LIMITS else 0
 	vsync = bool(config.get_value("display", "vsync", true))
@@ -120,6 +133,8 @@ func load_settings() -> void:
 
 func save_settings() -> void:
 	var config := ConfigFile.new()
+	for key in VISUAL_OPTIONS:
+		config.set_value("visual", key, get(key))
 	config.set_value("display", "fps_limit", fps_limit)
 	config.set_value("display", "vsync", vsync)
 	config.set_value("display", "mode", display_mode)

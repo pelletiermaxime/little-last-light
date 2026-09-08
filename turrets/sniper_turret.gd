@@ -73,7 +73,7 @@ func _draw() -> void:
 	_draw_boost()
 	if is_instance_valid(visual):
 		visual.charge = clampf(1.0 - cooldown / fire_interval, 0.0, 1.0)
-		visual.flash = shot_time / 0.12
+		visual.flash = 0.0 if get_node("/root/DisplaySettings").reduce_effects else shot_time / 0.12
 		visual.aim_angle = aim_angle
 		visual.shot_endpoint = to_local(shot_endpoint)
 		visual.queue_redraw()

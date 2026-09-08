@@ -111,9 +111,9 @@ func _process(delta: float) -> void:
 			notice_remaining = 2.0
 		elif main.lantern.position.distance_to(pickup_position) <= COLLECTION_RADIUS:
 			_collect()
-	elif main.lantern.elapsed >= next_spawn and main.lantern.elapsed < LAST_SPAWN:
+	elif main.encounter_time() >= next_spawn and main.encounter_time() < LAST_SPAWN:
 		# No catch-up burst after a long frame, expiry, or viewport too small.
-		next_spawn = main.lantern.elapsed + rng.randf_range(24.0, 34.0)
+		next_spawn = main.encounter_time() + rng.randf_range(24.0, 34.0)
 		_spawn()
 	_refresh_status()
 	# Clear expired visuals once, then leave the empty canvas cached between offers.

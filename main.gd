@@ -49,6 +49,52 @@ var game_version: String = "dev" if OS.has_feature("editor") else str(ProjectSet
 var version_bests: Dictionary = {}
 var legacy_best_time: float = 0.0
 var leaderboard_profile: Dictionary = {"token": "", "username": "", "pending": {}}
+var assists: Dictionary = {"cheap_upgrades": false, "short_night": false, "slow_enemies": false, "reduced_damage": false}
+const DAMAGE_FACTORS := [1.0, 0.75, 0.5, 0.0]
+var damage_taken_factor := 1.0
+# Energy and upgrades carry between runs, so eligibility belongs to the save.
+var assisted_progress := false
+var run_assisted := false
+
+
+func set_assist(kind: String, enabled: bool) -> bool:
+	if phase != Phase.PREPARATION or not assists.has(kind):
+		return false
+	assists[kind] = enabled
+	if enabled:
+		assisted_progress = true
+		leaderboard_profile.pending = {}
+	save_progress()
+	$BuildController._update_interface()
+	return true
+
+
+func night_scale() -> float:
+	return 0.5 if assists.short_night else 1.0
+
+
+func set_damage_taken(value: float) -> bool:
+	if phase != Phase.PREPARATION or value not in DAMAGE_FACTORS:
+		return false
+	damage_taken_factor = value
+	return set_assist("reduced_damage", value != 1.0)
+
+
+func encounter_time() -> float:
+	# Child HUD readiness precedes Main's @onready bindings.
+	return $Lantern.elapsed / night_scale()
+
+
+func night_duration() -> float:
+	return encounters.final_boss_time * night_scale()
+
+
+func enemy_movement_multiplier() -> float:
+	return 0.5 if assists.slow_enemies else 1.0
+
+
+func leaderboard_eligible() -> bool:
+	return not assisted_progress and not assists.values().has(true)
 
 
 func _ready() -> void:
@@ -142,14 +188,14 @@ func proximity_multiplier() -> float:
 func upgrade_cost(kind: String) -> float:
 	if not UPGRADE_BASE_COSTS.has(kind):
 		return INF
-	return UPGRADE_BASE_COSTS[kind] * pow(2.0, upgrade_levels()[kind])
+	return UPGRADE_BASE_COSTS[kind] * pow(2.0, upgrade_levels()[kind]) * (0.5 if assists.cheap_upgrades else 1.0)
 
 
 func defense_investment() -> float:
 	var invested: float = $BuildController.layout_refund()
 	# Upgrade prices double; their cumulative cost is next price minus base price.
 	for kind in UPGRADE_BASE_COSTS:
-		invested += upgrade_cost(kind) - UPGRADE_BASE_COSTS[kind]
+		invested += UPGRADE_BASE_COSTS[kind] * (pow(2.0, upgrade_levels()[kind]) - 1.0)
 	return invested
 
 
@@ -205,6 +251,8 @@ func start_run() -> void:
 	pickups.reset()
 	# Snapshot the defense budget before the run. Unspent savings do not help survival.
 	run_energy_invested = defense_investment()
+	run_assisted = not leaderboard_eligible()
+	assisted_progress = assisted_progress or run_assisted
 	lantern.health = lantern.max_health
 	lantern.energy = 0.0
 	lantern.elapsed = 0.0
@@ -235,16 +283,20 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	lantern.running = false
 	pickups.reset()
 	# Capture the result before banking clears this run's energy.
-	var survival := minf(lantern.elapsed, encounters.final_boss_time)
+	var survival := minf(lantern.elapsed, night_duration())
 	var previous_clear := float(version_clears.get(game_version, 0.0))
-	var new_clear: bool = victory and (previous_clear == 0.0 or lantern.elapsed < previous_clear)
+	var eligible := leaderboard_eligible() and not run_assisted
+	var new_clear: bool = eligible and victory and (previous_clear == 0.0 or lantern.elapsed < previous_clear)
 	last_run = {"duration": lantern.elapsed, "survival": survival, "victory": victory, "energy": lantern.energy, "new_best": new_clear if victory else survival > best_time, "voluntary": voluntary}
 	last_run.boss_bonus = boss_reward_amount
-	best_time = maxf(best_time, survival)
+	last_run.assisted = not eligible
+	last_run.new_best = eligible and last_run.new_best
+	if eligible:
+		best_time = maxf(best_time, survival)
 	if new_clear:
 		version_clears[game_version] = lantern.elapsed
 	version_bests[game_version] = best_time
-	if new_clear or (last_run.new_best and previous_clear == 0.0):
+	if eligible and (new_clear or (last_run.new_best and previous_clear == 0.0)):
 		leaderboard_profile.pending = {
 			"version": game_version,
 			"durationMs": maxi(1, int(survival * 1000.0)),
