@@ -8,6 +8,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Fixed
+
+- Runs using Ember Pot can now be published to the leaderboard, with Ember Pots shown in shared turret layouts.
+
 ## [0.0.24] - 2026-09-08
 
 ### Changed

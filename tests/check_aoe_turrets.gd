@@ -123,7 +123,15 @@ func check() -> void:
 	var layout: Dictionary = scene._run_turret_layout()
 	expect(scene.PROGRESS_STORE.valid_run_layout(layout), "Record layout preserves new types")
 	var panel = scene.get_node("GameHUD").leaderboard
-	expect(panel._has_prototype_layout({"turretLayout": layout}), "Prototype records remain local")
+	scene.leaderboard_profile.pending = {"version": scene.game_version, "durationMs": 1000, "turretLayout": layout}
+	panel.api_url = "http://127.0.0.1:1"
+	panel.username.text = "EmberKeeper"
+	panel.refresh()
+	expect(panel.publish.visible and not panel.publish.disabled, "Ember records offer publishing")
+	expect(not panel.notice.text.contains("prototype"), "Ember records have no prototype restriction notice")
+	panel._publish()
+	expect(panel.sending.get("turretLayout", {}) == layout, "Ember records reach the submission handler with their full layout")
+	panel.request.cancel_request()
 	scene.free()
 	await process_frame
 	scene = game()

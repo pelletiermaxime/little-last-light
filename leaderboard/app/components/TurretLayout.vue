@@ -8,6 +8,7 @@ const legend = computed(() => [
   { type: 'damage', label: 'Damage', color: '#9bddff' },
   { type: 'pulse', label: 'Slow', color: '#d3a4ff' },
   { type: 'sniper', label: 'Watchlight', color: '#fff0cc' },
+  { type: 'ember', label: 'Ember Pot', color: '#ffad66' },
   { type: undefined, label: 'Type not recorded', color: '#a3b5ba' },
 ].map(item => ({ ...item, count: props.layout.turrets.filter(turret => turret.type === item.type).length })).filter(item => item.count > 0))
 </script>
@@ -16,11 +17,11 @@ const legend = computed(() => [
   <figure class="turret-layout">
     <svg :viewBox="`0 0 ${layout.width} ${layout.height}`" role="img" :aria-label="`${username}'s run layout: ${layout.turrets.length} turrets`">
       <title>{{ username }}'s turret layout at run end</title>
-      <desc>Top-down arena. Blue circles mark damage turrets, purple diamonds mark slow turrets, ivory squares mark Watchlight snipers, and gray circles mark turrets whose type was not recorded. The cross marks the arena center.</desc>
+      <desc>Top-down arena. Blue circles mark damage turrets, purple diamonds mark slow turrets, ivory squares mark Watchlight snipers, orange circles mark Ember Pots, and gray circles mark turrets whose type was not recorded. The cross marks the arena center.</desc>
       <rect width="100%" height="100%" fill="#101820" />
       <path :d="`M ${layout.width / 2} 0 V ${layout.height} M 0 ${layout.height / 2} H ${layout.width}`" stroke="#354249" stroke-dasharray="5 10" vector-effect="non-scaling-stroke" />
       <g v-for="(turret, index) in layout.turrets" :key="index" :transform="`translate(${turret.x * layout.width} ${turret.y * layout.height})`">
-        <title>{{ turret.type === 'sniper' ? 'Watchlight sniper' : turret.type === 'pulse' ? 'Slow turret' : turret.type === 'damage' ? 'Damage turret' : 'Turret · Type not recorded' }}</title>
+        <title>{{ turret.type === 'ember' ? 'Ember Pot' : turret.type === 'sniper' ? 'Watchlight sniper' : turret.type === 'pulse' ? 'Slow turret' : turret.type === 'damage' ? 'Damage turret' : 'Turret · Type not recorded' }}</title>
         <template v-if="turret.type === 'pulse'">
           <circle :r="radius * 1.85" fill="#503767" />
           <path :d="`M 0 ${-radius * 1.3} L ${radius * 1.3} 0 L 0 ${radius * 1.3} L ${-radius * 1.3} 0 Z`" fill="#d3a4ff" />
@@ -28,6 +29,10 @@ const legend = computed(() => [
         <template v-else-if="turret.type === 'sniper'">
           <rect :x="-radius * 1.65" :y="-radius * 1.65" :width="radius * 3.3" :height="radius * 3.3" :rx="radius * 0.25" fill="#36566f" />
           <rect :x="-radius" :y="-radius" :width="radius * 2" :height="radius * 2" fill="#fff0cc" />
+        </template>
+        <template v-else-if="turret.type === 'ember'">
+          <circle :r="radius * 1.85" fill="#69402c" />
+          <circle :r="radius" fill="#ffad66" />
         </template>
         <template v-else>
           <circle :r="radius * 1.85" :fill="turret.type === 'damage' ? '#36566f' : '#354249'" />
