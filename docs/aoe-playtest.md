@@ -14,7 +14,9 @@ choose **Done → Start run**. Move with WASD/arrows and lead enemies through th
 defenses. Normal encounters and lantern damage still apply.
 
 Ember Pot is also available in the regular placement toolbar with its stats below
-the purchase button. It follows the shared 60, 85, 110… energy price ladder and
+the purchase button. In **Place turrets**, press **L3 / left-stick click** to
+select Ember Pot directly; its purchase button shows the matching controller icon.
+It follows the shared 60, 85, 110… energy price ladder and
 saves, moves, and refunds normally. Its fixed 1 damage is unaffected by upgrades
 and proximity; balance and progression integration remain provisional. Records
 with Ember layouts stay local until tuning and leaderboard support are ready.

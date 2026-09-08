@@ -39,7 +39,22 @@ func check() -> void:
 	ProjectSettings.set_setting("leaderboard/api_url", "")
 	var scene := game()
 	var build = scene.get_node("BuildController")
+	var prep = scene.get_node("PreparationUI")
+	prep.open_view(prep.View.PLACEMENT)
+	press_ember()
+	expect(not build.placing, "Ember shortcut respects insufficient funds")
 	scene.banked_energy = 2000.0
+	build._update_interface()
+	build.sniper_button.grab_focus()
+	press_ember()
+	expect(build.placing and build.placement_type == "ember", "L3 selects Ember even with another toolbar button focused")
+	expect(root.gui_get_focus_owner() == null, "Shortcut releases toolbar focus for placement")
+	expect(build.ember_button.icon != null, "Ember displays its dedicated controller icon")
+	build.cancel_placement()
+	prep.open_view(prep.View.HOME)
+	press_ember()
+	expect(not build.placing, "Ember shortcut is limited to Place turrets")
+	prep.open_view(prep.View.PLACEMENT)
 	var kinds := ["ember"]
 	for index in range(kinds.size()):
 		var kind: String = kinds[index]
@@ -128,3 +143,12 @@ func check() -> void:
 	if failures == 0:
 		print("PASS: AOE placement, timing, locked aim, area exclusions, single hits, fixed stats, reset, save/reload, records and refunds")
 	quit(1 if failures else 0)
+
+
+func press_ember() -> void:
+	var event := InputEventJoypadButton.new()
+	event.button_index = JOY_BUTTON_LEFT_STICK
+	event.pressed = true
+	root.push_input(event)
+	event.pressed = false
+	root.push_input(event)

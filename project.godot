@@ -100,6 +100,11 @@ build_sniper_turret={
 "events": [Object(InputEventJoypadButton,"device":-1,"button_index":8)
 ]
 }
+build_ember_turret={
+"deadzone": 0.2,
+"events": [Object(InputEventJoypadButton,"device":-1,"button_index":7)
+]
+}
 build_turret={
 "deadzone": 0.2,
 "events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":2,"pressure":0.0,"pressed":false,"script":null)
