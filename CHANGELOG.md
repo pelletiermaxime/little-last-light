@@ -38,6 +38,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 - Watchlights now acquire their next target immediately after shooting and turn toward it during reload, updating their aim as enemies move or die.
 - Turret purchases use the mouse toolbar or controller shortcuts. Removed the B, V, and N keyboard purchase shortcuts; right-stick click now selects the Watchlight on controllers.
 
+## [0.0.20] - 2026-09-07
+
+- No player-facing changes recorded for this release.
+
 ## [0.0.19] - 2026-09-07
 
 ### Added
