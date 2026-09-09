@@ -41,12 +41,18 @@ func _ready() -> void:
 
 
 func show_page(records: bool) -> void:
+	var changed := showing_records != records
 	if overlay.visible and showing_records != records:
 		get_node("/root/GameAudio").play(&"confirm" if records else &"back")
 	showing_records = records
 	summary_page.visible = not records
 	content.visible = records
 	page_button.text = "Back to run summary" if records else ("Publish record / Leaderboard" if not main.leaderboard_profile.pending.is_empty() else "Leaderboard")
+	if changed and overlay.visible:
+		if records:
+			main.get_node("Controls").focus_default()
+		else:
+			page_button.grab_focus()
 	call_deferred("_layout")
 
 

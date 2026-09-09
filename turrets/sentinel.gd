@@ -1,6 +1,6 @@
 extends "res://turrets/turret.gd"
 
-const DURATION := 12.0
+const DURATION := 15.0
 var remaining := DURATION
 
 func _init() -> void:

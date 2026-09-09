@@ -47,7 +47,7 @@ func _input_type_changed(_input_type: int, _controller: int) -> void:
 	var prep = main.get_node("PreparationUI")
 	if using_controller() and _menu_open() and not (main.phase == main.Phase.PREPARATION and prep.view == prep.View.PLACEMENT):
 		if get_viewport().gui_get_focus_owner() == null:
-			move_focus(1)
+			focus_default()
 
 
 func _exit_tree() -> void:
@@ -175,6 +175,11 @@ func _activate_button(button: BaseButton) -> void:
 
 
 func _process(delta: float) -> void:
+	# Async updates can hide or disable the selected control between inputs.
+	# Only repair lost controller focus; never override a valid selection.
+	if using_controller() and _menu_open():
+		if get_viewport().gui_get_focus_owner() not in menu_controls():
+			focus_default()
 	var focused := get_viewport().gui_get_focus_owner()
 	var focus_id := focused.get_instance_id() if focused != null else 0
 	if focus_id != last_focus_id:
@@ -221,10 +226,41 @@ func _collect_controls(node: Node, controls: Array[Control]) -> void:
 		return
 	# Unavailable upgrades remain navigation stops so gaps cannot trap focus.
 	# Purchase validation in Main still rejects capped or unaffordable actions.
-	if node is BaseButton and (not node.disabled or node.has_meta("upgrade_kind")) and node.focus_mode == Control.FOCUS_ALL or node is LineEdit:
+	if node is BaseButton and (not node.disabled or node.has_meta("upgrade_kind")) and node.focus_mode == Control.FOCUS_ALL or node is LineEdit and node.editable and node.focus_mode == Control.FOCUS_ALL:
 		controls.append(node)
 	for child in node.get_children():
 		_collect_controls(child, controls)
+
+
+func focus_default(allow_placement_toolbar := false) -> void:
+	var prep = main.get_node("PreparationUI")
+	var settings = main.get_node("SettingsScreen")
+	var preferred: Control
+	if settings.is_open():
+		pass # Settings pages are ordered with their safe first action first.
+	elif get_tree().paused:
+		preferred = main.get_node("PauseScreen").resume_button
+	elif main.phase == main.Phase.RESULTS:
+		var results = main.get_node("ResultsScreen")
+		preferred = main.get_node("GameHUD").leaderboard.default_control() if results.showing_records else results.continue_button
+		if preferred == null:
+			preferred = results.page_button
+	elif prep.view == prep.View.PLACEMENT:
+		if not allow_placement_toolbar:
+			return # Only explicit D-pad navigation selects the placement toolbar.
+	elif prep.view == prep.View.HOME:
+		preferred = main.get_node("BuildController").start_button
+	elif prep.view == prep.View.UPGRADES:
+		preferred = main.get_node("BuildController").damage_button
+	elif prep.view == prep.View.RECORDS:
+		preferred = main.get_node("GameHUD").leaderboard.default_control()
+		if preferred == null:
+			preferred = prep.back_button
+	var controls := menu_controls()
+	if preferred in controls:
+		preferred.grab_focus()
+	elif not controls.is_empty():
+		controls[0].grab_focus()
 
 
 func move_focus(direction: int) -> void:
@@ -232,7 +268,10 @@ func move_focus(direction: int) -> void:
 	if controls.is_empty():
 		return
 	var index := controls.find(get_viewport().gui_get_focus_owner())
-	index = posmod(index + direction, controls.size()) if index >= 0 else (0 if direction > 0 else controls.size() - 1)
+	if index < 0:
+		focus_default(true)
+		return
+	index = posmod(index + direction, controls.size())
 	controls[index].grab_focus()
 	refresh_prompts()
 

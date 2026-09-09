@@ -8,6 +8,16 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Changed
+
+- Powerups now keep spawning throughout the run instead of stopping after three minutes.
+- Kindling now lasts 12 seconds, Sentinel 15 seconds, and Stillness 5 seconds.
+
+### Fixed
+
+- Controller menus now start with a useful selection, return to the button that opened a submenu, and recover selection when a control disappears or becomes unavailable.
+- Fixed a game freeze and runaway memory use when enemies die and new ones arrive during Stillness.
+
 ## [0.0.25] - 2026-09-08
 
 ### Fixed

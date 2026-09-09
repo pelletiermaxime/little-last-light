@@ -52,13 +52,13 @@ func check() -> void:
 	pickups.kind = pickups.Kind.KINDLING
 	scene.lantern.position = pickups.pickup_position
 	pickups._process(0.1)
-	expect(not pickups.active and pickups.kindling_remaining == 8.0, "Walking into Kindling collects once")
+	expect(not pickups.active and pickups.kindling_remaining == 12.0, "Walking into Kindling collects once for twelve seconds")
 	pickups._collect()
 	scene.energy_level = 2
 	scene.lantern.brightness = 2
 	expect(is_equal_approx(scene.lantern.current_energy_rate(), 7.2), "Kindling combines with permanent gain and brightness")
-	scene.lantern._process(10.0)
-	expect(is_equal_approx(scene.lantern.energy, 64.8), "Expiry frame pays eight doubled and two ordinary seconds")
+	scene.lantern._process(14.0)
+	expect(is_equal_approx(scene.lantern.energy, 93.6), "Expiry frame pays twelve doubled and two ordinary seconds")
 	expect(pickups.kindling_remaining == 0.0 and is_equal_approx(scene.lantern.current_energy_rate(), 3.6), "Income returns to normal")
 	# Real enemies establish radius, damage amount and single application.
 	var enemies: Array[Node2D] = []
@@ -94,7 +94,9 @@ func check() -> void:
 	sentinel._process(0.02)
 	expect(enemies[2].health == targets_before - 8.0, "Sentinel fires again after 0.35 seconds")
 	sentinel._process(12.0)
-	expect(sentinel.is_queued_for_deletion(), "Sentinel expires after twelve seconds")
+	expect(not sentinel.is_queued_for_deletion(), "Sentinel stays active beyond twelve seconds")
+	sentinel._process(3.0)
+	expect(sentinel.is_queued_for_deletion(), "Sentinel expires after fifteen seconds")
 	scene.damage_level = 2
 	pickups.active = true
 	pickups._collect()
@@ -124,7 +126,9 @@ func check() -> void:
 	expect(newcomer.process_mode == Node.PROCESS_MODE_DISABLED and scene.lantern.health == health_before, "New arrivals join freeze and deal no contact damage")
 	charger.take_damage(1.0)
 	expect(charger.health < charger.max_health, "Frozen enemies can still take turret damage")
-	pickups._process(3.0)
+	pickups._process(4.0)
+	expect(charger.process_mode == Node.PROCESS_MODE_DISABLED, "Stillness stays active beyond four seconds")
+	pickups._process(1.0)
 	expect(charger.process_mode == Node.PROCESS_MODE_INHERIT and newcomer.process_mode == Node.PROCESS_MODE_INHERIT, "Expiration restores enemy processing")
 	pickups.active = true
 	pickups.kind = pickups.Kind.STILLNESS
@@ -133,6 +137,27 @@ func check() -> void:
 	await process_frame
 	pickups._process(0.1)
 	expect(pickups.stillness_remaining > 0, "Enemies killed while frozen do not break cleanup")
+	# New arrivals can resize the freeze dictionary after earlier enemies die.
+	# Bound this probe so the regression fails instead of hanging in thaw/draw.
+	for batch in range(100):
+		for index in range(10):
+			scene.encounters._spawn_enemy()
+		pickups._freeze_enemies()
+		var visited := 0
+		for entry in pickups.frozen_enemies:
+			visited += 1
+			if visited > pickups.frozen_enemies.size():
+				printerr("FAIL: frozen enemy iteration repeats after deaths and new arrivals")
+				quit(1)
+				return
+		for enemy in get_nodes_in_group("enemies"):
+			if enemy != newcomer:
+				enemy.take_damage(10000.0)
+		await process_frame
+	pickups._process(5.0)
+	expect(newcomer.process_mode == Node.PROCESS_MODE_INHERIT and pickups.frozen_enemies.is_empty(), "Stillness expires after multiple frozen enemies die")
+	pickups.active = true
+	pickups._collect()
 	pickups._spawn()
 	pickups.kindling_remaining = 8.0
 	paused = true
@@ -146,10 +171,13 @@ func check() -> void:
 	pickups.pickup_position = scene.lantern.position + Vector2(160, 0)
 	pickups._process(18.0)
 	expect(not pickups.active and pickups.notice == "Ember faded", "Ignored marker expires without collection")
-	scene.lantern.elapsed = 180.0
-	pickups.next_spawn = 179.0
-	pickups._process(1.0)
-	expect(not pickups.active, "No new markers after three minutes")
+	for elapsed in [180.0, 360.0, 600.0]:
+		pickups.active = false
+		scene.lantern.elapsed = elapsed
+		pickups.next_spawn = elapsed
+		pickups._process(1.0)
+		expect(pickups.active and pickups.remaining == 18.0, "Powerups keep spawning throughout the run")
+		expect(pickups.next_spawn >= elapsed + 24.0 and pickups.next_spawn <= elapsed + 34.0, "Late powerups retain the normal cadence")
 	pickups.active = true
 	pickups.remaining = 10.0
 	pickups.kindling_remaining = 8.0
@@ -170,5 +198,5 @@ func check() -> void:
 	scene.free()
 	DirAccess.remove_absolute(path)
 	if failures == 0:
-		print("PASS: pickup spawn bounds/cadence, collection, income expiry, explosion radius, pause, expiration, cutoff, end/death/restart and save isolation")
+		print("PASS: pickup spawn bounds/cadence throughout the run, collection, income expiry, explosion radius, pause, expiration, end/death/restart and save isolation")
 	quit(1 if failures else 0)

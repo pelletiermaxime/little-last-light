@@ -125,7 +125,7 @@ func open_view(next: View) -> void:
 	elif view != View.PLACEMENT:
 		var controls := main.get_node_or_null("Controls")
 		if controls != null and controls.is_node_ready():
-			controls.move_focus(1)
+			controls.focus_default()
 	elif view == View.PLACEMENT:
 		var focused := get_viewport().gui_get_focus_owner()
 		if focused != null:
@@ -133,7 +133,15 @@ func open_view(next: View) -> void:
 
 
 func go_back() -> void:
+	var previous := view
 	open_view(View.HOME)
+	match previous:
+		View.UPGRADES:
+			upgrades_button.grab_focus()
+		View.RECORDS:
+			records_button.grab_focus()
+		View.PLACEMENT:
+			place_button.grab_focus()
 
 
 func _create_upgrade_groups() -> void:

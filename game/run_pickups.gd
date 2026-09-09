@@ -4,12 +4,11 @@ enum Kind { KINDLING, FLARE, SENTINEL, STILLNESS }
 
 const NAMES := ["Kindling", "Flare", "Sentinel", "Stillness"]
 const SENTINEL_SCRIPT = preload("res://turrets/sentinel.gd")
-const STILLNESS_DURATION := 3.0
+const STILLNESS_DURATION := 5.0
 
 const FIRST_SPAWN := 12.0
-const LAST_SPAWN := 180.0
 const LIFETIME := 18.0
-const KINDLING_DURATION := 8.0
+const KINDLING_DURATION := 12.0
 const COLLECTION_RADIUS := 28.0
 const MARKER_RADIUS := 20.0
 const MIN_DISTANCE := 160.0
@@ -30,7 +29,9 @@ var explained_kinds: Dictionary = {}
 var explain_current := false
 var sentinel: Node2D
 var stillness_remaining := 0.0
-var frozen_enemies: Dictionary = {}
+# Object keys can break dictionary iteration after death and later insertions.
+# Instance IDs stay stable until we discard the saved processing mode.
+var frozen_enemies: Dictionary[int, int] = {}
 var status: Label
 var rng := RandomNumberGenerator.new()
 @onready var main: Node2D = get_parent()
@@ -111,7 +112,7 @@ func _process(delta: float) -> void:
 			notice_remaining = 2.0
 		elif main.lantern.position.distance_to(pickup_position) <= COLLECTION_RADIUS:
 			_collect()
-	elif main.encounter_time() >= next_spawn and main.encounter_time() < LAST_SPAWN:
+	elif main.encounter_time() >= next_spawn:
 		# No catch-up burst after a long frame, expiry, or viewport too small.
 		next_spawn = main.encounter_time() + rng.randf_range(24.0, 34.0)
 		_spawn()
@@ -173,17 +174,22 @@ func _clear_sentinel() -> void:
 func _freeze_enemies() -> void:
 	# Keep spawning at the ordinary cadence; new arrivals join the same freeze.
 	# Disabling processing also stops contact damage and charger attack clocks.
+	for instance_id in frozen_enemies.keys():
+		if not is_instance_id_valid(instance_id):
+			frozen_enemies.erase(instance_id)
 	for enemy in get_tree().get_nodes_in_group("enemies"):
-		if enemy.is_queued_for_deletion() or frozen_enemies.has(enemy):
+		var instance_id: int = enemy.get_instance_id()
+		if enemy.is_queued_for_deletion() or frozen_enemies.has(instance_id):
 			continue
-		frozen_enemies[enemy] = enemy.process_mode
+		frozen_enemies[instance_id] = enemy.process_mode
 		enemy.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 func _thaw_enemies() -> void:
-	for enemy in frozen_enemies:
+	for instance_id in frozen_enemies:
+		var enemy := instance_from_id(instance_id) as Node2D
 		if is_instance_valid(enemy) and not enemy.is_queued_for_deletion():
-			enemy.process_mode = frozen_enemies[enemy]
+			enemy.process_mode = frozen_enemies[instance_id]
 	frozen_enemies.clear()
 
 
@@ -212,13 +218,13 @@ func _refresh_status() -> void:
 func _explanation() -> String:
 	match kind:
 		Kind.KINDLING:
-			return "Kindling · Walk into the diamond before it fades.\nDoubles passive energy for 8 seconds, including Energy Gain upgrades.\nBoss rewards stay unchanged."
+			return "Kindling · Walk into the diamond before it fades.\nDoubles passive energy for %d seconds, including Energy Gain upgrades.\nBoss rewards stay unchanged." % int(KINDLING_DURATION)
 		Kind.FLARE:
 			return "Flare · Walk into the spark before it fades.\nDeals %d damage to enemies within %d pixels of the pickup.\nA single burst; projectiles and water remain." % [int(FLARE_DAMAGE), int(FLARE_RADIUS)]
 		Kind.SENTINEL:
-			return "Sentinel · Walk into the square before it fades.\nCreates a turret here for 12s: %d damage every 0.35s, 260-pixel range.\nDouble your turret damage (minimum 4); no proximity bonus." % int(maxf(4.0, main.turret_damage() * 2.0))
+			return "Sentinel · Walk into the square before it fades.\nCreates a turret here for %ds: %d damage every 0.35s, 260-pixel range.\nDouble your turret damage (minimum 4); no proximity bonus." % [int(SENTINEL_SCRIPT.DURATION), int(maxf(4.0, main.turret_damage() * 2.0))]
 		_:
-			return "Stillness · Walk into the pause symbol before it fades.\nFreezes enemy movement and attacks across the arena for 3 seconds.\nYou and turrets keep moving and firing; existing water and shots remain dangerous."
+			return "Stillness · Walk into the pause symbol before it fades.\nFreezes enemy movement and attacks across the arena for %d seconds.\nYou and turrets keep moving and firing; existing water and shots remain dangerous." % int(STILLNESS_DURATION)
 
 
 func _draw() -> void:
@@ -250,6 +256,7 @@ func _draw() -> void:
 		draw_circle(burst_position, FLARE_RADIUS, Color(1.0, 0.7, 0.3, 0.12 * (1.0 - progress)))
 		draw_arc(burst_position, lerpf(MARKER_RADIUS, FLARE_RADIUS, progress), 0, TAU, 64, Color(1.0, 0.8, 0.4, 1.0 - progress), 3, true)
 	if stillness_remaining > 0.0:
-		for enemy in frozen_enemies:
+		for instance_id in frozen_enemies:
+			var enemy := instance_from_id(instance_id) as Node2D
 			if is_instance_valid(enemy) and not enemy.is_queued_for_deletion():
 				draw_arc(to_local(enemy.global_position), 19, 0, TAU, 24, Color("#bcecff"), 1.5, true)

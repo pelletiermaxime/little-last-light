@@ -91,7 +91,7 @@ func refresh() -> void:
 	var offered: bool = main.leaderboard_eligible() and not pending.is_empty()
 	if pending != displayed_section_pending:
 		displayed_section_pending = pending.duplicate(true)
-		show_submission(offered)
+		show_submission(offered, false)
 	submission_button.visible = offered
 	rankings_button.get_parent().visible = offered
 	prompt.visible = offered
@@ -189,6 +189,8 @@ func _skip() -> void:
 	main.save_progress()
 	notice.text = "Record kept on this device."
 	refresh()
+	if is_visible_in_tree():
+		main.get_node("Controls").focus_default()
 
 
 func _publish() -> void:
@@ -244,9 +246,24 @@ func _version_label(version: String) -> String:
 	return "dev" if version == "dev" else "v" + version
 
 
-func show_submission(show_form: bool) -> void:
+func default_control() -> Control:
+	# Prefer the form field or a useful ranking action over the page tabs.
+	for control in [username, previous_page, next_page, refresh_scores, all_versions, submission_button, rankings_button]:
+		if not control.is_visible_in_tree() or control.focus_mode != Control.FOCUS_ALL:
+			continue
+		if control is BaseButton and control.disabled or control is LineEdit and not control.editable:
+			continue
+		return control
+	return null
+
+
+func show_submission(show_form: bool, select_control := true) -> void:
 	submission.visible = show_form
 	rankings.visible = not show_form
+	if select_control and is_visible_in_tree():
+		var controls := main.get_node_or_null("Controls")
+		if controls != null and controls.is_node_ready():
+			controls.focus_default()
 
 
 func _change_page(direction: int) -> void:
