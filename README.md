@@ -2,6 +2,35 @@
 
 A small Godot learning project: defend a mobile lantern with fixed, automatically firing turrets.
 
+## License
+
+Copyright (c) 2026 Maxime Pelletier.
+
+Little Last Light's original code and assets are licensed under the GNU General
+Public License, version 3 only (`GPL-3.0-only`). You may use, study, modify, and
+redistribute them under those terms, including commercially. When distributing
+covered builds or modifications, provide the corresponding source and preserve
+the GPL freedoms and notices required by the license.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See [LICENSE.txt](LICENSE.txt) for the full terms.
+Third-party components retain their own licenses; see
+[THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
+
+Automated releases include the license, notices, this README, and
+`little-last-light-source.zip` beside each build. The source archive includes
+the game project and build scripts, but not the separately hosted leaderboard
+backend, which is not part of the game executable. It uses the release commit's
+tracked files with the exported build's project settings and export presets.
+For manual exports, provide the matching game source and these notices with
+your uploads too. Automated browser exports include a source download link;
+for manual browser exports, run `python3 scripts/link-web-source.py PATH_TO_HTML`
+after placing the matching source archive beside the HTML file, or provide a
+visible source download alongside the playable game on its hosting page.
+
+## About the game
+
 **Ember Pot prototype:** a delayed coal projectile damages enemies in a small splash.
 It is available alongside Watchlight in placement and shares Damage, Fire Rate, and lantern proximity bonuses.
 See the [Ember Pot playtest guide](docs/aoe-playtest.md) for a separate profile with both ready to try.

@@ -8,6 +8,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Added
+
+- Released the original game code and assets under GPLv3, with matching game source and third-party notices included with builds.
+
 ## [0.0.26] - 2026-09-09
 
 ### Changed

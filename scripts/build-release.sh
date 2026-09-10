@@ -26,6 +26,16 @@ chmod +x export/linux/little-last-light.x86_64
 cp export/release/version.txt export/web/version.txt
 cp export/release/version.txt export/windows/version.txt
 cp export/release/version.txt export/linux/version.txt
+# Supply matching game source with every build, including browser downloads.
+# The independently hosted backend is not linked into the game executable.
+git archive --format=zip --output=export/downloads/little-last-light-source.zip HEAD -- . ':!leaderboard' ':!.github' ':!.agents' ':!.codex'
+# Release preparation stamps these files after checkout; include their exact
+# exported versions instead of the pre-stamp copies from the source commit.
+zip -q export/downloads/little-last-light-source.zip project.godot export_presets.cfg
+for platform in web windows linux; do
+  cp LICENSE.txt THIRD_PARTY_NOTICES.txt README.md export/downloads/little-last-light-source.zip "export/$platform/"
+done
+python3 scripts/link-web-source.py export/web/index.html
 touch export/web/.nojekyll
 
 # tar preserves the Linux executable permission; Windows gets a zip.
