@@ -2,6 +2,21 @@
 
 A small Godot learning project: defend a mobile lantern with fixed, automatically firing turrets.
 
+## License
+
+Little Last Light is proprietary. You may play authorized copies and publish
+screenshots, gameplay videos, and streams, including monetized content. The
+original code and assets remain reserved; reuse, redistribution, and modified
+releases require separate permission except where applicable law permits them.
+See [LICENSE.txt](LICENSE.txt) for the full terms and
+[THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt) for Godot, Controller Icons,
+and Kenney sound credits and licenses.
+
+Automated releases include both text files beside the game. For manual Godot
+exports, copy both files into each export folder before packaging it for upload.
+
+## About the game
+
 **Ember Pot prototype:** a delayed coal projectile damages enemies in a small splash.
 It is available alongside Watchlight in placement and shares Damage, Fire Rate, and lantern proximity bonuses.
 See the [Ember Pot playtest guide](docs/aoe-playtest.md) for a separate profile with both ready to try.

@@ -8,6 +8,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Added
+
+- Included game license terms and third-party credits with releases, explicitly allowing gameplay videos and streams, including monetized content.
+
 ## [0.0.26] - 2026-09-09
 
 ### Changed

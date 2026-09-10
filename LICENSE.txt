@@ -1,0 +1,48 @@
+Little Last Light — Game License
+
+Copyright (c) 2026 Maxime Pelletier. All rights reserved, except for the
+permissions expressly granted below and rights provided by applicable law.
+
+1. Playing the game
+
+You may download, install, run, and play copies of Little Last Light obtained
+from the creator or an authorized distributor. You may keep personal backup
+copies. This permission applies whether the game is obtained free of charge
+or through a purchase or donation.
+
+2. Screenshots, videos, and streams
+
+You may create, publish, share, and monetize screenshots, gameplay recordings,
+livestreams, reviews, and commentary featuring the game, including its in-game
+visuals and audio as part of that gameplay. Credit and a link to the official
+game page are appreciated but not required:
+https://max94.itch.io/little-last-light
+
+This permission does not authorize distributing extracted assets or presenting
+your content as officially endorsed by the creator.
+
+3. Reserved rights
+
+The original game code, artwork, game content, and other original assets are
+not offered under an open-source or open-content license. Except as permitted
+above, by applicable law, or by separate permission from the relevant rights
+holder, you may not redistribute, rehost, sublicense, or sell the game; publish
+or redistribute modified versions; or extract and reuse its original code or
+assets in other projects. Sharing links to the official game page is welcome.
+
+These terms do not replace any separate distribution agreement the creator
+has entered into with an authorized store or hosting platform.
+
+4. Third-party components
+
+Third-party software and assets retain their respective licenses. These terms
+do not restrict rights granted by those licenses. See THIRD_PARTY_NOTICES.txt
+and the notices supplied with the relevant components.
+
+5. Warranty and liability
+
+To the extent permitted by applicable law, the game is provided "as is",
+without warranties of any kind, express or implied. To that same extent, the
+copyright holder is not liable for damages arising from use of the game.
+Nothing in this license excludes rights or remedies that cannot lawfully be
+excluded.

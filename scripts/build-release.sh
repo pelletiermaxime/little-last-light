@@ -26,6 +26,9 @@ chmod +x export/linux/little-last-light.x86_64
 cp export/release/version.txt export/web/version.txt
 cp export/release/version.txt export/windows/version.txt
 cp export/release/version.txt export/linux/version.txt
+for platform in web windows linux; do
+  cp LICENSE.txt THIRD_PARTY_NOTICES.txt "export/$platform/"
+done
 touch export/web/.nojekyll
 
 # tar preserves the Linux executable permission; Windows gets a zip.
