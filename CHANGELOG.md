@@ -12,6 +12,12 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 - Released the original game code and assets under GPLv3, with matching game source and third-party notices included with builds.
 
+## [0.0.27] - 2026-09-10
+
+### Added
+
+- Included game license terms and third-party credits with releases, explicitly allowing gameplay videos and streams, including monetized content.
+
 ## [0.0.26] - 2026-09-09
 
 ### Changed
