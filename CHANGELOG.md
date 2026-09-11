@@ -8,6 +8,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+## [0.0.29] - 2026-09-11
+
+- No player-facing changes recorded for this release.
+
 ## [0.0.28] - 2026-09-10
 
 ### Added
