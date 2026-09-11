@@ -2,55 +2,6 @@
 
 A small Godot learning project: defend a mobile lantern with fixed, automatically firing turrets.
 
-## License
-
-Copyright (c) 2026 Maxime Pelletier.
-
-Little Last Light's original code and assets are licensed under the GNU General
-Public License, version 3 only (`GPL-3.0-only`). You may use, study, modify, and
-redistribute them under those terms, including commercially. When distributing
-covered builds or modifications, provide the corresponding source and preserve
-the GPL freedoms and notices required by the license.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See [LICENSE.txt](LICENSE.txt) for the full terms.
-Third-party components retain their own licenses; see
-[THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
-
-Automated releases include the license, notices, this README, and
-`little-last-light-source.zip` beside each build. The source archive includes
-the game project and build scripts, but not the separately hosted leaderboard
-backend, which is not part of the game executable. It uses the release commit's
-tracked files with the exported build's project settings and export presets.
-For manual exports, provide the matching game source and these notices with
-your uploads too. Automated browser exports include a source download link;
-for manual browser exports, run `python3 scripts/link-web-source.py PATH_TO_HTML`
-after placing the matching source archive beside the HTML file, or provide a
-visible source download alongside the playable game on its hosting page.
-
-## About the game
-
-**Ember Pot prototype:** a delayed coal projectile damages enemies in a small splash.
-It is available alongside Watchlight in placement and shares Damage, Fire Rate, and lantern proximity bonuses.
-See the [Ember Pot playtest guide](docs/aoe-playtest.md) for a separate profile with both ready to try.
-
-**Watchlight sniper:** click its placement button or press **R3 / right-stick click** on a controller to build one. It fires
-at the furthest living enemy within **360 pixels of the turret**, dealing **3
-damage every 4.5 seconds** before upgrades. Its shuttered housing faces each shot
-and acquires its next target immediately after firing, turning smoothly toward it
-while recharging. It refreshes the furthest-target choice during reload and checks
-again when firing. A shot damages only one enemy.
-It costs the same as a basic or slow turret at the same layout size (60 energy
-for the first purchase). Damage and fire-rate upgrades apply to both basic and
-sniper turrets: Watchlights retain 3× the damage and 3× the firing interval.
-Lantern proximity boosts both. Slow upgrades remain exclusive to slow turrets.
-Controller players can also select Watchlight with the placement toolbar and confirm.
-
-The placement toolbar shows each turret's base damage, range, and seconds per
-shot or pulse below its purchase button. These values exclude upgrades and
-proximity boosts; targeting priority and the slow turret's effect are shown too.
-
 ## Run the project
 
 Open `project.godot` in Godot and press F6 for the current scene or F5 for the project. Developed with Godot 4.7.2 using the Compatibility renderer.
