@@ -8,6 +8,8 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-12
+
 ### Added
 
 - An Achievements menu shows your first tower purchase and each boss defeated in unassisted play, with a popup when you unlock one and community completion counts on the website. Unlocks stay on your device across gameplay resets and retry syncing when you reconnect.
