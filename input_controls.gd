@@ -256,6 +256,8 @@ func focus_default(allow_placement_toolbar := false) -> void:
 		preferred = main.get_node("GameHUD").leaderboard.default_control()
 		if preferred == null:
 			preferred = prep.back_button
+	elif prep.view == prep.View.ACHIEVEMENTS:
+		preferred = prep.back_button
 	var controls := menu_controls()
 	if preferred in controls:
 		preferred.grab_focus()
@@ -325,7 +327,7 @@ func refresh_prompts() -> void:
 	decorate(pause.resume_button, "confirm_placement")
 	decorate(pause.end_run_button, "confirm_placement")
 	pause.keys.text = "Esc / P to resume"
-	pause.keys.visible = not using_controller()
+	pause.keys.visible = not using_controller() and not prep.using_touch()
 	decorate(main.get_node("ResultsScreen").continue_button, "confirm_placement")
 	var indicator = main.get_node("GameHUD").brightness_indicator
 	indicator.tooltip_text = "Brightness · %s to cycle" % hint("cycle_brightness") if using_controller() else "Click to cycle brightness"

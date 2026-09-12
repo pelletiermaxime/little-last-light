@@ -16,6 +16,62 @@ const board = async (t: ReturnType<typeof convexTest>, version = '0.1.0') => (aw
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('HTTP leaderboard contract', () => {
+  it('groups historical patches, keeps each device best, and isolates minor and major releases', async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async ctx => {
+      const base = { username: 'Keeper', durationMs: 65000, achievedAt: 1 }
+      await ctx.db.insert('scores', { ...base, version: '0.0.9', playerHash: 'same', durationMs: 120000, energyInvested: 20, turretLayout })
+      await ctx.db.insert('scores', { ...base, version: '0.0.27', playerHash: 'same', durationMs: 100000, energyInvested: 999 })
+      await ctx.db.insert('scores', { ...base, version: '0.0.10', playerHash: 'clear', durationMs: 900000, clearTimeMs: 950000 })
+      await ctx.db.insert('scores', { ...base, version: '0.0.27', playerHash: 'clear', durationMs: 900000, clearTimeMs: 930000 })
+      for (const version of ['0.1.0', '0.10.0', '1.0.0', 'dev']) {
+        await ctx.db.insert('scores', { ...base, version, playerHash: 'same' })
+      }
+    })
+    const rows = await board(t, '0.0')
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ rank: 1, clearTimeMs: 930000 })
+    expect(rows[1]).toMatchObject({ rank: 2, durationMs: 120000, energyInvested: 20, turretLayout })
+    for (const version of ['0.0.9', '0.0.27', '0.0.999']) expect(await board(t, version)).toEqual(rows)
+    expect(await t.query(api.scores.list, { version: '0.0' })).toEqual(rows)
+    for (const version of ['0.1', '0.10', '1.0', 'dev']) expect(await board(t, version)).toHaveLength(1)
+    expect(await board(t, '0.2')).toEqual([])
+    expect(await (await t.fetch('/versions')).json()).toEqual(['dev', '1.0', '0.10', '0.1', '0.0'])
+    // Read-time grouping leaves every historical run intact.
+    expect(await t.run(async ctx => (await ctx.db.query('scores').collect()).length)).toBe(8)
+  })
+
+  it('accepts old patch clients and combines new submissions without duplicating a device', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = convexTest(schema, modules)
+    await post(t, { ...detailedPayload, version: '0.0.9' })
+    vi.setSystemTime(Date.now() + 6000)
+    await post(t, { ...payload, version: '0.0.27', durationMs: 70000 })
+    expect(await board(t, '0.0')).toMatchObject([{ durationMs: 70000 }])
+    expect(await board(t, '0.0')).toHaveLength(1)
+    expect((await board(t, '0.0'))[0]).not.toHaveProperty('turretLayout')
+    vi.setSystemTime(Date.now() + 6000)
+    await post(t, { ...detailedPayload, version: '0.0.9', durationMs: 80000 })
+    expect(await board(t, '0.0.27')).toMatchObject([{ durationMs: 80000, turretLayout }])
+    expect((await post(t, { ...payload, version: '0.0' })).status).toBe(400)
+  })
+
+  it('deduplicates across patches before applying the combined top 100 limit', async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async ctx => {
+      for (const version of ['0.0.9', '0.0.27']) {
+        for (let i = 0; i < 110; i++) {
+          await ctx.db.insert('scores', { version, playerHash: String(i), username: `Keeper${i}`, durationMs: 1000 + i, achievedAt: 1 })
+        }
+      }
+    })
+    const rows = await board(t, '0.0')
+    expect(rows).toHaveLength(100)
+    expect(new Set(rows.map((r: { username: string }) => r.username)).size).toBe(100)
+    expect(rows[0].durationMs).toBe(1109)
+    expect(rows[99].durationMs).toBe(1010)
+  })
+
   it('preserves mixed turret types through HTTP storage and realtime queries without guessing legacy types', async () => {
     const t = convexTest(schema, modules)
     const mixedLayout = { ...turretLayout, turrets: [{ x: 0.2, y: 0.3, type: 'damage' }, { x: 0.7, y: 0.6, type: 'pulse' }, { x: 0.8, y: 0.2, type: 'sniper' }, { x: 0.3, y: 0.7, type: 'ember' }, { x: 0.5, y: 0.5 }] }
@@ -86,7 +142,7 @@ describe('HTTP leaderboard contract', () => {
     const t = convexTest(schema, modules)
     expect(await (await t.fetch('/versions')).json()).toEqual([])
     expect((await post(t, payload)).status).toBe(200)
-    expect(await (await t.fetch('/versions')).json()).toEqual(['0.1.0'])
+    expect(await (await t.fetch('/versions')).json()).toEqual(['0.1'])
     expect((await post(t, payload)).status).toBe(200)
     expect((await post(t, { ...payload, durationMs: 1000 })).status).toBe(200)
     expect(await board(t, '0.2.0')).toEqual([])
@@ -103,7 +159,7 @@ describe('HTTP leaderboard contract', () => {
     await post(t, { ...payload, version: '0.2.0', durationMs: 5000 })
     expect(await board(t, '0.2.0')).toHaveLength(1)
     expect(await board(t)).toHaveLength(2)
-    expect(await (await t.fetch('/versions')).json()).toEqual(['0.2.0', '0.1.0'])
+    expect(await (await t.fetch('/versions')).json()).toEqual(['0.2', '0.1'])
   })
 
   it('accepts new releases without registration, rejects invalid requests and supports browser CORS', async () => {
@@ -187,7 +243,7 @@ describe('HTTP leaderboard contract', () => {
       for (const version of ['0.1.9', '0.1.10', '0.2.0']) await ctx.db.insert('scores', { version, playerHash: version, username: 'Keeper', durationMs: 1000, achievedAt: 1 })
       for (let i = 1; i <= 105; i++) await ctx.db.insert('scores', { version: '0.1.0', playerHash: String(i), username: 'Keeper', durationMs: i * 1000, achievedAt: i })
     })
-    expect(await (await t.fetch('/versions')).json()).toEqual(['0.2.0', '0.1.10', '0.1.9', '0.1.0'])
+    expect(await (await t.fetch('/versions')).json()).toEqual(['0.2', '0.1'])
     const rows = await board(t)
     expect(rows).toHaveLength(100)
     expect(rows[0].durationMs).toBe(105000)

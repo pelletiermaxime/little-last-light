@@ -52,6 +52,7 @@ func _input(event: InputEvent) -> void:
 func pause() -> void:
 	if main.phase != main.Phase.RUNNING:
 		return
+	main.get_node("TouchLayer/TouchControls").reset()
 	get_node("/root/GameAudio").stop_combat()
 	get_node("/root/GameAudio").play(&"confirm")
 	var lantern = main.get_node("Lantern")

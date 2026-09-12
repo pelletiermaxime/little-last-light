@@ -1,16 +1,18 @@
 import type { Page, WebSocketRoute } from '@playwright/test'
 import type { TurretLayout } from '../../convex/runDetails'
+import { catalog } from '../../convex/achievementCatalog'
 
 export interface Score { rank: number; username: string; durationMs: number; achievedAt: number; energyEarned?: number; energyInvested?: number; totalEnergy?: number; turretLayout?: TurretLayout }
 interface Query { queryId: number; udfPath: string; args: [{ version?: string }] }
 
 export async function mockConvex(page: Page, initial: Record<string, Score[]> = {}) {
   let boards = initial
+  let achievementStats = { totalPlayers: 0, achievements: catalog.map(entry => ({ ...entry, unlockedPlayers: 0, percentage: 0 })) }
   let failed = false
   const connections: Array<{ socket: WebSocketRoute; queries: Map<number, Query>; version: { querySet: number; ts: string; identity: number } }> = []
   let tick = 0n
   const timestamp = () => { const bytes = Buffer.alloc(8); bytes.writeBigUInt64LE(++tick); return bytes.toString('base64') }
-  const value = (query: Query) => query.udfPath.endsWith(':versions')
+  const value = (query: Query) => query.udfPath === 'achievements:stats' ? achievementStats : query.udfPath.endsWith(':versions')
     ? Object.keys(boards).filter(version => boards[version]!.length).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
     : boards[query.args[0]?.version ?? ''] ?? []
   const update = (connection: typeof connections[number], querySet = connection.version.querySet) => {
@@ -45,6 +47,10 @@ export async function mockConvex(page: Page, initial: Record<string, Score[]> = 
   })
   return {
     publish(next: Record<string, Score[]>) { boards = next; connections.forEach(connection => update(connection)) },
+    achievements(totalPlayers: number, counts: number[]) {
+      achievementStats = { totalPlayers, achievements: catalog.map((entry, index) => ({ ...entry, unlockedPlayers: counts[index] ?? 0, percentage: totalPlayers ? (counts[index] ?? 0) / totalPlayers * 100 : 0 })) }
+      connections.forEach(connection => update(connection))
+    },
     fail(value: boolean) { failed = value; connections.forEach(connection => update(connection)) },
     subscriptions() { return connections.flatMap(connection => [...connection.queries.values()]) },
   }

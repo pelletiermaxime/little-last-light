@@ -206,6 +206,16 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Reset all progress"
 
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 136.0
+offset_bottom = 64.0
+text = "Back"
+tooltip_text = "Return to the previous menu"
+
+[connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/VolumeButton" to="." method="_on_volume_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/SoundButton" to="." method="_on_sound_button_pressed"]
 [connection signal="pressed" from="Center/Panel/Padding/Content/DisplayModeButton" to="." method="_on_display_mode_button_pressed"]

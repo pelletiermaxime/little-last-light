@@ -9,11 +9,13 @@ const SOUNDS := {
 	&"back": preload("res://audio/kenney/interface/back_001.ogg"),
 	&"place": preload("res://audio/kenney/impact/impactWood_medium_000.ogg"),
 	&"shot": preload("res://audio/kenney/scifi/laserSmall_001.ogg"),
+	&"rain": preload("res://audio/kenney/scifi/slime_000.ogg"),
 	&"damage": preload("res://audio/kenney/impact/impactPunch_heavy_000.ogg"),
 	&"upgrade": preload("res://audio/kenney/interface/glass_001.ogg"),
 	&"brightness": preload("res://audio/kenney/interface/toggle_001.ogg"),
 }
-const LEVELS := {&"navigate": -16.0, &"confirm": -10.0, &"back": -12.0, &"place": -10.0, &"shot": -22.0, &"damage": -12.0, &"upgrade": -12.0, &"brightness": -14.0}
+const LEVELS := {&"navigate": -16.0, &"confirm": -10.0, &"back": -12.0, &"place": -10.0, &"shot": -22.0, &"rain": -14.0, &"damage": -12.0, &"upgrade": -12.0, &"brightness": -14.0}
+const COMBAT_CUES := [&"shot", &"damage", &"brightness", &"rain"]
 const INTERVALS := {&"navigate": 0.08, &"shot": 0.12, &"damage": 0.25}
 var players: Dictionary = {}
 var cooldowns: Dictionary = {}
@@ -47,7 +49,7 @@ func _exit_tree() -> void:
 func play(cue: StringName) -> bool:
 	if muted or volume <= 0.0 or cooldowns.get(cue, 0.0) > 0.0:
 		return false
-	if get_tree().paused and cue in [&"shot", &"damage", &"brightness"]:
+	if get_tree().paused and cue in COMBAT_CUES:
 		return false
 	var player: AudioStreamPlayer = players[cue]
 	player.volume_db = LEVELS[cue] + linear_to_db(volume)
@@ -60,7 +62,7 @@ func play(cue: StringName) -> bool:
 
 
 func stop_combat() -> void:
-	for cue in [&"shot", &"damage", &"brightness"]:
+	for cue in COMBAT_CUES:
 		players[cue].stop()
 
 

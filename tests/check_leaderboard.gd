@@ -39,6 +39,8 @@ func finish(scene: Node2D, seconds: float) -> void:
 func check() -> void:
 	var scene := game("0.1.0")
 	var panel = scene.get_node("GameHUD").leaderboard
+	expect(panel._version_label("0.0.27") == "v0.0.x" and panel._version_label("0.1.0") == "v0.1.x", "Leaderboard labels group patches by minor version")
+	expect(panel._version_label("dev") == "dev", "Dev leaderboard label stays separate")
 	expect(scene.leaderboard_profile.token.length() == 64, "Creates anonymous identity")
 	expect(not panel.publish.visible, "No publish offer before completed personal best")
 	finish(scene, 65.125)

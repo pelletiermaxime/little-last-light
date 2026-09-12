@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { api } from '../../convex/_generated/api'
+import { minorVersion, versionLabel } from '../../convex/versions'
 const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
 const configured = Boolean(config.public.convex.url)
-const version = computed(() => typeof route.query.version === 'string' ? route.query.version : '')
+const version = computed(() => typeof route.query.version === 'string' ? minorVersion(route.query.version) : '')
 const { data: versions, status: versionsStatus, error: versionsError, refresh: refreshVersions } = await useConvexQuery(api.scores.versions, {}, {
   enabled: configured,
 })
@@ -40,7 +41,7 @@ function time(ms: number) {
       <div class="toolbar">
         <div><p class="eyebrow">SURVIVAL LEADERBOARD</p><h2 id="board-title">The last lights</h2></div>
         <div class="actions">
-          <label for="version">Game version<select id="version" :value="version" :disabled="!options.length" @change="selectVersion"><option v-if="!options.length" value="">No versions yet</option><option v-for="item in options" :key="item" :value="item">v{{ item }}</option></select></label>
+          <label for="version">Game version<select id="version" :value="version" :disabled="!options.length" @change="selectVersion"><option v-if="!options.length" value="">No versions yet</option><option v-for="item in options" :key="item" :value="item">{{ versionLabel(item) }}</option></select></label>
           <span v-if="configured && !error && !versionsError" class="eyebrow">Updates live</span>
           <button v-if="error || versionsError" @click="refreshVersions(); version && refresh()">Retry</button>
         </div>
@@ -49,7 +50,7 @@ function time(ms: number) {
         <p v-if="!configured" class="state">The online leaderboard is not connected yet. You can still play and keep your records locally.</p>
         <p v-else-if="status === 'pending' || versionsStatus === 'pending'" class="state">Gathering the last lights…</p>
         <p v-else-if="error || versionsError" class="state">We couldn’t reach the leaderboard. Please try again in a moment.</p>
-        <p v-else-if="!scores?.length" class="state">No lights recorded{{ version ? ` for v${version}` : '' }} yet. Beat your personal best in the game to publish the first.</p>
+        <p v-else-if="!scores?.length" class="state">No lights recorded{{ version ? ` for ${versionLabel(version)}` : '' }} yet. Beat your personal best in the game to publish the first.</p>
         <div v-else class="table-wrap"><table>
           <caption class="sr-only">Top 100 records for version {{ version }}: fastest clears, then longest survival</caption>
           <thead><tr><th scope="col">Rank</th><th scope="col">Keeper of the light</th><th scope="col" class="duration">Survived</th><th scope="col" class="energy">Energy<span class="column-note">Invested / Earned</span></th></tr></thead>
@@ -73,10 +74,11 @@ function time(ms: number) {
           </tbody>
         </table></div>
       </div>
-      <p class="footnote">Top 100 · Best published run per device and version · Clears first, fastest total clear time wins; otherwise longest survival wins.</p>
+      <p class="footnote">Top 100 · Best published run per device and minor version (all patches combined) · Clears first, fastest total clear time wins; otherwise longest survival wins.</p>
       <p class="data-note">Invested: energy spent on the turrets and persistent damage, fire rate, and health upgrades used for this run. The starting turret is free; unspent energy is excluded. Earned: energy generated during the run. Compare survival time alongside investment to see how much progression supported each defense. Older runs may not have this data.</p>
     </section>
-    <footer>Beat your personal best, choose a username, and publish from the game.<br>No account needed. These are community-submitted, unverified runs.</footer>
+    <AchievementStats />
+    <footer>Beat your personal best, choose a username, and publish from the game.<br>No account needed. These are community-submitted, unverified runs and achievements.</footer>
   </main>
 </template>
 

@@ -35,7 +35,7 @@ zip -q export/downloads/little-last-light-source.zip project.godot export_preset
 for platform in web windows linux; do
   cp LICENSE.txt THIRD_PARTY_NOTICES.txt README.md export/downloads/little-last-light-source.zip "export/$platform/"
 done
-python3 scripts/link-web-source.py export/web/index.html
+python3 scripts/stamp-web-version.py export/web/index.html
 touch export/web/.nojekyll
 
 # tar preserves the Linux executable permission; Windows gets a zip.

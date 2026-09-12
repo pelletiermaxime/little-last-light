@@ -12,8 +12,8 @@ const KINDLING_DURATION := 12.0
 const COLLECTION_RADIUS := 28.0
 const MARKER_RADIUS := 20.0
 const MIN_DISTANCE := 160.0
-const FLARE_RADIUS := 180.0
-const FLARE_DAMAGE := 8.0
+const FLARE_RADIUS := 240.0
+const FLARE_DAMAGE := 16.0
 
 var next_spawn := FIRST_SPAWN
 var active := false
@@ -220,7 +220,7 @@ func _explanation() -> String:
 		Kind.KINDLING:
 			return "Kindling · Walk into the diamond before it fades.\nDoubles passive energy for %d seconds, including Energy Gain upgrades.\nBoss rewards stay unchanged." % int(KINDLING_DURATION)
 		Kind.FLARE:
-			return "Flare · Walk into the spark before it fades.\nDeals %d damage to enemies within %d pixels of the pickup.\nA single burst; projectiles and water remain." % [int(FLARE_DAMAGE), int(FLARE_RADIUS)]
+			return "Flare · Walk into the spark before it fades.\nUnleashes a powerful burst that damages enemies in a wide area.\nEnemy shots and pools of water remain dangerous."
 		Kind.SENTINEL:
 			return "Sentinel · Walk into the square before it fades.\nCreates a turret here for %ds: %d damage every 0.35s, 260-pixel range.\nDouble your turret damage (minimum 4); no proximity bonus." % [int(SENTINEL_SCRIPT.DURATION), int(maxf(4.0, main.turret_damage() * 2.0))]
 		_:

@@ -102,6 +102,7 @@ func update_rainkeeper_encounter() -> void:
 		return
 	rainkeeper_spawned = true
 	var boss := RAINKEEPER_SCRIPT.new()
+	boss.defeated.connect(game._on_rainkeeper_defeated)
 	boss.target = lantern
 	boss.assist_movement_factor = game.enemy_movement_multiplier()
 	boss.position = _opposite_corner()

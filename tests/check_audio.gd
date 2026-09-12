@@ -17,7 +17,9 @@ func check() -> void:
 	audio.set_muted(false)
 	audio.set_volume(0.5)
 	audio.cue_played.connect(func(cue): heard.append(cue))
-	expect(audio.players.size() == 8, "Only the eight selected sounds are loaded")
+	expect(audio.players.size() == 9, "The selected sounds and one rain impact are loaded")
+	var rain_stream = audio.players[&"rain"].stream
+	expect(not rain_stream.loop and rain_stream.get_length() <= 0.5, "Rain impact is a short, non-looping sound")
 	expect(audio.play(&"shot"), "First shot plays")
 	for index in range(100):
 		expect(not audio.play(&"shot"), "Simultaneous turret shots are throttled")
@@ -28,9 +30,11 @@ func check() -> void:
 	audio.stop_combat()
 	audio._process(1.0)
 	expect(not audio.play(&"shot") and audio.play(&"back"), "Pause silences combat but allows menu audio")
+	expect(not audio.play(&"rain"), "Pause suppresses rain impacts")
 	paused = false
 	audio.set_muted(true)
 	expect(not audio.play(&"confirm"), "Mute suppresses sounds")
+	expect(not audio.play(&"rain"), "Mute suppresses rain impacts")
 	audio.set_volume(0.75)
 	audio.muted = false
 	audio.volume = 0.1

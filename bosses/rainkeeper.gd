@@ -1,5 +1,7 @@
 extends "res://enemies/enemy.gd"
 
+signal defeated
+
 enum Attack { ARRIVAL, RECOVERY, WARNING, ACTIVE }
 
 const POOL_RADIUS := 100.0
@@ -8,7 +10,7 @@ const POOL_DURATION := 3.0
 const POOL_DPS := 8.0
 const RAIN_STRIKES := 3
 const RAIN_STRIKE_INTERVAL := 0.35
-const RAIN_RECOVERY := 1.5
+const RAIN_RECOVERY := 4.0
 
 var attack: Attack = Attack.ARRIVAL
 var remaining := 3.0
@@ -80,6 +82,7 @@ func _advance() -> void:
 		Attack.WARNING:
 			attack = Attack.ACTIVE
 			rain_pools.append({"point": mark, "remaining": POOL_DURATION})
+			get_node("/root/GameAudio").play(&"rain")
 			rain_strikes += 1
 			remaining = RAIN_STRIKE_INTERVAL
 		Attack.ACTIVE:
@@ -110,7 +113,10 @@ func _tick_rain(step: float) -> void:
 
 func take_damage(amount: float) -> void:
 	if attack == Attack.ARRIVAL: return
+	var was_alive := health > 0.0
 	super.take_damage(amount)
+	if was_alive and health <= 0.0:
+		defeated.emit()
 	if health <= 0.0:
 		rain_pools.clear()
 

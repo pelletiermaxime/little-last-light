@@ -105,10 +105,23 @@ func check() -> void:
 	var pause = scene.get_node("PauseScreen")
 	prep.settings_button.pressed.emit()
 	expect(settings.is_open() and not paused, "Settings opens from preparation")
+	var back: Button = settings.menu.get_node("BackButton")
+	for page in ["visual", "assistance", "reset"]:
+		match page:
+			"visual": settings._show_visual(true)
+			"assistance": settings._show_assistance(true)
+			"reset": settings._ask_reset()
+		expect(back.is_visible_in_tree(), "Header Back remains visible on " + page)
+		back.pressed.emit()
+		expect(settings.is_open() and not settings.visual_open and not settings.assistance_open and not settings.reset_pending, "Back returns one level without changing progress")
+	back.pressed.emit()
+	expect(not settings.is_open() and root.gui_get_focus_owner() == prep.settings_button, "Visible Back exits settings to preparation")
+	prep.settings_button.pressed.emit()
 	for size in [Vector2i(640, 480), Vector2i(360, 640)]:
 		root.size = size
 		for frame in range(6):
 			await process_frame
+		expect(back.get_global_rect().size.y >= 48 and Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(back.get_global_rect()), "Back stays visible and thumb-sized")
 		for button in [settings.volume_button, settings.mute_button, settings.display_mode_button, settings.fps_button, settings.vsync_button, settings.assistance_button, settings.visual_button]:
 			expect(Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(button.get_global_rect()), "Settings buttons fit small viewports")
 	settings.fps_button.grab_focus()
@@ -129,6 +142,9 @@ func check() -> void:
 	expect(controls.menu_controls().has(settings.fps_button) and not controls.menu_controls().has(pause.resume_button), "Controller focus stays in settings")
 	key(KEY_ESCAPE)
 	expect(not settings.is_open() and paused and root.gui_get_focus_owner() == pause.settings_button, "Escape returns to pause without resuming")
+	pause.settings_button.pressed.emit()
+	back.pressed.emit()
+	expect(not settings.is_open() and paused and root.gui_get_focus_owner() == pause.settings_button, "Visible Back returns to pause without resuming combat")
 	pause.resume()
 	var path: String = scene.save_path
 	scene.free()

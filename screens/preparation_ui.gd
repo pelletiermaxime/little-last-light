@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-enum View { HOME, PLACEMENT, UPGRADES, RECORDS }
+enum View { HOME, PLACEMENT, UPGRADES, RECORDS, ACHIEVEMENTS }
 const STYLE = preload("res://ui/ui_style.gd")
 
 var main: Node2D
@@ -32,6 +32,29 @@ var upgrade_groups: GridContainer
 var energy_button: Button
 var proximity_button: Button
 var placement_stats: Dictionary = {}
+var touch_scroll: ScrollContainer
+var achievements_button: Button
+var achievements_page: VBoxContainer
+
+
+func using_touch() -> bool:
+	var touch := main.get_node_or_null("TouchLayer/TouchControls")
+	return touch != null and touch.enabled
+
+
+func _enable_touch_layout() -> void:
+	if is_instance_valid(touch_scroll):
+		return
+	# Keep readable button sizes on phones; swipe the card instead of shrinking it.
+	touch_scroll = ScrollContainer.new()
+	touch_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	touch_scroll.follow_focus = true
+	scroll.add_child(touch_scroll)
+	content.reparent(touch_scroll)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for control in content.find_children("*", "Control", true, false):
+		if control.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+			control.mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 func _ready() -> void:
@@ -53,6 +76,13 @@ func _ready() -> void:
 	hide_button = $Card/Padding/Content/Footer/HideButton
 	records_button = $Card/Padding/Content/Footer/RecordsButton
 	settings_button = $Card/Padding/Content/Footer/SettingsButton
+	achievements_button = Button.new()
+	achievements_button.name = "AchievementsButton"
+	achievements_button.text = "Achievements"
+	achievements_button.custom_minimum_size.y = 44
+	footer.add_child(achievements_button)
+	footer.move_child(achievements_button, settings_button.get_index())
+	achievements_button.pressed.connect(func(): open_view(View.ACHIEVEMENTS))
 	show_button = $ShowButton
 	place_button.pressed.connect(func(): open_view(View.PLACEMENT))
 	upgrades_button.pressed.connect(func(): open_view(View.UPGRADES))
@@ -88,6 +118,15 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(refresh)
 	refresh()
 	build.start_button.call_deferred("grab_focus")
+
+
+func setup_achievements() -> void:
+	achievements_page = preload("res://screens/achievements_page.gd").new()
+	achievements_page.name = "AchievementsPage"
+	content.add_child(achievements_page)
+	content.move_child(achievements_page, footer.get_index())
+	achievements_page.setup(main)
+	refresh()
 
 
 func _create_placement_stats() -> void:
@@ -140,6 +179,8 @@ func go_back() -> void:
 			upgrades_button.grab_focus()
 		View.RECORDS:
 			records_button.grab_focus()
+		View.ACHIEVEMENTS:
+			achievements_button.grab_focus()
 		View.PLACEMENT:
 			place_button.grab_focus()
 
@@ -223,12 +264,21 @@ func refresh() -> void:
 	show_button.visible = preparing and view == View.PLACEMENT and controls_hidden
 	if not preparing:
 		return
+	var touch := using_touch()
+	if touch:
+		_enable_touch_layout()
 	var home := view == View.HOME
 	var placement := view == View.PLACEMENT
 	for label in placement_stats.values():
 		label.visible = placement
 	var upgrades := view == View.UPGRADES
 	var records := view == View.RECORDS
+	var achievements := view == View.ACHIEVEMENTS
+	achievements_button.visible = home
+	if is_instance_valid(achievements_page):
+		achievements_page.visible = achievements
+		if achievements:
+			achievements_page.refresh()
 	place_button.visible = home
 	upgrades_button.visible = home
 	build.start_button.visible = home
@@ -304,8 +354,22 @@ func refresh() -> void:
 		description.text = "Place through the card background. Tab hides all controls. Esc cancels."
 	if build.using_controller and placement:
 		description.text = "Base stats before upgrades or proximity.\nStick: cursor · D-pad: toolbar\nConfirm: place · Back: done"
+	if touch:
+		build.cancel_button.text = "Cancel placement"
+		back_button.text = "Done" if placement else "Back"
+		hide_button.text = "Hide controls"
+		show_button.text = "Show controls"
+		if home:
+			description.text = "Play sideways. Hold and slide your left thumb to move; tap brightness with your right."
+		elif placement:
+			description.text = "Tap the arena to place. Hide controls to reach underneath." if build.placing else "Tap a turret to move or sell. Swipe this panel for more controls."
 	if not main.save_message.is_empty():
 		description.text = main.save_message
+	if achievements:
+		title.text = "Your achievements"
+		description.text = "Lifetime milestones · earned in unassisted play."
+		balance.hide()
+		back_button.text = "Back" if build.using_controller or touch else "Back · Esc"
 	var size := get_viewport().get_visible_rect().size
 	actions.columns = 1
 	footer.columns = 1
@@ -317,9 +381,19 @@ func refresh() -> void:
 		# Keep every group visible together. Small windows scale the complete card.
 		width = maxf(900, minf(1060, size.x - 32))
 		height = minf(580, size.y - 32)
+	if achievements:
+		width = minf(560, size.x - 32)
+		height = minf(580, size.y - 32)
+	if touch:
+		width = minf(300 if placement else 660, size.x - 32)
+		height = size.y - 32
+		upgrade_groups.columns = 1 if size.x < 700 else 2
+		card.scale = Vector2.ONE
 	card.size = Vector2(width, height)
 	card.position = Vector2(16 if placement else (size.x - width) / 2, (size.y - height) / 2)
 	card_style.bg_color.a = 0.62 if home else (0.28 if placement else 0.94)
+	if main.is_node_ready():
+		_fit_layout()
 	call_deferred("_fit_layout")
 	card_style.border_color.a = 0.4 if home or placement else 1.0
 	card_style.shadow_color.a = 0.08 if home or placement else 0.3
@@ -381,6 +455,8 @@ func blocks_point(point: Vector2) -> bool:
 		return false
 	if view != View.PLACEMENT:
 		return true
+	if using_touch():
+		return true # Swiping the toolbar must never place a turret behind it.
 	for parent in [actions, footer]:
 		for child in parent.get_children():
 			if child is Button and child.is_visible_in_tree() and child.get_global_rect().has_point(point):

@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://cw3o8kcv3s0dn" path="res://input_controls.gd" id="10_controls"]
 [ext_resource type="Script" uid="uid://bb76vhuyy5kqc" path="res://screens/settings_screen.gd" id="11_settings"]
 [ext_resource type="PackedScene" uid="uid://cnaypxw2cudkc" path="res://screens/settings_menu.tscn" id="12_dg77c"]
+[ext_resource type="Script" path="res://ui/touch_controls.gd" id="13_touch"]
 
 [node name="Main" type="Node2D" unique_id=49982640]
 script = ExtResource("1_h2yge")
@@ -57,5 +58,18 @@ visible = false
 
 [node name="Controls" type="Node" parent="." unique_id=1983997394]
 script = ExtResource("10_controls")
+
+[node name="TouchLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="TouchControls" type="Control" parent="TouchLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("13_touch")
 
 [connection signal="closed" from="SettingsScreen/SettingsMenu" to="SettingsScreen" method="_on_settings_menu_closed"]

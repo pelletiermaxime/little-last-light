@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Little Last Light"
-config/version="0.0.29"
+config/version="0.1.0"
 run/main_scene="uid://cnjhfdvymo7wv"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -135,6 +135,8 @@ toggle_build_controls={
 }
 
 [leaderboard]
+
+dev_api_url="https://notable-giraffe-170.convex.site"
 
 api_url="https://judicious-meerkat-207.convex.site"
 site_url="https://little-last-light-leaderboard.pages.dev"

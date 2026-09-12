@@ -8,10 +8,13 @@
  * @module
  */
 
+import type * as achievementCatalog from "../achievementCatalog.js";
+import type * as achievements from "../achievements.js";
 import type * as http from "../http.js";
 import type * as runDetails from "../runDetails.js";
 import type * as scores from "../scores.js";
 import type * as validation from "../validation.js";
+import type * as versions from "../versions.js";
 
 import type {
   ApiFromModules,
@@ -20,10 +23,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  achievementCatalog: typeof achievementCatalog;
+  achievements: typeof achievements;
   http: typeof http;
   runDetails: typeof runDetails;
   scores: typeof scores;
   validation: typeof validation;
+  versions: typeof versions;
 }>;
 
 /**

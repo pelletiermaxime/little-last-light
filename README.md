@@ -38,9 +38,9 @@ Progress saves locally to `user://progress-v1.json` after purchases, upgrades, s
 
 ## Online leaderboard
 
-The in-game Records view and results screen show the current version's published leaderboard. Editor runs use `dev` as a normal leaderboard version: you can publish records, view rankings, and retry failed requests just like a release. Development scores remain separate from release scores. The All versions link opens the website to browse every version.
+The in-game Records view and results screen show the current minor version's published leaderboard: all `0.0.x` patches share a board, while `0.1.x` starts a separate board. Each board shows one best published run per device across its patches, including existing scores. Editor runs use `dev` as a separate leaderboard: you can publish records, view rankings, and retry failed requests just like a release. The All versions link opens the website to browse minor versions.
 
-The results screen offers to publish a new survival record with a username; pending offers remain available through **Records** in preparation. New records include earned energy, defense investment, and a turret-layout diagram with upgrade levels. Publication is optional; failed attempts can be retried, and records are separate for every game version. Saved energy and turret layouts continue across versions. The Nuxt website and Convex backend live in [`leaderboard/`](leaderboard/README.md), including setup, deployment, and verification instructions. Online publishing requires configuring this game's own backend and website URLs; unconfigured builds keep records locally.
+The results screen offers to publish a new survival record with a username; pending offers remain available through **Records** in preparation. New records include earned energy, defense investment, and a turret-layout diagram with upgrade levels. Publication is optional; failed attempts can be retried. Published leaderboards group patches by minor version; local progress remains scoped to the exact build version. The Nuxt website and Convex backend live in [`leaderboard/`](leaderboard/README.md), including setup, deployment, and verification instructions. Online publishing requires configuring this game's own backend and website URLs; unconfigured builds keep records locally.
 
 ## Learn and explore
 

@@ -36,7 +36,7 @@ func check() -> void:
 	expect(root.gui_get_focus_owner() == prep.place_button, "Down moves from Start run to Place turrets")
 	key(KEY_UP)
 	expect(root.gui_get_focus_owner() == scene.get_node("BuildController").start_button, "Up returns to Start run")
-	for button in [prep.place_button, prep.upgrades_button, prep.records_button, prep.settings_button]:
+	for button in [prep.place_button, prep.upgrades_button, prep.records_button, prep.achievements_button, prep.settings_button]:
 		key(KEY_DOWN)
 		expect(root.gui_get_focus_owner() == button, "Down follows vertical main menu order")
 	key(KEY_ENTER)

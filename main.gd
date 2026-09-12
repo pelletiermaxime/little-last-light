@@ -23,6 +23,7 @@ const UPGRADE_BASE_COSTS: Dictionary = {"damage": 120.0, "fire_rate": 100.0, "he
 @onready var lantern: Node2D = $Lantern
 
 var encounters := ENCOUNTER_DIRECTOR.new()
+var achievements := preload("res://game/achievement_tracker.gd").new()
 var phase: Phase = Phase.PREPARATION
 var pickups: Node2D
 var banked_energy: float = 0.0
@@ -112,6 +113,13 @@ func _ready() -> void:
 		configure_turret(turret)
 	if leaderboard_profile.token.is_empty():
 		leaderboard_profile.token = Crypto.new().generate_random_bytes(32).hex_encode()
+	add_child(achievements)
+	achievements.setup(self)
+	var achievement_toasts := preload("res://ui/achievement_toasts.gd").new()
+	achievement_toasts.name = "AchievementToasts"
+	add_child(achievement_toasts)
+	achievement_toasts.setup(self)
+	$PreparationUI.setup_achievements()
 	_set_turrets_active(false)
 	lantern._update_status()
 	get_viewport().size_changed.connect(_resize_layout)
@@ -252,6 +260,7 @@ func start_run() -> void:
 	# Snapshot the defense budget before the run. Unspent savings do not help survival.
 	run_energy_invested = defense_investment()
 	run_assisted = not leaderboard_eligible()
+	achievements.enroll()
 	assisted_progress = assisted_progress or run_assisted
 	lantern.health = lantern.max_health
 	lantern.energy = 0.0
@@ -279,6 +288,7 @@ func end_run(voluntary: bool = false, victory: bool = false) -> void:
 	if phase != Phase.RUNNING:
 		return
 	phase = Phase.RESULTS
+	$TouchLayer/TouchControls.reset()
 	get_tree().paused = false
 	lantern.running = false
 	pickups.reset()
@@ -377,6 +387,7 @@ func _process(delta: float) -> void:
 func _on_final_boss_defeated() -> void:
 	# First terminal event wins. A dead lantern can never claim a clear.
 	if phase == Phase.RUNNING and lantern.health > 0.0 and encounters.final_boss_spawned:
+		achievements.unlock("defeat_snuffer")
 		end_run(false, true)
 
 
@@ -384,12 +395,18 @@ func _on_drencher_defeated() -> void:
 	if phase != Phase.RUNNING or lantern.health <= 0.0 or boss_reward_earned:
 		return
 	boss_reward_earned = true
+	achievements.unlock("defeat_drencher")
 	boss_reward_amount = BOSS_ENERGY_REWARD * energy_multiplier()
 	boss_reward_notice_until = lantern.elapsed + 5.0
 	lantern.energy += boss_reward_amount
 	save_progress()
 	$GameHUD.refresh()
 	get_node("/root/GameAudio").play(&"upgrade")
+
+
+func _on_rainkeeper_defeated() -> void:
+	if phase == Phase.RUNNING and lantern.health > 0.0:
+		achievements.unlock("defeat_rainkeeper")
 
 
 func get_arena_rect() -> Rect2:

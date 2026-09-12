@@ -8,7 +8,8 @@ The Rainkeeper has 900 HP and three seconds of protected arrival. Each burst mar
 three consecutive positions, with a **0.85-second warning** before each strike.
 Marks lock immediately and never track the lantern. Each **100 px-radius pool**
 lasts **three seconds**, dealing 8 damage per second; overlapping rain pools do not
-multiply damage. Strikes are separated by 0.35 seconds, followed by a **1.5-second
+multiply damage. Each pool appears with one short wet impact sound. Strikes are
+separated by 0.35 seconds, followed by a **four-second
 recovery** in which the boss approaches the lantern. Pulse slows affect that movement,
 not its attack clocks. There is no passive body-contact damage.
 

@@ -190,7 +190,8 @@ func refresh() -> void:
 	displayed_brightness = lantern.brightness
 	scroll.visible = running
 	health_bar.visible = running
-	brightness_indicator.visible = running
+	var touch := main.get_node_or_null("TouchLayer/TouchControls")
+	brightness_indicator.visible = running and not (touch != null and touch.enabled)
 	var bosses := get_tree().get_nodes_in_group("bosses").filter(func(boss: Node): return not boss.is_queued_for_deletion())
 	# Show the latest encounter even when an earlier boss survives.
 	bosses.sort_custom(func(a: Node, b: Node): return _boss_priority(a) > _boss_priority(b))

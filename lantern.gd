@@ -12,6 +12,7 @@ const MOVE_DEADZONE := 0.25
 
 var health: float
 var running: bool = false
+var touch_direction := Vector2.ZERO
 var hit_flash: float = 0.0
 var projectile_grace_remaining: float = 0.0
 
@@ -81,6 +82,8 @@ func _physics_process(delta: float) -> void:
 		return
 	# get_vector keeps diagonal movement the same speed as straight movement.
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down", MOVE_DEADZONE)
+	if touch_direction.length_squared() > direction.length_squared():
+		direction = touch_direction
 	position += direction * move_speed * delta
 	_keep_inside_viewport()
 

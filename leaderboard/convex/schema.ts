@@ -1,8 +1,15 @@
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import { turretLayoutValidator } from './runDetails'
+import { achievementId } from './achievementCatalog'
 
 export default defineSchema({
+  achievementPlayers: defineTable({ playerHash: v.string(), joinedAt: v.number() })
+    .index('by_playerHash', ['playerHash']),
+  playerAchievements: defineTable({ playerHash: v.string(), achievementId, unlockedAt: v.number() })
+    .index('by_playerHash_achievementId', ['playerHash', 'achievementId']),
+  achievementCounts: defineTable({ key: v.string(), count: v.number() })
+    .index('by_key', ['key']),
   scores: defineTable({
     version: v.string(), playerHash: v.string(), username: v.string(),
     durationMs: v.number(), achievedAt: v.number(),

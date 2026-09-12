@@ -94,6 +94,8 @@ func _process(delta: float) -> void:
 		var valid := reason.is_empty()
 		preview.modulate = Color(0.6, 1.0, 0.7, 0.65) if valid else Color(1.0, 0.3, 0.3, 0.65)
 		var confirm: String = main.get_node("Controls").hint("confirm_placement") if using_controller else "Click"
+		if main.get_node("PreparationUI").using_touch():
+			confirm = "Tap"
 		placement_hint.text = ((confirm + " to move here · Free") if is_instance_valid(selected_turret) else (confirm + " to build · %d energy" % int(turret_cost(placement_type)))) if valid else reason
 		placement_hint.modulate = Color("#a5edb7") if valid else Color("#ffb4a8")
 		placement_hint.reset_size()
@@ -269,8 +271,9 @@ func _select_or_place(point: Vector2) -> void:
 	if placing:
 		try_place(point)
 	else:
+		var selection_radius := 32.0 if ui.using_touch() else 20.0
 		for turret in get_tree().get_nodes_in_group("turrets"):
-			if point.distance_to(turret.global_position) <= 20.0:
+			if point.distance_to(turret.global_position) <= selection_radius:
 				begin_move(turret)
 				break
 
@@ -348,6 +351,7 @@ func try_place(point: Vector2) -> bool:
 		get_parent().add_child(turret)
 		turret.global_position = point
 		main.banked_energy -= cost
+		main.achievements.unlock("first_tower")
 	cancel_placement(false)
 	main.save_progress()
 	get_node("/root/GameAudio").play(&"place")

@@ -1,6 +1,6 @@
 # Sound effects
 
-Eight unmodified Kenney OGG files selected in the sound audition. Original CC0
+Nine unmodified Kenney OGG files, including one short Rainkeeper impact clip. Original CC0
 licenses are preserved beside each pack's clips.
 
 | Cue | Original pack / filename | Gain |
@@ -10,11 +10,12 @@ licenses are preserved beside each pack's clips.
 | Back / cancel | Interface Sounds / back_001.ogg | -12 dB |
 | Place / move turret | Impact Sounds / impactWood_medium_000.ogg | -10 dB |
 | Turret shot | Sci-Fi Sounds / laserSmall_001.ogg | -22 dB |
+| Rainkeeper strike | Sci-Fi Sounds / slime_000.ogg | -14 dB |
 | Lantern damage | Impact Sounds / impactPunch_heavy_000.ogg | -12 dB |
 | Successful upgrade | Interface Sounds / glass_001.ogg | -12 dB |
 | Brightness change | Interface Sounds / toggle_001.ogg | -14 dB |
 
-Sources (downloaded 2026-09-06):
+Sources (original clips downloaded 2026-09-06; slime clips added 2026-09-12):
 
 - https://kenney.nl/assets/interface-sounds
 - https://kenney.nl/assets/impact-sounds
@@ -26,3 +27,5 @@ Other cues have one voice each. Default sound volume is 50%, applied on top of
 the gains above. Settings provides volume cycling (0/25/50/75/100%) and mute;
 preferences live separately from progress in `user://audio-settings.cfg`.
 Audio uses normal Godot playback without bus effects, including on Web.
+The 0.5-second Rainkeeper impact plays once when each warning ends and its pool
+appears. It does not loop and follows the same volume, mute, pause, and combat-stop controls.

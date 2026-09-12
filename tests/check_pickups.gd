@@ -62,9 +62,9 @@ func check() -> void:
 	expect(pickups.kindling_remaining == 0.0 and is_equal_approx(scene.lantern.current_energy_rate(), 3.6), "Income returns to normal")
 	# Real enemies establish radius, damage amount and single application.
 	var enemies: Array[Node2D] = []
-	for distance in [0.0, 180.0, 181.0]:
+	for distance in [0.0, 240.0, 241.0]:
 		var enemy = scene.encounters.ENEMY_SCENE.instantiate()
-		enemy.max_health = 10.0
+		enemy.max_health = 20.0
 		scene.add_child(enemy)
 		enemy.position = scene.lantern.position + Vector2(distance, 0)
 		enemy.set_process(false)
@@ -75,7 +75,7 @@ func check() -> void:
 	pickups.pickup_position = scene.lantern.position
 	pickups._process(0.1)
 	pickups._collect()
-	expect(enemies[0].health == 2 and enemies[1].health == 2 and enemies[2].health == 10, "Flare hits its larger radius once for eight, leaving outsiders intact")
+	expect(enemies[0].health == 4 and enemies[1].health == 4 and enemies[2].health == 20, "Flare deals sixteen damage once through the edge of its wider radius, leaving outsiders intact")
 	# A temporary turret uses the normal shot path without entering the layout.
 	pickups.active = true
 	pickups.kind = pickups.Kind.SENTINEL

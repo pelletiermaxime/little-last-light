@@ -36,7 +36,7 @@ var pager: HBoxContainer
 func _ready() -> void:
 	if main == null:
 		main = get_tree().current_scene as Node2D
-	api_url = str(ProjectSettings.get_setting("leaderboard/api_url", "")).trim_suffix("/")
+	api_url = preload("res://game/online_config.gd").api_url()
 	prompt = $Submission/Prompt
 	username = $Submission/Username
 	publish = $Submission/PublishButton
@@ -120,7 +120,7 @@ func refresh() -> void:
 func _load_scores() -> void:
 	if scores_loading:
 		return
-	scores_heading.text = "LEADERBOARD · " + ("dev" if main.game_version == "dev" else "v" + main.game_version)
+	scores_heading.text = "LEADERBOARD · " + _version_label(main.game_version)
 	for row in scores_rows.get_children():
 		row.free()
 	scores_page.hide()
@@ -243,7 +243,10 @@ func _completed(result: int, code: int, _headers: PackedStringArray, body: Packe
 
 
 func _version_label(version: String) -> String:
-	return "dev" if version == "dev" else "v" + version
+	if version == "dev":
+		return "dev"
+	var parts := version.split(".")
+	return "v%s.%s.x" % [parts[0], parts[1]]
 
 
 func default_control() -> Control:

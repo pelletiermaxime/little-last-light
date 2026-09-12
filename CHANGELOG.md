@@ -8,6 +8,23 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Added
+
+- An Achievements menu shows your first tower purchase and each boss defeated in unassisted play, with a popup when you unlock one and community completion counts on the website. Unlocks stay on your device across gameplay resets and retry syncing when you reconnect.
+- Touchscreen controls: steer with a floating thumb joystick, change brightness while moving, pause with an on-screen button, and swipe through readable preparation menus.
+- The Rainkeeper's rain strikes now play one short wet impact sound as each pool appears.
+
+### Changed
+
+- Flare now deals twice the damage in a wider area, with a simpler pickup description.
+- Leaderboards now combine patch releases into one board per minor version, such as v0.0.x, showing each device's best published run across those patches. v0.1.x starts a separate board.
+- The browser game's bottom-right label now shows the build version instead of a source-download link.
+- The Rainkeeper now rests for four seconds between trios of rain strikes, giving you more time to return to your turrets.
+
+### Fixed
+
+- Settings now has an always-visible Back button and readable, swipeable touchscreen pages, so phone players can return to preparation or the paused game.
+
 ## [0.0.29] - 2026-09-11
 
 - No player-facing changes recorded for this release.
