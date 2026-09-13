@@ -207,6 +207,50 @@ jobs:
           echo 'Could not record release metadata on main after three attempts.' >&2
           exit 1
 
+  itch:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ITCH_TARGET != ''
+    needs: [build, leaderboard]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: web-build
+          path: web-build
+
+      - name: Check itch.io configuration and web export
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$BUTLER_API_KEY" ]]; then
+            echo '::error::Set the BUTLER_API_KEY Actions secret before enabling ITCH_TARGET.'
+            exit 1
+          fi
+          test -s web-build/index.html
+          test -s web-build/index.wasm
+          test -s web-build/index.pck
+
+      - name: Install Butler
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default \
+            --output "$RUNNER_TEMP/butler.zip"
+          unzip -q "$RUNNER_TEMP/butler.zip" -d "$RUNNER_TEMP/butler"
+          chmod +x "$RUNNER_TEMP/butler/butler"
+          "$RUNNER_TEMP/butler/butler" version
+
+      - name: Publish browser build to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_TARGET: ${{ vars.ITCH_TARGET }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/butler/butler" push web-build "$ITCH_TARGET:html5" \
+            --userversion "$RELEASE_VERSION"
+
   pages:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [build, leaderboard]

@@ -99,6 +99,19 @@ Godot and the three required release templates are cached by engine version, run
 
 **Deployment setup:** The public `pelletiermaxime/little-last-light-demo` repository serves Pages from `main`, at `/`. A write-enabled deploy key on that repository has its private key stored in this source repository's `PAGES_DEPLOY_KEY` Actions secret. This key is restricted to the demo repository and used only in the `pages` job on `main`. Keep the `github-pages` environment open to `main` deployments. Publishing preserves the demo README and replaces the exported site files; GitHub then builds the public Pages site. Desktop releases use the source repository's built-in `GITHUB_TOKEN`. Pages does not need to be enabled on this private repository.
 
+### itch.io browser uploads
+
+The `itch` job reuses the same `web-build` artifact as Pages and uploads it with [Butler](https://itch.io/docs/butler/) to the `html5` channel, using CI's assigned release version. It runs after the build and leaderboard checks succeed on pushes or manual workflow runs on `main`, independently of Pages and desktop publication. Feature branches and pull requests never upload to itch.io. Until `ITCH_TARGET` is configured, this job is skipped.
+
+One-time setup in this source repository's **Settings → Secrets and variables → Actions**:
+
+1. Install [Butler](https://itch.io/docs/butler/installing.html), run `butler login`, and store its credential as the **secret** `BUTLER_API_KEY`. The [authentication documentation](https://itch.io/docs/butler/login.html) lists the credential file locations and the `wharf` key in itch.io's API-key settings. Enter the key directly in GitHub's secret form.
+2. Set the **variable** `ITCH_TARGET` to `username/game-slug`, without a URL scheme or channel suffix. For example, `https://username.itch.io/little-last-light` becomes `username/little-last-light`. The itch.io project must already exist and the key must have access to it.
+3. Run **Actions → Build and publish game → Run workflow** on `main` after this workflow change is merged, or let the next push publish it.
+4. After the first upload, open itch.io's **Edit game** page, set the project kind to **HTML**, and mark the `html5` upload as **playable in the browser**, then save. See [Butler's HTML-game instructions](https://itch.io/docs/butler/pushing.html#html--playable-in-browser-games). Later uploads update the same channel automatically.
+
+An itch.io failure is visible as a failed job and does not block Pages or desktop publication. Retry the failed job to upload that run's existing artifact again. Remove `ITCH_TARGET` to disable future itch.io uploads.
+
 ### Automatic versions and changelog
 
 `scripts/prepare-release.py` starts at `0.0.1` and increments the patch version from existing `vMAJOR.MINOR.PATCH` Git tags. Do not bump patch versions before merging. The script stamps the selected version into the build and each export's `version.txt`. After desktop publication succeeds, CI commits the assigned version back to `project.godot` on `main`. That field can still be raised manually to request a new major/minor minimum, such as `0.1.0`; writeback never lowers a newer value. Local builds stamp only the working copy.

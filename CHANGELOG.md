@@ -8,6 +8,10 @@ This history starts with v0.0.14. Earlier releases retain their original notes o
 
 ## [Unreleased]
 
+### Added
+
+- Automatic browser-build updates on itch.io once publishing is configured.
+
 ## [0.1.0] - 2026-09-12
 
 ### Added
